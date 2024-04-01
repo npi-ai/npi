@@ -2,11 +2,12 @@
 name = "npi"
 version = "0.0.1"
 description = "Natural language API"
-authors = ["wells <wells@npi.ai"]
+authors = ["Wells Wang <wells@npi.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+openai = "^1.14.3"
 
 
 [build-system]
