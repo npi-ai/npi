@@ -8,7 +8,14 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 openai = "^1.14.3"
+pydantic = "^2.6.4"
+markdown = "^3.6"
+simplegmail = "^4.1.1"
+google-api-python-client = "^2.125.0"
 
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^69.2.0"
 
 [build-system]
 requires = ["poetry-core"]
