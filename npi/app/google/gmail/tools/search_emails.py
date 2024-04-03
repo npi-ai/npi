@@ -9,7 +9,7 @@ class SearchEmailsParameter(Parameter):
     max_results: int = Field(default=100, description='Maximum number of messages to return')
 
 
-def search_emails(_agent: Agent, params: SearchEmailsParameter):
+def search_emails(params: SearchEmailsParameter, _prompt: str, _agent: Agent):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
     return gmail_client.get_messages(

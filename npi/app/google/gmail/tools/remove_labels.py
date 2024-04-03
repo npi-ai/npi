@@ -10,7 +10,7 @@ class RemoveLabelsParameter(Parameter):
     labels: List[str] = Field(description='A list of labels to remove')
 
 
-def remove_labels(_agent: Agent, params: RemoveLabelsParameter):
+def remove_labels(params: RemoveLabelsParameter, _prompt: str, _agent: Agent):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
     emails = gmail_client.get_messages(

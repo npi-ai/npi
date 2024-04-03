@@ -12,7 +12,7 @@ class CreateDraftParameter(Parameter):
     bcc: Optional[List[str]] = Field(default=None, description='The list of email addresses to be bcc\'d')
 
 
-def create_draft(_agent: Agent, params: CreateDraftParameter):
+def create_draft(params: CreateDraftParameter, _prompt: str, _agent: Agent):
     if confirm('Create draft', params):
         print('Creating draft...')
         gmail_client.create_draft(

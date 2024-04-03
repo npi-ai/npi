@@ -12,7 +12,7 @@ class SendEmailParameter(Parameter):
     bcc: Optional[List[str]] = Field(default=None, description='The list of email addresses to be bcc\'d')
 
 
-def send_email(_agent: Agent, params: SendEmailParameter):
+def send_email(params: SendEmailParameter, _prompt: str, _agent: Agent):
     if confirm('Sending an email', params):
         print('Sending email...')
         gmail_client.send_message(

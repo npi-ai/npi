@@ -10,7 +10,7 @@ class AddLabelsParameter(Parameter):
     labels: List[str] = Field(description='A list of labels to add')
 
 
-def add_labels(_agent: Agent, params: AddLabelsParameter):
+def add_labels(params: AddLabelsParameter, _prompt: str, _agent: Agent):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
     emails = gmail_client.get_messages(

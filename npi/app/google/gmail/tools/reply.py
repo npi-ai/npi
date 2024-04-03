@@ -14,7 +14,7 @@ class ReplyParameter(Parameter):
     max_results: int = Field(default=100, description='Maximum number of messages to return')
 
 
-def _generate_reply(agent: Agent, content: str) -> str:
+def _generate_reply(agent: Agent, content: str, prompt: str) -> str:
     response = agent.client.chat.completions.create(
         model=agent.model,
         messages=[{
@@ -26,7 +26,10 @@ User: Ping
 You: Pong"""
         }, {
             'role': 'user',
-            'content': content
+            'content': prompt
+        }, {
+            'role': 'user',
+            'content': 'Email body:\n' + content
         }]
     )
 
@@ -36,7 +39,7 @@ You: Pong"""
     return markdown(match.groups()[0] if match else content)
 
 
-def reply(agent: Agent, params: ReplyParameter):
+def reply(params: ReplyParameter, prompt: str, agent: Agent):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
     messages = gmail_client.get_messages(
@@ -48,7 +51,7 @@ def reply(agent: Agent, params: ReplyParameter):
 
     for msg in messages:
         content = msg.plain or msg.html
-        res = _generate_reply(agent, content)
+        res = _generate_reply(agent, content, prompt)
 
         if confirm(f'Reply to email:\n{content}\nwith:\n{res}'):
             print('Sending reply...')
@@ -72,5 +75,5 @@ gmail_agent.register(
 
 if __name__ == '__main__':
     gmail_agent.chat(
-        'Reply to the latest email from daofeng.wu@emory.edu'
+        'Reply to the latest email from daofeng.wu@emory.edu telling him I will see him on Sunday'
     )

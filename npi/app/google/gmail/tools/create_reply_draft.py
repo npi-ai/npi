@@ -14,7 +14,7 @@ class CreateReplyDraftParameter(Parameter):
     max_results: int = Field(default=100, description='Maximum number of messages to return')
 
 
-def _generate_reply(agent: Agent, content: str) -> str:
+def _generate_reply(agent: Agent, content: str, prompt: str) -> str:
     response = agent.client.chat.completions.create(
         model=agent.model,
         messages=[{
@@ -26,7 +26,10 @@ User: Ping
 You: Pong"""
         }, {
             'role': 'user',
-            'content': content
+            'content': prompt
+        }, {
+            'role': 'user',
+            'content': 'Email body:\n' + content
         }]
     )
 
@@ -36,7 +39,7 @@ You: Pong"""
     return markdown(match.groups()[0] if match else content)
 
 
-def create_reply_draft(agent: Agent, params: CreateReplyDraftParameter):
+def create_reply_draft(params: CreateReplyDraftParameter, prompt: str, agent: Agent):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
     messages = gmail_client.get_messages(
@@ -48,7 +51,7 @@ def create_reply_draft(agent: Agent, params: CreateReplyDraftParameter):
 
     for msg in messages:
         content = msg.plain or msg.html
-        res = _generate_reply(agent, content)
+        res = _generate_reply(agent, content, prompt)
 
         if confirm(f'Create a draft to email:\n{content}\nwith:\n{res}'):
             print('Creating draft...')

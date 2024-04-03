@@ -4,7 +4,7 @@ from npi.app.google.gmail.shared.parameter import Parameter
 from typing import List, Dict, Callable, Any, Tuple, Type
 import json
 
-AgentFunction = Callable[['Agent', Parameter], Any]
+AgentFunction = Callable[[Parameter, str, 'Agent'], Any]
 
 
 class Agent:
@@ -77,11 +77,11 @@ class Agent:
         )
 
         response_message = response.choices[0].message
-        tool_messages = self._parse_response(response_message)
+        tool_messages = self._parse_response(message, response_message)
 
         return prompts, response_message, tool_messages
 
-    def _parse_response(self, response_message: ChatCompletionMessage):
+    def _parse_response(self, prompt: str, response_message: ChatCompletionMessage):
         tool_calls = response_message.tool_calls
         tool_messages = []
 
@@ -93,7 +93,7 @@ class Agent:
             fn, Params = self.fn_map[fn_name]
             args = json.loads(tool_call.function.arguments)
             print(f'Calling {fn_name}({args})')
-            res = fn(self, Params(**args))
+            res = fn(Params(**args), prompt, self)
             tool_messages.append(
                 {
                     "tool_call_id": tool_call.id,
