@@ -52,5 +52,5 @@ gmail_agent.register(
 
 if __name__ == '__main__':
     gmail_agent.chat(
-        'Remove label "TEST" to the latest email from daofeng.wu@emory.edu'
+        'Remove label "TEST" from the latest email from daofeng.wu@emory.edu'
     )
