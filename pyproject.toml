@@ -11,6 +11,7 @@ openai = "^1.14.3"
 google-api-python-client = "^2.124.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
+httplib2 = "^0.22.0"
 
 
 [build-system]
