@@ -4,6 +4,7 @@ from npi.app.google.gmail.shared import Agent, Parameter, gmail_agent, gmail_cli
 from typing import Optional
 import json
 import re
+import html
 
 pattern = re.compile(r'```.*\n([\s\S]+)```')
 
@@ -57,7 +58,9 @@ def reply(agent: Agent, params: ReplyParameter):
                 cc=msg.cc,
                 bcc=msg.bcc,
                 subject='Re: ' + msg.subject,
-                msg_html=res + f'<div>In {msg.date} {msg.sender} wrote:<br> <blockquote>{msg.html}</blockquote></div>',
+                # TODO: email template
+                msg_html=res + f'<div>On {msg.date} {html.escape(msg.sender)} wrote:<br> <blockquote>{msg.html}</blockquote></div>',
+                reply_to=msg,
             )
 
 
