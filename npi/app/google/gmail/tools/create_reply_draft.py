@@ -20,7 +20,7 @@ def _generate_reply(agent: Agent, content: str) -> str:
         messages=[{
             'role': 'system',
             'content': """
-You are an assistant helping user to reply emails. For example:
+You are an assistant helping user to reply emails in markdown format. For example:
 
 User: Ping
 You: Pong"""
