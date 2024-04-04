@@ -12,8 +12,13 @@ class App(ABC):
     default_model: str
     tool_choice: str
     functions = {}
+    name: str
+    description: str
 
-    def __init__(self, llm, mode="gpt-4-turbo-preview", tool_choice="auto"):
+    def __init__(self, name, description, llm,
+                 mode="gpt-4-turbo-preview", tool_choice="auto"):
+        self.name = name
+        self.description = description
         self.llm = llm
         self.default_model = mode
         self.tool_choice = tool_choice
@@ -24,6 +29,27 @@ class App(ABC):
     @abstractmethod
     def chat(self, message, context=None) -> str:
         """the chat function for the app"""
+
+    def as_tool(self) -> str:
+        """return the tool defination with OpenAI format"""
+
+        return {
+            "type": "function",
+            "function:": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "task": {
+                            "type": "string",
+                            "description": f"the task you want {self.name} does"
+                        },
+                    },
+                    "required": ["task"],
+                },
+            }
+        }
 
     def _call_llm(self, messages, functions):
         tools = []
