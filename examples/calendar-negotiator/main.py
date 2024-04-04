@@ -56,14 +56,10 @@ if __name__ == "__main__":
     # for func in functions.copy().values():
     #     tools.append({"type": "function", "function": func})
 
-    tools = []
-    tools.append(gc.as_tool())
-    tools.append(hb.as_tool())
-    # print(json.dumps(tools))
     response = oai.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=msgs,
-        tools=tools,
+        tools=[gc.as_tool(), hb.as_tool()],
         tool_choice="auto",
     )
 
