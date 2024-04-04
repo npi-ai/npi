@@ -15,7 +15,7 @@ class App(ABC):
     name: str
     description: str
 
-    def __init__(self, name, description, llm,
+    def __init__(self, name: str, description: str, llm,
                  mode="gpt-4-turbo-preview", tool_choice="auto"):
         self.name = name
         self.description = description
@@ -35,7 +35,7 @@ class App(ABC):
 
         return {
             "type": "function",
-            "function:": {
+            "function": {
                 "name": self.name,
                 "description": self.description,
                 "parameters": {

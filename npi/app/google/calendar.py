@@ -34,7 +34,7 @@ class GoogleCalendar(App):
                     },
                     "description": {
                         "type": "string",
-                        "description": "the description of this event. this property",
+                        "description": "the description of this event. this property used to store the detail information of this event.",
                     },
                     "startTime": {
                         "type": "string",
@@ -43,10 +43,9 @@ class GoogleCalendar(App):
                     "endTime": {
                         "type": "string",
                         "description": "the end time of this event",
-                    },
-                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    }
                 },
-                "required": ["summary", "description", "startTime", "endTime"],
+                "required": ["summary", "startTime", "endTime"],
             },
         },
 
@@ -80,7 +79,10 @@ class GoogleCalendar(App):
     llm = None
 
     def __init__(self, llm=None):
-        super().__init__(llm)
+        super().__init__(
+            name="google-calendar",
+            description="a function can invoke natural language(english only) instruction to interact with Google Calendar, such as create the event, retrive the events",
+            llm=llm)
 
         self.creds = self.__get_creds()
         self.service = build(
@@ -100,26 +102,26 @@ class GoogleCalendar(App):
 
     def chat(self, message, context=None) -> str:
         messages = [
-            {"role": Role.ROLE_SYSTEM.value, "content": self.__system_role, },
-            {"role": Role.ROLE_USER.value, "content": message, },
+            {"role": Role.ROLE_SYSTEM.value, "content": self.__system_role},
+            {"role": Role.ROLE_USER.value, "content": message['task']},
         ]
-
-        super()._call_llm(messages, self.__calendar_funcs)
 
         # self.__create_event(summary="Test Event",
         #                     description="This is a test event",
         #                     start_time="2024-04-04T16:00:00-07:00",
         #                     end_time="2024-04-04T17:00:00-07:00",
         #                     attendee=[{'email': 'w@npi.ai'}])
-        return ""
+        return super()._call_llm(messages, self.__calendar_funcs)
 
     @staticmethod
     def __get_creds():
         creds = None
         if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_info(
-                json.load(open("token.json")), GoogleCalendar.__scopes
-            )
+            with open("token.json", encoding="utf-8") as file:
+                creds = Credentials.from_authorized_user_info(
+                    json.load(file), GoogleCalendar.__scopes
+                )
+
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -130,7 +132,7 @@ class GoogleCalendar(App):
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
+            with open("token.json", "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
 
         return creds
@@ -152,8 +154,7 @@ class GoogleCalendar(App):
                 time_min = print(datetime.datetime.utcnow().isoformat() + "Z")
 
             events_result = (
-                self.service.events()
-                .list(
+                self.service.events().list(  # pylint: disable=maybe-no-member
                     calendarId=calendar_id,
                     timeMin=time_min,
                     maxResults=max_result,
@@ -203,7 +204,7 @@ class GoogleCalendar(App):
             },
         }
 
-        event = self.service.events().insert(
+        event = self.service.events().insert(  # pylint: disable=maybe-no-member
             calendar_id=calendar_id, body=event).execute()
         print('Event created: %s' % (event.get('htmlLink')))
 
