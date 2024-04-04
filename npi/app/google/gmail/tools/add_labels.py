@@ -1,6 +1,6 @@
 from pydantic import Field
 from typing import List, Optional
-from npi.app.google.gmail.shared import Agent, Parameter, gmail_agent, gmail_client, confirm
+from npi.app.google.gmail.shared import Parameter, FunctionRegistration, GmailAgent, confirm
 import json
 
 
@@ -10,10 +10,10 @@ class AddLabelsParameter(Parameter):
     labels: List[str] = Field(description='A list of labels to add')
 
 
-def add_labels(params: AddLabelsParameter, _prompt: str, _agent: Agent):
+def add_labels(params: AddLabelsParameter, agent: GmailAgent, _prompt: str):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
-    emails = gmail_client.get_messages(
+    emails = agent.gmail_client.get_messages(
         query=params.query,
         max_results=params.max_results,
     )
@@ -25,14 +25,14 @@ def add_labels(params: AddLabelsParameter, _prompt: str, _agent: Agent):
         return
 
     print('Retrieving current labels...')
-    labels = gmail_client.list_labels()
+    labels = agent.gmail_client.list_labels()
     label_name_map = {label.name: label for label in labels}
     labels_to_add = []
     print(labels)
 
     for lbl in params.labels:
         if lbl not in label_name_map and confirm(f'Creating new label: {lbl}'):
-            new_label = gmail_client.create_label(lbl)
+            new_label = agent.gmail_client.create_label(lbl)
             label_name_map[lbl] = new_label
         labels_to_add.append(label_name_map[lbl])
 
@@ -40,16 +40,20 @@ def add_labels(params: AddLabelsParameter, _prompt: str, _agent: Agent):
         print('Email:', msg)
 
         if confirm(f'Add label(s): {labels_to_add}'):
-            gmail_client.add_labels(msg, labels_to_add)
+            agent.gmail_client.add_labels(msg, labels_to_add)
 
 
-gmail_agent.register(
+add_labels_registration = FunctionRegistration(
     fn=add_labels,
     description='Add labels to the emails matching the search query',
     Params=AddLabelsParameter,
 )
 
 if __name__ == '__main__':
+    from npi.app.google.gmail.tools import gmail_functions
+
+    gmail_agent = GmailAgent(function_list=gmail_functions)
+
     gmail_agent.chat(
         'Add label "TEST" to the latest email from daofeng.wu@emory.edu'
     )

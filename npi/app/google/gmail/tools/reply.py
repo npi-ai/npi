@@ -1,6 +1,6 @@
 from pydantic import Field
 from markdown import markdown
-from npi.app.google.gmail.shared import Agent, Parameter, gmail_agent, gmail_client, confirm
+from npi.app.google.gmail.shared import Parameter, FunctionRegistration, GmailAgent, confirm
 from typing import Optional
 import json
 import re
@@ -14,7 +14,7 @@ class ReplyParameter(Parameter):
     max_results: int = Field(default=100, description='Maximum number of messages to return')
 
 
-def _generate_reply(agent: Agent, content: str, prompt: str) -> str:
+def _generate_reply(agent: GmailAgent, content: str, prompt: str) -> str:
     response = agent.client.chat.completions.create(
         model=agent.model,
         messages=[{
@@ -39,10 +39,10 @@ You: Pong"""
     return markdown(match.groups()[0] if match else content)
 
 
-def reply(params: ReplyParameter, prompt: str, agent: Agent):
+def reply(params: ReplyParameter, agent: GmailAgent, prompt: str):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
-    messages = gmail_client.get_messages(
+    messages = agent.gmail_client.get_messages(
         query=params.query,
         max_results=params.max_results,
     )
@@ -55,7 +55,7 @@ def reply(params: ReplyParameter, prompt: str, agent: Agent):
 
         if confirm(f'Reply to email:\n{content}\nwith:\n{res}'):
             print('Sending reply...')
-            gmail_client.send_message(
+            agent.gmail_client.send_message(
                 sender='',
                 to=msg.sender,
                 cc=msg.cc,
@@ -67,13 +67,17 @@ def reply(params: ReplyParameter, prompt: str, agent: Agent):
             )
 
 
-gmail_agent.register(
+reply_registration = FunctionRegistration(
     fn=reply,
     description='Reply to emails matching the search query',
     Params=ReplyParameter,
 )
 
 if __name__ == '__main__':
+    from npi.app.google.gmail.tools import gmail_functions
+
+    gmail_agent = GmailAgent(function_list=gmail_functions)
+
     gmail_agent.chat(
         'Reply to the latest email from daofeng.wu@emory.edu telling him I will see him on Sunday'
     )

@@ -1,4 +1,4 @@
-from npi.app.google.gmail.shared.gmail_agent import gmail_agent
-import npi.app.google.gmail.tools
+from npi.app.google.gmail.shared import GmailAgent
+from npi.app.google.gmail.tools import gmail_functions
 
-__all__ = ['gmail_agent']
+__all__ = ['GmailAgent', 'gmail_functions']

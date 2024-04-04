@@ -1,6 +1,6 @@
 from pydantic import Field
 from typing import List, Optional
-from npi.app.google.gmail.shared import Agent, Parameter, gmail_agent, gmail_client, confirm
+from npi.app.google.gmail.shared import Parameter, FunctionRegistration, GmailAgent, confirm
 import json
 
 
@@ -10,10 +10,10 @@ class RemoveLabelsParameter(Parameter):
     labels: List[str] = Field(description='A list of labels to remove')
 
 
-def remove_labels(params: RemoveLabelsParameter, _prompt: str, _agent: Agent):
+def remove_labels(params: RemoveLabelsParameter, agent: GmailAgent, _prompt: str):
     print('Retrieving messages: ', json.dumps(params.dict(), indent=2))
 
-    emails = gmail_client.get_messages(
+    emails = agent.gmail_client.get_messages(
         query=params.query,
         max_results=params.max_results,
     )
@@ -25,7 +25,7 @@ def remove_labels(params: RemoveLabelsParameter, _prompt: str, _agent: Agent):
         return
 
     print('Retrieving current labels...')
-    labels = gmail_client.list_labels()
+    labels = agent.gmail_client.list_labels()
     label_name_map = {label.name: label for label in labels}
     labels_to_remove = []
     print(labels)
@@ -41,16 +41,20 @@ def remove_labels(params: RemoveLabelsParameter, _prompt: str, _agent: Agent):
     for msg in emails:
         print('Email:', msg)
         if confirm(f'Remove label(s): {labels_to_remove}'):
-            gmail_client.remove_labels(msg, labels_to_remove)
+            agent.gmail_client.remove_labels(msg, labels_to_remove)
 
 
-gmail_agent.register(
+remove_labels_registration = FunctionRegistration(
     fn=remove_labels,
     description='Remove labels from the emails matching the search query',
     Params=RemoveLabelsParameter,
 )
 
 if __name__ == '__main__':
+    from npi.app.google.gmail.tools import gmail_functions
+
+    gmail_agent = GmailAgent(function_list=gmail_functions)
+
     gmail_agent.chat(
         'Remove label "TEST" from the latest email from daofeng.wu@emory.edu'
     )

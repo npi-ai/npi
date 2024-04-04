@@ -1,6 +1,6 @@
 from pydantic import Field
 from typing import List, Optional
-from npi.app.google.gmail.shared import Agent, Parameter, gmail_agent, gmail_client, confirm
+from npi.app.google.gmail.shared import FunctionRegistration, Parameter, GmailAgent, confirm
 from markdown import markdown
 
 
@@ -12,10 +12,10 @@ class CreateDraftParameter(Parameter):
     bcc: Optional[List[str]] = Field(default=None, description='The list of email addresses to be bcc\'d')
 
 
-def create_draft(params: CreateDraftParameter, _prompt: str, _agent: Agent):
+def create_draft(params: CreateDraftParameter, agent: GmailAgent, _prompt: str):
     if confirm('Create draft', params):
         print('Creating draft...')
-        gmail_client.create_draft(
+        agent.gmail_client.create_draft(
             sender='',
             to=params.to,
             cc=params.cc,
@@ -25,13 +25,17 @@ def create_draft(params: CreateDraftParameter, _prompt: str, _agent: Agent):
         )
 
 
-gmail_agent.register(
+create_draft_registration = FunctionRegistration(
     fn=create_draft,
     description='Create and insert a draft email',
     Params=CreateDraftParameter,
 )
 
 if __name__ == '__main__':
+    from npi.app.google.gmail.tools import gmail_functions
+
+    gmail_agent = GmailAgent(function_list=gmail_functions)
+
     gmail_agent.chat(
         'Create a draft email to dolphin.w.e+test@gmail.com stating that the email is sent from the NPi Gmail Agent. You should test markdown features in the email body. Also CC dolphin.w.e+cc@gmail.com'
     )
