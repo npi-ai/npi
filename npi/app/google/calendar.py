@@ -1,86 +1,214 @@
-from openai import OpenAI
+"""the defination of Google Calendar App"""
+
+import os.path
 import json
+import datetime
 
-client = OpenAI(api_key="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")
+from openai import OpenAI
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
-# Example dummy function hard coded to return the same weather
-# In production, this could be your backend API or an external API
-def get_current_weather(location, unit="fahrenheit"):
-    """Get the current weather in a given location"""
-    if "tokyo" in location.lower():
-        return json.dumps({"location": "Tokyo", "temperature": "10", "unit": unit})
-    elif "san francisco" in location.lower():
-        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": unit})
-    elif "paris" in location.lower():
-        return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
-    else:
-        return json.dumps({"location": location, "temperature": "unknown"})
+from npi.core.api import App
+from npi.constants.openai import Role
 
-def run_conversation():
-    # Step 1: send the conversation and available functions to the model
-    messages = [{"role": "user", "content": "What's the weather like in San Francisco, Tokyo, and Paris?"}]
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_current_weather",
-                "description": "Get the current weather in a given location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": "The city and state, e.g. San Francisco, CA",
-                        },
-                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+# https://developers.google.com/calendar/quickstart/python
+# API Reference: https://developers.google.com/calendar/api/v3/reference
+
+
+class GoogleCalendar(App):
+    """the function wrapper of Google Calendar App"""
+
+    __calendar_funcs = {
+        "create_event": {
+            "name": "create_event",
+            "description": "create the event to Google Calendar",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "summary": {
+                        "type": "string",
+                        "description": "the title of this event",
                     },
-                    "required": ["location"],
+                    "description": {
+                        "type": "string",
+                        "description": "the description of this event. this property used to store the detail information of this event.",
+                    },
+                    "startTime": {
+                        "type": "string",
+                        "description": "the start time of this event",
+                    },
+                    "endTime": {
+                        "type": "string",
+                        "description": "the end time of this event",
+                    }
                 },
+                "required": ["summary", "startTime", "endTime"],
+            },
+        },
+
+        "retrive_events": {
+            "name": "retrive_events",
+            "description": "retrive the events from Google Calendar",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "calendar_id": {
+                        "type": "string",
+                        "description": "the calendar identifier, which is the email address of the user. if the context doesn't contain the email address, you should ask the user to provide the email address",
+                    },
+                },
+                "required": ["calendar_id"],
+            },
+        },
+        "get_user_email": {
+            "name": "get_user_email",
+            "description": "get the current user email address",
+        }
+    }
+
+    __scopes = ["https://www.googleapis.com/auth/calendar"]
+    __service_name = "calendar"
+    __api_version = "v3"
+    __system_role = '''
+    You are an assistant who are interacting with Google Calendar API. your job is the selecting the best function based the tool list.
+    '''
+
+    llm = None
+
+    def __init__(self, llm=None):
+        super().__init__(
+            name="google-calendar",
+            description="a function can invoke natural language(english only) instruction to interact with Google Calendar, such as create the event, retrive the events",
+            llm=llm)
+
+        self.creds = self.__get_creds()
+        self.service = build(
+            self.__service_name, self.__api_version, credentials=self.__get_creds())
+        if llm:
+            self.llm = llm
+        else:
+            # create openai client
+            self.llm = OpenAI(
+                api_key="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")
+
+        super()._register_functions({
+            "create_event": self.__create_event,
+            "retrive_events": self.__retrive_events,
+            "get_user_email": self.__get_user_email,
+        })
+
+    def chat(self, message, context=None) -> str:
+        messages = [
+            {"role": Role.ROLE_SYSTEM.value, "content": self.__system_role},
+            {"role": Role.ROLE_USER.value, "content": message['task']},
+        ]
+
+        # self.__create_event(summary="Test Event",
+        #                     description="This is a test event",
+        #                     start_time="2024-04-04T16:00:00-07:00",
+        #                     end_time="2024-04-04T17:00:00-07:00",
+        #                     attendee=[{'email': 'w@npi.ai'}])
+        return super()._call_llm(messages, self.__calendar_funcs)
+
+    @staticmethod
+    def __get_creds():
+        creds = None
+        if os.path.exists("token.json"):
+            with open("token.json", encoding="utf-8") as file:
+                creds = Credentials.from_authorized_user_info(
+                    json.load(file), GoogleCalendar.__scopes
+                )
+
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "credentials.json", GoogleCalendar.__scopes
+                )
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open("token.json", "w", encoding="utf-8") as token:
+                token.write(creds.to_json())
+
+        return creds
+
+    def __get_user_email(self, params):
+        return "the user's email address is: ww@lifecycle.sh"
+
+    def __retrive_events(self, params,):
+        calendar_id = params['calendar_id']
+        time_min = None
+        max_result = 10
+        single_events = True
+        order_by = 'startTime'
+        event_types = "default"
+
+        try:
+            if time_min is None:
+                # 'Z' indicates UTC time
+                time_min = print(datetime.datetime.utcnow().isoformat() + "Z")
+
+            events_result = (
+                self.service.events().list(  # pylint: disable=maybe-no-member
+                    calendarId=calendar_id,
+                    timeMin=time_min,
+                    maxResults=max_result,
+                    singleEvents=single_events,
+                    orderBy=order_by,
+                    eventTypes=event_types,
+                ).execute()
+            )
+            events = events_result.get("items", [])
+
+            if not events:
+                return "No upcoming events found."
+
+            return json.dumps(events)
+        except HttpError as error:
+            return f"An error occurred: {error}"
+
+    def __create_event(self, params):
+        summary = params['summary']
+        description = params['description']
+        start_time = params['start_time']
+        end_time = params['end_time']
+        calendar_id = params['end_time']
+        attendee = [],
+        localtion = None,
+        recurrence = None,
+        event = {
+            'summary': summary,
+            'location': localtion,
+            'description': description,
+            'start': {
+                'dateTime': start_time,
+                'timeZone': 'America/Los_Angeles',
+            },
+            'end': {
+                'dateTime': end_time,  # '2024-04-03T17:00:00-07:00',
+                'timeZone': 'America/Los_Angeles',
+            },
+            'recurrence': [recurrence],
+            'attendees': attendee,
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'email', 'minutes': 24 * 60},
+                    {'method': 'popup', 'minutes': 10},
+                ],
             },
         }
-    ]
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",  # auto is default, but we'll be explicit
-    )
-    response_message = response.choices[0].message
-    tool_calls = response_message.tool_calls
-    # Step 2: check if the model wanted to call a function
-    if tool_calls:
-        # Step 3: call the function
-        # Note: the JSON response may not always be valid; be sure to handle errors
-        available_functions = {
-            "get_current_weather": get_current_weather,
-        }  # only one function in this example, but you can have multiple
-        messages.append(response_message)  # extend conversation with assistant's reply
-        # Step 4: send the info for each function call and function response to the model
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_to_call = available_functions[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            function_response = function_to_call(
-                location=function_args.get("location"),
-                unit=function_args.get("unit"),
-            )
-            messages.append(
-                {
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": function_response,
-                }
-            )  # extend conversation with function response
-        second_response = client.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
-            messages=messages,
-        )  # get a new response from the model where it can see the function response
-        return second_response
-    
-print(run_conversation())    
+
+        event = self.service.events().insert(  # pylint: disable=maybe-no-member
+            calendar_id=calendar_id, body=event).execute()
+        print('Event created: %s' % (event.get('htmlLink')))
 
 
-
-def chat():
-    print("Chatting with Google Calendar")
+if __name__ == "__main__":
+    gc = GoogleCalendar()
+    gc.chat("does wells is available on 3pm tommowor?")
