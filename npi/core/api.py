@@ -38,7 +38,7 @@ class App(ABC):
         )
         response_message = response.choices[0].message
         tool_calls = response_message.tool_calls
-        if tool_calls:
+        while tool_calls is not None:
             messages.append(response_message)
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
@@ -56,7 +56,9 @@ class App(ABC):
             second_response = self.llm.chat.completions.create(
                 model=self.default_model,
                 messages=messages,
+                tools=tools,
+                tool_choice=self.tool_choice,
             )  # get a new response from the model where it can see the function response
-            return second_response
-        else:
-            return response_message
+            response_message = second_response.choices[0].message
+            tool_calls = response_message.tool_calls
+        return response_message

@@ -136,14 +136,14 @@ class GoogleCalendar(App):
         return creds
 
     def __get_user_email(self, params):
-        return "ww@lifecycle.sh"
+        return "the user's email address is: ww@lifecycle.sh"
 
     def __retrive_events(self, params,):
         calendar_id = params['calendar_id']
-        time_min = None,
-        max_result = 10,
-        single_events = True,
-        order_by = "startTime",
+        time_min = None
+        max_result = 10
+        single_events = True
+        order_by = 'startTime'
         event_types = "default"
 
         try:
@@ -154,28 +154,22 @@ class GoogleCalendar(App):
             events_result = (
                 self.service.events()
                 .list(
-                    calendar_id=calendar_id,
-                    time_min=time_min,
-                    max_result=max_result,
-                    single_events=single_events,
-                    order_by=order_by,
-                    event_types=event_types,
+                    calendarId=calendar_id,
+                    timeMin=time_min,
+                    maxResults=max_result,
+                    singleEvents=single_events,
+                    orderBy=order_by,
+                    eventTypes=event_types,
                 ).execute()
             )
             events = events_result.get("items", [])
 
             if not events:
-                print("No upcoming events found.")
-                return
+                return "No upcoming events found."
 
-            # Prints the start and name of the next 10 events
-            for event in events:
-                start = event["start"].get(
-                    "dateTime", event["start"].get("date"))
-                print(json.dumps(event))
-
+            return json.dumps(events)
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            return f"An error occurred: {error}"
 
     def __create_event(self, params):
         summary = params['summary']
