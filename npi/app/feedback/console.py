@@ -13,7 +13,7 @@ class HumanFeedback(App):
     def __init__(self):
         super().__init__(
             name="human_feedback",
-            description="if you think other tools can't help you, you can ask the human for help by use this tool.",
+            description="Ask the human for help",
             llm=None,
             model="gpt-4-turbo-preview",
             tool_choice="auto"

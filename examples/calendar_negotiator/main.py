@@ -38,7 +38,7 @@ The tools you can use are: Google Calendar, Google Gmail, and Human Feedback:
 You need to follow the instructions below step by step to schedule the meeting:
 
 1. Ask for the attendee's email address if not provided.
-2. Look for the available time slots from on Google Calendar if not provided.
+2. Look for the user's available time slots from on Google Calendar if not provided.
 3. If the previous step fails, ask the user for available time slots.
 4. After the available time slots are determined, you should send an email to the attendee. 
 5. Wait for the attendee's reply to the email you sent. Do not proceed if the reply is not received.
@@ -51,12 +51,15 @@ Here are some rules for you to fulfill the task:
 
 1. You can only schedule the meeting with the user's available time.
 2. You must follow user's task.
+3. The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
 3. If you think you need to ask the user for more information to fill the properties, you can use the Human Feedback tool to ask the user for more information.
+4. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Human Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.cl
 
 ## Example
 Task: Schedule a meeting with test@gmail.com on Friday
 Steps:
 - google_calendar('get today\'s date')
+- google_calendar('check the user\'s availability on Frida')
 - gmail('send an email to test@gmail.com asking their availability on Friday')
 - gmail('wait for response from test@gmail.com')
 - google_calendar('create an event on Friday')
@@ -87,8 +90,7 @@ def main():
     print('Negotiator: What\'s your task for me?')
     task = input('User: ')
     print()
-    res = negotiator.chat(task)
-    print(res)
+    negotiator.chat(task)
 
 
 if __name__ == "__main__":
