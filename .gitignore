@@ -1,5 +1,6 @@
 .idea
 **/__pycache__
+.VSCodeCounter
 
 gmail_credentials.json
 gmail_token.json
