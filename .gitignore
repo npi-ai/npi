@@ -2,5 +2,5 @@
 **/__pycache__
 .VSCodeCounter
 
-gmail_credentials.json
-gmail_token.json
+credentials.json
+*token.json

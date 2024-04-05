@@ -25,7 +25,7 @@ class GmailExtended(Gmail):
         attachments: List[str] = None,
         signature: bool = False,
         user_id: str = 'me',
-        reply_to: Optional[Message] = None,
+        reply_to: Optional[str] = None,
     ) -> dict:
         """
         Creates the raw email message to be sent.
@@ -43,7 +43,7 @@ class GmailExtended(Gmail):
             signature: Whether the account signature should be added to the
                 message. Will add the signature to your HTML message only, or a
                 create a HTML message if none exists.
-            reply_to: The message that this email replies to.
+            reply_to: The id of the message that this email replies to.
 
         Returns:
             The message dict.
@@ -242,7 +242,7 @@ class GmailExtended(Gmail):
         attachments: Optional[List[str]] = None,
         signature: bool = False,
         user_id: str = 'me',
-        reply_to: Optional[Message] = None,
+        reply_to: Optional[str] = None,
     ) -> Message:
         """
         Create and insert a draft email.
@@ -262,7 +262,7 @@ class GmailExtended(Gmail):
                 message.
             user_id: The address of the sending account. 'me' for the
                 default address associated with the account.
-            reply_to: The message that this draft replies to.
+            reply_to: The id of the message that this draft replies to.
 
         Returns:
             The Message object representing the draft message.
@@ -308,7 +308,7 @@ class GmailExtended(Gmail):
         attachments: Optional[List[str]] = None,
         signature: bool = False,
         user_id: str = 'me',
-        reply_to: Optional[Message] = None,
+        reply_to: Optional[str] = None,
     ) -> Message:
         """
         Sends an email.
@@ -328,7 +328,7 @@ class GmailExtended(Gmail):
                 message.
             user_id: The address of the sending account. 'me' for the
                 default address associated with the account.
-            reply_to: The message that this email replies to.
+            reply_to: The id of the message that this email replies to.
 
         Returns:
             The Message object representing the sent message.
@@ -486,3 +486,31 @@ class GmailExtended(Gmail):
         except HttpError as error:
             # Pass along the error
             raise error
+
+    def get_message_by_id(self, message_id: str):
+        """
+        Get an email message using the given id
+
+        Args:
+            message_id: message id
+
+        Returns:
+            The Message object
+
+        Raises:
+            googleapiclient.errors.HttpError: There was an error executing the
+                HTTP request.
+        """
+
+        try:
+            res = self.service.users().messages().get(userId='me', id=message_id).execute()
+            return self._build_message_from_ref(user_id='me', message_ref=res, attachments='reference')
+        except HttpError as error:
+            # Pass along the error
+            raise error
+
+
+if __name__ == '__main__':
+    gmail = GmailExtended(client_secret_file='./credentials.json')
+    msg = gmail.get_messages(max_results=1)[0]
+    print(msg)

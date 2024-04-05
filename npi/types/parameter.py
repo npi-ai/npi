@@ -1,7 +1,21 @@
 from pydantic import BaseModel
+from openai.types.chat import ChatCompletionMessageParam
+from typing import List
 
 
 class Parameter(BaseModel):
+    """
+        Base parameter model for tool definitions
+
+        Attributes:
+              _messages: llm messages so far
+    """
+    _messages: List[ChatCompletionMessageParam]
+
+    def __init__(self, _messages: List[ChatCompletionMessageParam], **args):
+        super().__init__(**args)
+        self._prompt = _messages
+
     # remove "title" property from pydantic json schema
     @classmethod
     def __get_pydantic_json_schema__(cls, __core_schema, __handler):
@@ -22,5 +36,9 @@ class Parameter(BaseModel):
 
                 if prop.get('default') is None:
                     prop.pop('default', None)
+
+        # remove empty properties
+        if len(schema.get('properties', {})) == 0:
+            schema.pop('properties', None)
 
         return schema

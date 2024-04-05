@@ -1,4 +1,3 @@
-from npi.app.google.gmail.shared import GmailAgent
-from npi.app.google.gmail.tools import gmail_functions
+from .app import Gmail
 
-__all__ = ['GmailAgent', 'gmail_functions']
+__all__ = ['Gmail']
