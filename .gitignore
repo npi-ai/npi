@@ -1,4 +1,6 @@
 .idea
 **/__pycache__
-
 .VSCodeCounter
+
+credentials.json
+*token.json

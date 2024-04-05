@@ -8,12 +8,22 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 openai = "^1.14.3"
+pydantic = "^2.6.4"
+markdown = "^3.6"
+simplegmail = "^4.1.1"
 google-api-python-client = "^2.124.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
 httplib2 = "^0.22.0"
+termcolor = "^2.4.0"
 
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^69.2.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+negotiator = "examples.calendar_negotiator.main:main"
