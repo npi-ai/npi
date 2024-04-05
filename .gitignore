@@ -1,5 +1,5 @@
 .idea
 **/__pycache__
 
-credentials.json
+gmail_credentials.json
 gmail_token.json

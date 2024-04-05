@@ -18,4 +18,4 @@ class GmailAgent(Agent):
             system_prompt='You are a Gmail Agent helping users to manage their emails.',
             function_list=function_list,
         )
-        self.gmail_client = GmailExtended(client_secret_file='./credentials.json')
+        self.gmail_client = GmailExtended(client_secret_file='./gmail_gscredentials.json')
