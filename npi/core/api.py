@@ -3,7 +3,7 @@ import json
 import logging
 import inspect
 import functools
-from typing import Dict, List, Tuple, Literal, Optional, Any, overload
+from typing import Dict, List, Tuple, Literal, Optional, Union, overload
 
 from pydantic import Field
 from openai import Client
@@ -137,31 +137,35 @@ class App:
 
     def register(
         self,
-        fn_reg: FunctionRegistration,
+        *tools: Union[FunctionRegistration, 'App'],
     ):
         """
-        Register a function used in tool calls
+        Register a tool to this application
 
         Args:
-            fn_reg: the function registration object
+            *tools: the tools to register. If an app is provided, the `app.as_tool()` method will be called.
         """
-        if fn_reg.name in self.fn_map:
-            raise Exception(f'Duplicate function: {fn_reg.name}')
 
-        self.fn_map[fn_reg.name] = fn_reg
+        for tool in tools:
+            fn_reg = tool.as_tool() if isinstance(tool, App) else tool
 
-        tool: ChatCompletionToolParam = {
-            'type': 'function',
-            'function': {
-                'name': fn_reg.name,
-                'description': fn_reg.description,
+            if fn_reg.name in self.fn_map:
+                raise Exception(f'Duplicate function: {fn_reg.name}')
+
+            self.fn_map[fn_reg.name] = fn_reg
+
+            tool: ChatCompletionToolParam = {
+                'type': 'function',
+                'function': {
+                    'name': fn_reg.name,
+                    'description': fn_reg.description,
+                }
             }
-        }
 
-        if fn_reg.Params is not None:
-            tool['function']['parameters'] = fn_reg.Params.model_json_schema()
+            if fn_reg.Params is not None:
+                tool['function']['parameters'] = fn_reg.Params.model_json_schema()
 
-        self.tools.append(tool)
+            self.tools.append(tool)
 
     @overload
     def chat(

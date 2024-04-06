@@ -76,14 +76,11 @@ class CalendarNegotiator(App):
             llm=OpenAI(),
         )
 
-        self.apps = [
+        self.register(
             GoogleCalendar(),
             Gmail(),
             HumanFeedback(),
-        ]
-
-        for app in self.apps:
-            self.register(app.as_tool())
+        )
 
 
 def main():
