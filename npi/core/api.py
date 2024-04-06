@@ -13,7 +13,7 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
 )
 
-from npi.types import FunctionRegistration, Parameter, ToolFunction
+from npi.types import FunctionRegistration, Parameters, ToolFunction
 
 logger = logging.getLogger()
 
@@ -23,7 +23,7 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 def npi_tool(
     tool_fn: ToolFunction = None,
     description: Optional[str] = None,
-    Param: Optional[Parameter] = None
+    Params: Optional[Parameters] = None
 ):
     """
     NPi Tool decorator for methods
@@ -31,14 +31,14 @@ def npi_tool(
     Args:
         tool_fn: Tool function. This value will be set automatically.
         description: Tool description. This value will be inferred from the tool's docstring if not given.
-        Param: Tool parameter factory. This value will be inferred from the tool's type hints if not given.
+        Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
 
     Returns:
         Wrapped tool function that will be registered on the app class
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Param': Param})
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Param': Params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -74,15 +74,15 @@ def _register_tools(app: 'App'):
         if params_count > 1:
             raise TypeError(f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}')
 
-        ParamClass = None
+        ParamsClass = None
 
         if params_count == 1:
             # this method is likely to receive a Parameter object
-            ParamClass = tool_props['Param'] or params[0].annotation
+            ParamsClass = tool_props['Param'] or params[0].annotation
 
-            if not ParamClass or not issubclass(ParamClass, Parameter):
+            if not ParamsClass or not issubclass(ParamsClass, Parameters):
                 raise TypeError(
-                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameter)}, got {type(ParamClass)}'
+                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameters)}, got {type(ParamsClass)}'
                 )
 
         description = tool_props['description'] or fn.__doc__
@@ -94,12 +94,12 @@ def _register_tools(app: 'App'):
             FunctionRegistration(
                 fn=fn,
                 description=description,
-                Params=ParamClass
+                Params=ParamsClass
             )
         )
 
 
-class ChatParameter(Parameter):
+class ChatParameters(Parameters):
     task: str = Field(description='The task you want {{app_name}} to do')
 
 
@@ -170,7 +170,7 @@ class App:
     @overload
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: Literal[False] = False,
     ) -> str:
@@ -179,7 +179,7 @@ class App:
     @overload
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: Literal[True] = True,
     ) -> Tuple[str, List[ChatCompletionMessageParam]]:
@@ -187,7 +187,7 @@ class App:
 
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: bool = False,
     ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
@@ -217,7 +217,7 @@ class App:
                 if msg.get('role') != 'system':
                     prompts.append(msg)
 
-        user_prompt: str = message.task if isinstance(message, ChatParameter) else message
+        user_prompt: str = message.task if isinstance(message, ChatParameters) else message
 
         prompts.append(
             {
@@ -241,7 +241,7 @@ class App:
             FunctionRegistration
         """
 
-        class AppChatParameter(ChatParameter):
+        class AppChatParameter(ChatParameters):
             task: str = Field(description=f'The task you want {self.name} to do')
 
         return FunctionRegistration(
@@ -272,8 +272,7 @@ class App:
             )
 
             response_message = response.choices[0].message
-            # noinspection PyTypeChecker
-            # type `ChatCompletionMessage` is allowed here
+
             history.append(
                 response_message.dict(exclude_unset=True)
             )
@@ -306,7 +305,3 @@ class App:
                 )
 
         return response_message.content, history
-
-
-if __name__ == '__main__':
-    print(1)

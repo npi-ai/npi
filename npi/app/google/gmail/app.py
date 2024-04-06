@@ -47,7 +47,7 @@ class Gmail(App):
         ) + f"Content: {message.plain or message.html}"
 
     @npi_tool
-    def add_labels(self, params: AddLabelsParameter) -> str:
+    def add_labels(self, params: AddLabelsParameters) -> str:
         """Add labels to the related emails in the previous chat. If the target email is not provided, you should search for it first"""
         messages = self._get_messages_from_ids(params.message_ids)
 
@@ -70,7 +70,7 @@ class Gmail(App):
         return 'Labels added'
 
     @npi_tool
-    def remove_labels(self, params: RemoveLabelsParameter):
+    def remove_labels(self, params: RemoveLabelsParameters):
         """Remove labels from the related emails in the previous chat. If the target email is not provided, you should search for it first"""
         messages = self._get_messages_from_ids(params.message_ids)
 
@@ -139,7 +139,7 @@ class Gmail(App):
         return 'The following reply is sent:\n' + self._message_to_string(msg)
 
     @npi_tool
-    def search_emails(self, params: SearchEmailsParameter):
+    def search_emails(self, params: SearchEmailsParameters):
         """Search for emails with a query"""
         msgs = self.gmail_client.get_messages(
             query=params.query,
@@ -149,7 +149,7 @@ class Gmail(App):
         return json.dumps([self._message_to_string(m) for m in msgs])
 
     @npi_tool
-    def send_email(self, params: SendEmailParameter):
+    def send_email(self, params: SendEmailParameters):
         """Send an email"""
         msg = self.gmail_client.send_message(
             sender='',
@@ -164,7 +164,7 @@ class Gmail(App):
         return 'The following message is sent:\n' + self._message_to_string(msg)
 
     @npi_tool
-    def wait_for_reply(self, params: WaitForReplyParameter):
+    def wait_for_reply(self, params: WaitForReplyParameters):
         """Wait for reply from the last email sent in the previous chats"""
         while True:
             messages = self.gmail_client.get_messages(

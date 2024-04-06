@@ -55,12 +55,12 @@ class GoogleCalendar(App):
         return [
             FunctionRegistration(
                 fn=self.__create_event,
-                Params=CreateEventParameter,
+                Params=CreateEventParameters,
                 description='Create and add an event to Google Calendar',
             ),
             FunctionRegistration(
                 fn=self.__retrieve_events,
-                Params=RetrieveEventsParameter,
+                Params=RetrieveEventsParameters,
                 description='Retrieve events from Google Calendar',
             ),
             FunctionRegistration(
@@ -110,7 +110,7 @@ class GoogleCalendar(App):
         return res.get('timeZone')
 
     @npi_tool
-    def __retrieve_events(self, params: RetrieveEventsParameter) -> str:
+    def __retrieve_events(self, params: RetrieveEventsParameters) -> str:
         """Retrieve events from Google Calendar"""
         calendar_id = 'primary'
         time_min = params.time_min
@@ -148,7 +148,7 @@ class GoogleCalendar(App):
             # raise error
 
     @npi_tool
-    def __create_event(self, params: CreateEventParameter) -> str:
+    def __create_event(self, params: CreateEventParameters) -> str:
         """Create and add an event to Google Calendar"""
         summary = params.summary
         description = params.description

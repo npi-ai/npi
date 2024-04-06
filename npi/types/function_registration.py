@@ -1,22 +1,22 @@
 from typing import Callable, Type, Optional
 import re
-from npi.types.parameter import Parameter
+from npi.types.parameters import Parameters
 
-ToolFunction = Callable[[Parameter], str | None]
+ToolFunction = Callable[[Parameters], str | None]
 
 
 class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
-    Params: Optional[Type[Parameter]] = None
+    Params: Optional[Type[Parameters]] = None
 
     def __init__(
         self,
         fn: ToolFunction,
         description: str,
         name: str = None,
-        Params: Type[Parameter] = None,
+        Params: Type[Parameters] = None,
     ):
         self.fn = fn
         self.description = description
