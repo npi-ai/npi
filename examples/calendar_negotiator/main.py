@@ -8,7 +8,6 @@ from npi.core import App
 from npi.app.google.gmail import Gmail
 from npi.app.google.calendar import GoogleCalendar
 from npi.app.feedback.console import HumanFeedback
-from npi.types import FunctionRegistration
 
 PROMPT = """
 Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.
@@ -67,11 +66,7 @@ Steps:
 
 
 class CalendarNegotiator(App):
-    apps: List[App] = [
-        GoogleCalendar(),
-        Gmail(),
-        HumanFeedback(),
-    ]
+    apps: List[App]
 
     def __init__(self):
         super().__init__(
@@ -81,8 +76,14 @@ class CalendarNegotiator(App):
             llm=OpenAI(),
         )
 
-    def get_functions(self) -> List[FunctionRegistration]:
-        return [app.as_tool() for app in self.apps]
+        self.apps = [
+            GoogleCalendar(),
+            Gmail(),
+            HumanFeedback(),
+        ]
+
+        for app in self.apps:
+            self.register(app.as_tool())
 
 
 def main():

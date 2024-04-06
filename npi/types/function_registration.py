@@ -2,18 +2,18 @@ from typing import Callable, Type, Optional
 import re
 from npi.types.parameter import Parameter
 
-AgentFunction = Callable[[Parameter], str | None]
+ToolFunction = Callable[[Parameter], str | None]
 
 
 class FunctionRegistration:
-    fn: AgentFunction
+    fn: ToolFunction
     description: str
     name: str
     Params: Optional[Type[Parameter]] = None
 
     def __init__(
         self,
-        fn: AgentFunction,
+        fn: ToolFunction,
         description: str,
         name: str = None,
         Params: Type[Parameter] = None,

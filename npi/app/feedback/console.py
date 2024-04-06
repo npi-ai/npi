@@ -2,7 +2,6 @@ from typing import List, Tuple
 from termcolor import colored
 from openai.types.chat import ChatCompletionMessageParam
 from npi.core.api import App, ChatParameter
-from npi.types import FunctionRegistration
 
 
 class HumanFeedback(App):
@@ -18,9 +17,6 @@ class HumanFeedback(App):
             model="gpt-4-turbo-preview",
             tool_choice="auto"
         )
-
-    def get_functions(self) -> List[FunctionRegistration]:
-        return []
 
     def chat(
         self,

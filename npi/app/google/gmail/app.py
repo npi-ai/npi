@@ -1,11 +1,10 @@
 import json
 import time
-from typing import override
 from markdown import markdown
 from openai import OpenAI
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
-from npi.core.api import App, FunctionRegistration
+from npi.core.api import App, npi_tool
 from .gmail_extended import GmailExtended
 from .schema import *
 
@@ -22,50 +21,6 @@ class Gmail(App):
         )
 
         self.gmail_client = GmailExtended(client_secret_file='./credentials.json')
-
-    def get_functions(self) -> List[FunctionRegistration]:
-        return [
-            FunctionRegistration(
-                fn=self.search_emails,
-                Params=SearchEmailsParameter,
-                description='Search for emails with a query'
-            ),
-            FunctionRegistration(
-                fn=self.send_email,
-                Params=SendEmailParameter,
-                description='Send an email'
-            ),
-            FunctionRegistration(
-                fn=self.reply,
-                Params=ReplyParameter,
-                description='Reply to the last email retrieved in the previous chat. If the target email is not provided, you should search for it first'
-            ),
-            FunctionRegistration(
-                fn=self.create_draft,
-                Params=CreateDraftParameter,
-                description='Create an email draft'
-            ),
-            FunctionRegistration(
-                fn=self.create_reply_draft,
-                Params=CreateReplyDraftParameter,
-                description='Create a draft that replies to the last email retrieved in the previous chat. If the target email is not provided, you should search for it first'
-            ),
-            FunctionRegistration(
-                fn=self.add_labels,
-                Params=AddLabelsParameter,
-                description='Add labels to the related emails in the previous chat. If the target email is not provided, you should search for it first'
-            ),
-            FunctionRegistration(
-                fn=self.remove_labels,
-                Params=AddLabelsParameter,
-                description='Remove labels from the related emails in the previous chat. If the target email is not provided, you should search for it first'
-            ),
-            FunctionRegistration(
-                fn=self.wait_for_reply,
-                Params=WaitForReplyParameter,
-                description='Wait for reply from the last email sent in the previous chat'
-            ),
-        ]
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:
         emails: List[Message] = []
@@ -91,7 +46,9 @@ class Gmail(App):
             """
         ) + f"Content: {message.plain or message.html}"
 
+    @npi_tool
     def add_labels(self, params: AddLabelsParameter) -> str:
+        """Add labels to the related emails in the previous chat. If the target email is not provided, you should search for it first"""
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
@@ -112,7 +69,9 @@ class Gmail(App):
 
         return 'Labels added'
 
+    @npi_tool
     def remove_labels(self, params: RemoveLabelsParameter):
+        """Remove labels from the related emails in the previous chat. If the target email is not provided, you should search for it first"""
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
@@ -132,7 +91,9 @@ class Gmail(App):
 
         return 'Labels removed'
 
+    @npi_tool
     def create_draft(self, params: CreateDraftParameter):
+        """Create an email draft"""
         msg = self.gmail_client.create_draft(
             sender='',
             to=params.to,
@@ -145,7 +106,9 @@ class Gmail(App):
 
         return 'The following draft is created:\n' + self._message_to_string(msg)
 
+    @npi_tool
     def create_reply_draft(self, params: CreateReplyDraftParameter):
+        """Create a draft that replies to the last email retrieved in the previous chat. If the target email is not provided, you should search for it first"""
         msg = self.gmail_client.create_draft(
             sender='',
             to=params.to,
@@ -159,7 +122,9 @@ class Gmail(App):
 
         return 'The following reply draft is created:\n' + self._message_to_string(msg)
 
+    @npi_tool
     def reply(self, params: ReplyParameter):
+        """Reply to the last email retrieved in the previous chat. If the target email is not provided, you should search for it first"""
         msg = self.gmail_client.send_message(
             sender='',
             to=params.to,
@@ -173,7 +138,9 @@ class Gmail(App):
 
         return 'The following reply is sent:\n' + self._message_to_string(msg)
 
+    @npi_tool
     def search_emails(self, params: SearchEmailsParameter):
+        """Search for emails with a query"""
         msgs = self.gmail_client.get_messages(
             query=params.query,
             max_results=params.max_results,
@@ -181,7 +148,9 @@ class Gmail(App):
 
         return json.dumps([self._message_to_string(m) for m in msgs])
 
+    @npi_tool
     def send_email(self, params: SendEmailParameter):
+        """Send an email"""
         msg = self.gmail_client.send_message(
             sender='',
             to=params.to,
@@ -192,11 +161,11 @@ class Gmail(App):
             msg_html=markdown(params.message),
         )
 
-        print(self._message_to_string(msg))
-
         return 'The following message is sent:\n' + self._message_to_string(msg)
 
+    @npi_tool
     def wait_for_reply(self, params: WaitForReplyParameter):
+        """Wait for reply from the last email sent in the previous chats"""
         while True:
             messages = self.gmail_client.get_messages(
                 query=f'is:unread from:{params.sent_from}',

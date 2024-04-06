@@ -1,8 +1,9 @@
-"""the basic interface for the natural language programming interface"""
-from abc import ABC, abstractmethod
+"""The basic interface for the natural language programming interface"""
 import json
 import logging
-from typing import Dict, List, Tuple, Literal, Optional, overload
+import inspect
+import functools
+from typing import Dict, List, Tuple, Literal, Optional, Any, overload
 
 from pydantic import Field
 from openai import Client
@@ -12,23 +13,105 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
 )
 
-from npi.types import FunctionRegistration, Parameter
+from npi.types import FunctionRegistration, Parameter, ToolFunction
 
 logger = logging.getLogger()
+
+__NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
+
+
+def npi_tool(
+    tool_fn: ToolFunction = None,
+    description: Optional[str] = None,
+    Param: Optional[Parameter] = None
+):
+    """
+    NPi Tool decorator for methods
+
+    Args:
+        tool_fn: Tool function. This value will be set automatically.
+        description: Tool description. This value will be inferred from the tool's docstring if not given.
+        Param: Tool parameter factory. This value will be inferred from the tool's type hints if not given.
+
+    Returns:
+        Wrapped tool function that will be registered on the app class
+    """
+
+    def decorator(fn: ToolFunction):
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Param': Param})
+
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    # called as `@npi_tool`
+    if callable(tool_fn):
+        return decorator(tool_fn)
+
+    # called as `@npi_tool(...)`
+    return decorator
+
+
+def _register_tools(app: 'App'):
+    """
+    Find the wrapped tool functions and register them in the app
+
+    Args:
+        app: NPi App instance
+    """
+    for attr in dir(app):
+        fn = getattr(app, attr)
+        tool_props = getattr(fn, __NPI_TOOL_ATTR__, None)
+
+        if not callable(fn) or not tool_props:
+            continue
+
+        params = list(inspect.signature(fn).parameters.values())
+        params_count = len(params)
+
+        if params_count > 1:
+            raise TypeError(f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}')
+
+        ParamClass = None
+
+        if params_count == 1:
+            # this method is likely to receive a Parameter object
+            ParamClass = tool_props['Param'] or params[0].annotation
+
+            if not ParamClass or not issubclass(ParamClass, Parameter):
+                raise TypeError(
+                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameter)}, got {type(ParamClass)}'
+                )
+
+        description = tool_props['description'] or fn.__doc__
+
+        if not description:
+            raise ValueError(f'Unable to get the description of tool function `{fn.__name__}`')
+
+        app.register(
+            FunctionRegistration(
+                fn=fn,
+                description=description,
+                Params=ParamClass
+            )
+        )
 
 
 class ChatParameter(Parameter):
     task: str = Field(description='The task you want {{app_name}} to do')
 
 
-class App(ABC):
-    """the basic interface for the natural language programming interface"""
+class App:
+    """The basic interface for the natural language programming interface"""
+
+    tools: List[ChatCompletionToolParam]
+    fn_map: Dict[str, FunctionRegistration]
 
     llm: Client
     default_model: str
     tool_choice: ChatCompletionToolChoiceOptionParam
-    tools: List[ChatCompletionToolParam]
-    fn_map: Dict[str, FunctionRegistration]
     name: str
     description: str
     system_role: Optional[str]
@@ -48,15 +131,9 @@ class App(ABC):
         self.default_model = model
         self.tool_choice = tool_choice
         self.system_role = system_role
-        self.fn_map = {}
         self.tools = []
-
-        for fn_reg in self.get_functions():
-            self.register(fn_reg)
-
-    @abstractmethod
-    def get_functions(self) -> List[FunctionRegistration]:
-        """Get the list of function registrations"""
+        self.fn_map = {}
+        _register_tools(self)
 
     def register(
         self,
@@ -225,3 +302,7 @@ class App(ABC):
                 )
 
         return response_message.content, history
+
+
+if __name__ == '__main__':
+    print(1)

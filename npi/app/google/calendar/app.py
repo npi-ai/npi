@@ -12,7 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from npi.core import App
+from npi.core import App, npi_tool
 from npi.types import FunctionRegistration
 
 from npi.app.google.calendar.schema import *
@@ -97,15 +97,21 @@ class GoogleCalendar(App):
 
         return creds
 
+    @npi_tool
     def __get_today(self):
+        """Get today's date"""
         return datetime.date.today().strftime('%a, %Y-%m-%d')
 
+    @npi_tool
     def __get_timezone(self):
+        """Get the user's timezone"""
         res = self.service.calendars().get(calendarId='primary').execute()
 
         return res.get('timeZone')
 
+    @npi_tool
     def __retrieve_events(self, params: RetrieveEventsParameter) -> str:
+        """Retrieve events from Google Calendar"""
         calendar_id = 'primary'
         time_min = params.time_min
         time_max = params.time_max
@@ -141,7 +147,9 @@ class GoogleCalendar(App):
             return f"An error occurred: {error}"
             # raise error
 
+    @npi_tool
     def __create_event(self, params: CreateEventParameter) -> str:
+        """Create and add an event to Google Calendar"""
         summary = params.summary
         description = params.description
         start_time = params.start_time
