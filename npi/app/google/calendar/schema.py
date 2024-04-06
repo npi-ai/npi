@@ -1,9 +1,9 @@
 from pydantic import Field
-from npi.types import Parameter
+from npi.types import Parameters
 from typing import Optional
 
 
-class CreateEventParameter(Parameter):
+class CreateEventParameters(Parameters):
     # calendar_id: str = Field(
     #     default='primary',
     #     description='The calendar\' ID'
@@ -21,7 +21,7 @@ class CreateEventParameter(Parameter):
     )
 
 
-class RetrieveEventsParameter(Parameter):
+class RetrieveEventsParameters(Parameters):
     # calendar_id: str = Field(
     #     default='primary',
     #     description='The calendar\' ID'

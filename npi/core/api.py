@@ -1,8 +1,9 @@
-"""the basic interface for the natural language programming interface"""
-from abc import ABC, abstractmethod
+"""The basic interface for the natural language programming interface"""
 import json
 import logging
-from typing import Dict, List, Tuple, Literal, Optional, overload
+import inspect
+import functools
+from typing import Dict, List, Tuple, Literal, Optional, Union, overload
 
 from pydantic import Field
 from openai import Client
@@ -12,23 +13,105 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
 )
 
-from npi.types import FunctionRegistration, Parameter
+from npi.types import FunctionRegistration, Parameters, ToolFunction
 
 logger = logging.getLogger()
 
+__NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
-class ChatParameter(Parameter):
+
+def npi_tool(
+    tool_fn: ToolFunction = None,
+    description: Optional[str] = None,
+    Params: Optional[Parameters] = None
+):
+    """
+    NPi Tool decorator for methods
+
+    Args:
+        tool_fn: Tool function. This value will be set automatically.
+        description: Tool description. This value will be inferred from the tool's docstring if not given.
+        Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
+
+    Returns:
+        Wrapped tool function that will be registered on the app class
+    """
+
+    def decorator(fn: ToolFunction):
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Param': Params})
+
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    # called as `@npi_tool`
+    if callable(tool_fn):
+        return decorator(tool_fn)
+
+    # called as `@npi_tool(...)`
+    return decorator
+
+
+def _register_tools(app: 'App'):
+    """
+    Find the wrapped tool functions and register them in the app
+
+    Args:
+        app: NPi App instance
+    """
+    for attr in dir(app):
+        fn = getattr(app, attr)
+        tool_props = getattr(fn, __NPI_TOOL_ATTR__, None)
+
+        if not callable(fn) or not tool_props:
+            continue
+
+        params = list(inspect.signature(fn).parameters.values())
+        params_count = len(params)
+
+        if params_count > 1:
+            raise TypeError(f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}')
+
+        ParamsClass = None
+
+        if params_count == 1:
+            # this method is likely to receive a Parameter object
+            ParamsClass = tool_props['Param'] or params[0].annotation
+
+            if not ParamsClass or not issubclass(ParamsClass, Parameters):
+                raise TypeError(
+                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameters)}, got {type(ParamsClass)}'
+                )
+
+        description = tool_props['description'] or fn.__doc__
+
+        if not description:
+            raise ValueError(f'Unable to get the description of tool function `{fn.__name__}`')
+
+        app.register(
+            FunctionRegistration(
+                fn=fn,
+                description=description,
+                Params=ParamsClass
+            )
+        )
+
+
+class ChatParameters(Parameters):
     task: str = Field(description='The task you want {{app_name}} to do')
 
 
-class App(ABC):
-    """the basic interface for the natural language programming interface"""
+class App:
+    """The basic interface for the natural language programming interface"""
+
+    tools: List[ChatCompletionToolParam]
+    fn_map: Dict[str, FunctionRegistration]
 
     llm: Client
     default_model: str
     tool_choice: ChatCompletionToolChoiceOptionParam
-    tools: List[ChatCompletionToolParam]
-    fn_map: Dict[str, FunctionRegistration]
     name: str
     description: str
     system_role: Optional[str]
@@ -48,48 +131,46 @@ class App(ABC):
         self.default_model = model
         self.tool_choice = tool_choice
         self.system_role = system_role
-        self.fn_map = {}
         self.tools = []
-
-        for fn_reg in self.get_functions():
-            self.register(fn_reg)
-
-    @abstractmethod
-    def get_functions(self) -> List[FunctionRegistration]:
-        """Get the list of function registrations"""
+        self.fn_map = {}
+        _register_tools(self)
 
     def register(
         self,
-        fn_reg: FunctionRegistration,
+        *tools: Union[FunctionRegistration, 'App'],
     ):
         """
-        Register a function used in tool calls
+        Register a tool to this application
 
         Args:
-            fn_reg: the function registration object
+            *tools: the tools to register. If an app is provided, the `app.as_tool()` method will be called.
         """
-        if fn_reg.name in self.fn_map:
-            raise Exception(f'Duplicate function: {fn_reg.name}')
 
-        self.fn_map[fn_reg.name] = fn_reg
+        for tool in tools:
+            fn_reg = tool.as_tool() if isinstance(tool, App) else tool
 
-        tool: ChatCompletionToolParam = {
-            'type': 'function',
-            'function': {
-                'name': fn_reg.name,
-                'description': fn_reg.description,
+            if fn_reg.name in self.fn_map:
+                raise Exception(f'Duplicate function: {fn_reg.name}')
+
+            self.fn_map[fn_reg.name] = fn_reg
+
+            tool: ChatCompletionToolParam = {
+                'type': 'function',
+                'function': {
+                    'name': fn_reg.name,
+                    'description': fn_reg.description,
+                }
             }
-        }
 
-        if fn_reg.Params is not None:
-            tool['function']['parameters'] = fn_reg.Params.model_json_schema()
+            if fn_reg.Params is not None:
+                tool['function']['parameters'] = fn_reg.Params.model_json_schema()
 
-        self.tools.append(tool)
+            self.tools.append(tool)
 
     @overload
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: Literal[False] = False,
     ) -> str:
@@ -98,7 +179,7 @@ class App(ABC):
     @overload
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: Literal[True] = True,
     ) -> Tuple[str, List[ChatCompletionMessageParam]]:
@@ -106,7 +187,7 @@ class App(ABC):
 
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: bool = False,
     ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
@@ -136,7 +217,7 @@ class App(ABC):
                 if msg.get('role') != 'system':
                     prompts.append(msg)
 
-        user_prompt: str = message.task if isinstance(message, ChatParameter) else message
+        user_prompt: str = message.task if isinstance(message, ChatParameters) else message
 
         prompts.append(
             {
@@ -160,7 +241,7 @@ class App(ABC):
             FunctionRegistration
         """
 
-        class AppChatParameter(ChatParameter):
+        class AppChatParameter(ChatParameters):
             task: str = Field(description=f'The task you want {self.name} to do')
 
         return FunctionRegistration(
@@ -191,8 +272,7 @@ class App(ABC):
             )
 
             response_message = response.choices[0].message
-            # noinspection PyTypeChecker
-            # type `ChatCompletionMessage` is allowed here
+
             history.append(
                 response_message.dict(exclude_unset=True)
             )

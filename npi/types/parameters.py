@@ -3,7 +3,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from typing import List
 
 
-class Parameter(BaseModel):
+class Parameters(BaseModel):
     """
         Base parameter model for tool definitions
 

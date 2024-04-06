@@ -8,7 +8,6 @@ from npi.core import App
 from npi.app.google.gmail import Gmail
 from npi.app.google.calendar import GoogleCalendar
 from npi.app.feedback.console import HumanFeedback
-from npi.types import FunctionRegistration
 
 PROMPT = """
 Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.
@@ -53,25 +52,22 @@ Here are some rules for you to fulfill the task:
 2. You must follow user's task.
 3. The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
 3. If you think you need to ask the user for more information to fill the properties, you can use the Human Feedback tool to ask the user for more information.
-4. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Human Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.cl
+4. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Human Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
 
 ## Example
 Task: Schedule a meeting with test@gmail.com on Friday
 Steps:
-- google_calendar('get today\'s date')
-- google_calendar('check the user\'s availability on Frida')
-- gmail('send an email to test@gmail.com asking their availability on Friday')
-- gmail('wait for response from test@gmail.com')
-- google_calendar('create an event on Friday')
+- google_calendar("get today's date")
+- google_calendar("check the user's availability on Friday")
+- gmail("send an email to test@gmail.com asking their availability on Friday")
+- gmail("wait for response from test@gmail.com")
+- human_feedback("are you sure to schedule a meeting with test@gmail.com on Friday at <time>?")
+- google_calendar("create an event on Friday")
 """
 
 
 class CalendarNegotiator(App):
-    apps: List[App] = [
-        GoogleCalendar(),
-        Gmail(),
-        HumanFeedback(),
-    ]
+    apps: List[App]
 
     def __init__(self):
         super().__init__(
@@ -81,8 +77,11 @@ class CalendarNegotiator(App):
             llm=OpenAI(),
         )
 
-    def get_functions(self) -> List[FunctionRegistration]:
-        return [app.as_tool() for app in self.apps]
+        self.register(
+            GoogleCalendar(),
+            Gmail(),
+            HumanFeedback(),
+        )
 
 
 def main():

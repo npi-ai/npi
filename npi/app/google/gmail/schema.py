@@ -1,15 +1,15 @@
 from pydantic import Field
 from textwrap import dedent
 from typing import Optional, List
-from npi.types import Parameter
+from npi.types import Parameters
 
 
-class SearchEmailsParameter(Parameter):
+class SearchEmailsParameters(Parameters):
     query: Optional[str] = Field(default=None, description='A Gmail query to match emails')
     max_results: int = Field(default=100, description='Maximum number of messages to return')
 
 
-class SendEmailParameter(Parameter):
+class SendEmailParameters(Parameters):
     to: str = Field(description='The email address the message is being sent to')
     subject: str = Field(description='The subject line of the email')
     message: Optional[str] = Field(default=None, description='The email content in markdown format')
@@ -17,7 +17,7 @@ class SendEmailParameter(Parameter):
     bcc: Optional[List[str]] = Field(default=None, description='The list of email addresses to be bcc\'d')
 
 
-class ReplyParameter(SendEmailParameter):
+class ReplyParameter(SendEmailParameters):
     message: str = Field(
         description=dedent(
             """
@@ -44,7 +44,7 @@ class ReplyParameter(SendEmailParameter):
     )
 
 
-class CreateDraftParameter(SendEmailParameter):
+class CreateDraftParameter(SendEmailParameters):
     pass
 
 
@@ -52,21 +52,21 @@ class CreateReplyDraftParameter(ReplyParameter):
     pass
 
 
-class AddLabelsParameter(Parameter):
+class AddLabelsParameters(Parameters):
     message_ids: List[str] = Field(
         description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." line of the email'
     )
     labels: List[str] = Field(description='A list of labels to add')
 
 
-class RemoveLabelsParameter(Parameter):
+class RemoveLabelsParameters(Parameters):
     message_ids: List[str] = Field(
         description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." line of the email'
     )
     labels: List[str] = Field(description='A list of labels to remove')
 
 
-class WaitForReplyParameter(Parameter):
+class WaitForReplyParameters(Parameters):
     # TODO: how to check correct thread?
     # thread_id: str = Field(
     #     description='The ID of the thread to wait. You can find this in the "Thread ID: ..." line of the email'

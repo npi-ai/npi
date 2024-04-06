@@ -1,8 +1,7 @@
 from typing import List, Tuple
 from termcolor import colored
 from openai.types.chat import ChatCompletionMessageParam
-from npi.core.api import App, ChatParameter
-from npi.types import FunctionRegistration
+from npi.core.api import App, ChatParameters
 
 
 class HumanFeedback(App):
@@ -19,16 +18,13 @@ class HumanFeedback(App):
             tool_choice="auto"
         )
 
-    def get_functions(self) -> List[FunctionRegistration]:
-        return []
-
     def chat(
         self,
-        message: str | ChatParameter,
+        message: str | ChatParameters,
         context: List[ChatCompletionMessageParam] = None,
         return_history: bool = False,
     ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
-        prompt = message.task if isinstance(message, ChatParameter) else message
+        prompt = message.task if isinstance(message, ChatParameters) else message
         response = input(colored(prompt, 'green') + colored('\nType Your Response: ', 'magenta'))
         print()
 
