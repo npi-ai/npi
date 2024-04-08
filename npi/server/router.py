@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     """the payload for chat request"""
     app: str
     task: str
+    thread_id: str
 
 
 @router.post("/chat")
