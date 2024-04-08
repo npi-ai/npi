@@ -143,9 +143,7 @@ class GoogleCalendar(App):
 
             return json.dumps(events)
         except HttpError as error:
-            # TODO: throw or return?
-            return f"An error occurred: {error}"
-            # raise error
+            raise error
 
     @npi_tool
     def __create_event(self, params: CreateEventParameters) -> str:

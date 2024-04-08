@@ -38,7 +38,7 @@ def npi_tool(
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Param': Params})
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Params': Params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -78,7 +78,7 @@ def _register_tools(app: 'App'):
 
         if params_count == 1:
             # this method is likely to receive a Parameter object
-            ParamsClass = tool_props['Param'] or params[0].annotation
+            ParamsClass = tool_props['Params'] or params[0].annotation
 
             if not ParamsClass or not issubclass(ParamsClass, Parameters):
                 raise TypeError(
@@ -290,10 +290,13 @@ class App:
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 print(f'Calling {fn_name}({args})\n')
-                if fn_reg.Params is not None:
-                    res = fn_reg.fn(fn_reg.Params(_messages=history, **args))
-                else:
-                    res = fn_reg.fn()
+                try:
+                    if fn_reg.Params is not None:
+                        res = fn_reg.fn(fn_reg.Params(_messages=history, **args))
+                    else:
+                        res = fn_reg.fn()
+                except Exception as e:
+                    res = f'Error: {str(e)}'
                 # print(res)
                 history.append(
                     {

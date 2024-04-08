@@ -52,7 +52,7 @@ class Gmail(App):
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
-            return 'Error: No messages found for the given IDs'
+            raise Exception('Error: No messages found for the given IDs')
 
         labels = self.gmail_client.list_labels()
         label_name_map = {label.name: label for label in labels}
@@ -75,7 +75,7 @@ class Gmail(App):
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
-            return 'Error: No messages found for the given IDs'
+            raise Exception('Error: No messages found for the given IDs')
 
         labels = self.gmail_client.list_labels()
         label_name_map = {label.name: label for label in labels}
