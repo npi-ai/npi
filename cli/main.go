@@ -9,7 +9,7 @@ import (
 
 const (
 	cliName        = "npi"
-	cliDescription = "the appCommand-line tool for NPi"
+	cliDescription = "the command-line tool for NPi"
 )
 
 var (
@@ -23,12 +23,22 @@ var (
 func init() {
 	cobra.EnablePrefixMatching = true
 	cobra.EnableCommandSorting = false
+
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		checkUpdate()
+		checkConfig()
+		if cmd.Name() == "connect" || cmd.Name() == "version" {
+			return
+		} else {
+			readConfig()
+		}
+	}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(
 		connectCommand(),
 		appCommand(),
 		versionCommand(),
 	)
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
 func main() {
