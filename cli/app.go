@@ -2,7 +2,7 @@ package main
 
 import "github.com/spf13/cobra"
 
-func newAppCommand() *cobra.Command {
+func appCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "app",
 		Short: "the applications NPi supported",

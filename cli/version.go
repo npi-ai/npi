@@ -13,7 +13,7 @@ var (
 	Platform  string
 )
 
-func newVersionCommand() *cobra.Command {
+func versionCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "get NPI version info",
