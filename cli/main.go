@@ -9,7 +9,7 @@ import (
 
 const (
 	cliName        = "npi"
-	cliDescription = "the command-line tool for NPi"
+	cliDescription = "the appCommand-line tool for NPi"
 )
 
 var (
@@ -23,12 +23,10 @@ var (
 func init() {
 	cobra.EnablePrefixMatching = true
 	cobra.EnableCommandSorting = false
-	rootCmd.PersistentFlags().StringVar(&NPIServer, "endpoint",
-		"localhost:9140", "the endpoint of NPI Server")
 	rootCmd.AddCommand(
-		newConnectCommand(),
-		newAppCommand(),
-		newVersionCommand(),
+		connectCommand(),
+		appCommand(),
+		versionCommand(),
 	)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
