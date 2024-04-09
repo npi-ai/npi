@@ -76,7 +76,7 @@ class GoogleCalendar(App):
     @staticmethod
     def __get_creds():
         creds = None
-        if os.path.exists("gc_token.json"):
+        if os.path.exists("credentials/gc_token.json"):
             with open("credentials/gc_token.json", encoding="utf-8") as file:
                 creds = Credentials.from_authorized_user_info(
                     json.load(file), GoogleCalendar.__scopes
