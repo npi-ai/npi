@@ -77,7 +77,7 @@ class GoogleCalendar(App):
     def __get_creds():
         creds = None
         if os.path.exists("gc_token.json"):
-            with open("gc_token.json", encoding="utf-8") as file:
+            with open("credentials/gc_token.json", encoding="utf-8") as file:
                 creds = Credentials.from_authorized_user_info(
                     json.load(file), GoogleCalendar.__scopes
                 )
@@ -88,11 +88,11 @@ class GoogleCalendar(App):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    "./credentials.json", GoogleCalendar.__scopes
+                    "credentials/google.json", GoogleCalendar.__scopes
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("gc_token.json", "w", encoding="utf-8") as token:
+            with open("credentials/gc_token.json", "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
 
         return creds
@@ -105,7 +105,8 @@ class GoogleCalendar(App):
     @npi_tool
     def __get_timezone(self):
         """Get the user's timezone"""
-        res = self.service.calendars().get(calendarId='primary').execute()
+        res = self.service.calendars().get(  # pylint: disable=maybe-no-member
+            calendarId='primary').execute()
 
         return res.get('timeZone')
 
@@ -123,7 +124,8 @@ class GoogleCalendar(App):
         try:
             if time_min is None:
                 # 'Z' indicates UTC time
-                time_min = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+                time_min = datetime.datetime.now(
+                    datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")  # pylint: disable=maybe-no-member
 
             events_result = (
                 self.service.events().list(  # pylint: disable=maybe-no-member
@@ -185,9 +187,3 @@ class GoogleCalendar(App):
             calendarId=calendar_id, body=event
         ).execute()
         return f'Event created: {event.get("htmlLink")}'
-
-
-if __name__ == "__main__":
-    gc = GoogleCalendar()
-    response = gc.chat("Create an event for meeting at 3pm tomorrow")
-    print(response)
