@@ -9,10 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	cfg = CMDConfig{}
-)
-
 type CMDConfig struct {
 	NPIServer string `yaml:"endpoint"`
 	APIKey    string `yaml:"apiKey"`
@@ -27,13 +23,9 @@ func connectCommand() *cobra.Command {
 				color.Red("apiKey is required")
 				os.Exit(-1)
 			}
-			home, err := os.UserHomeDir()
-			if err != nil {
-				color.Red("failed to get home dir: %v ", err)
-				os.Exit(-1)
-			}
-			defaultConfigPath := filepath.Join(home, ".npiai")
-			_, err = os.Stat(defaultConfigPath)
+
+			defaultConfigPath := filepath.Join(configHome, ".npiai")
+			_, err := os.Stat(defaultConfigPath)
 			if err != nil {
 				if !os.IsNotExist(err) {
 					color.Red("failed to get config dir: %v ", err)

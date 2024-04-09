@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	Version   string
-	GitCommit string
-	BuildDate string
-	Platform  string
+	Version       string
+	GitCommit     string
+	BuildDate     string
+	Platform      string
+	ServerVersion string
 )
 
 func versionCommand() *cobra.Command {
