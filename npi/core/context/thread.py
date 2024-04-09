@@ -1,8 +1,11 @@
 """This module contains the classes for the thread and thread message"""
-
+import datetime
+import uuid
+import json
 from typing import List
 
-from openai.types.chat import (ChatCompletionToolParam,)
+from openai.types.chat import (
+    ChatCompletionMessageParam, ChatCompletionFunctionCallOptionParam)
 
 
 class ThreadMessage:
@@ -12,11 +15,18 @@ class ThreadMessage:
     task: str
     msg_id: str
     response: str
-    messages: List[ChatCompletionToolParam]
+    messages:  List[ChatCompletionMessageParam]
     metadata: dict
-    born_at: str  # RFC3339
+    born_at: datetime.date  # RFC3339
 
-    def append(self, msg: List[ChatCompletionToolParam]) -> None:
+    def __init__(self, agent_id: str, thread_id: str, task: str) -> None:
+        self.agent_id = agent_id
+        self.thread_id = thread_id
+        self.task = task
+        self.born_at = datetime.datetime.now()
+        self.messages = []
+
+    def append(self, msg: ChatCompletionMessageParam) -> None:
         """add a message to the thread"""
         self.messages.append(msg)
 
@@ -24,15 +34,50 @@ class ThreadMessage:
         """set the result of the message"""
         self.response = result
 
+    def raw(self) -> List[ChatCompletionMessageParam]:
+        """return the raw message"""
+        return self.messages.copy()
 
-class Thread():
+    def plaintext(self) -> str:
+        """convert the thread message to plain text"""
+        msgs = {
+            "task": self.task,
+            "response": self.response,
+        }
+        history = []
+        for msg in self.messages:
+            if isinstance(msg, dict):
+                history.append(msg)
+            elif msg.tool_calls:
+                calls = []
+                for tool_call in msg.tool_calls:
+                    calls.append({
+                        "id": tool_call.id,
+                        "fn_name": tool_call.function.name,
+                        "fn_arguments": json.loads(tool_call.function.arguments),
+                    })
+                history.append(calls)
+            else:
+                history.append({
+                    "role": msg.role,
+                    "content": msg.content,
+                })
+        msgs['history'] = history
+        return msgs
+
+
+class Thread:
     """the abstraction of history management """
+    agent_id: str
     id: str
-    history: List[ThreadMessage]
-    born_at: str  # RFC3339
+    history: List[ThreadMessage | str]
+    born_at: datetime.date
 
     def __init__(self) -> None:
-        pass
+        self.agent_id = 'default'
+        self.id = str(uuid.uuid4())
+        self.born_at = datetime.datetime.now()
+        self.history = []
 
     def ask(self, msg: str) -> str:
         """retrieve the message from the thread"""
@@ -44,11 +89,21 @@ class Thread():
 
     def fork(self, task: str) -> ThreadMessage:
         """fork a child message, typically when call a new tools"""
-        return ThreadMessage()
+        tm = ThreadMessage(agent_id=self.agent_id,
+                           thread_id=self.id, task=task)
+        self.history.append(tm)
+        return tm
 
-    def _to_plaintext(self) -> str:
+    def plaintext(self) -> str:
         """convert the thread to plain text"""
-        return '\n'.join([msg.msg_id for msg in self.history])
+        msgs = []
+        for msg in self.history:
+            if isinstance(msg, ThreadMessage):
+                return msg.plaintext()
+            else:
+                msgs.append(msg)
+
+        return print(json.dumps(msgs))
 
 
 class ThreadManager():
@@ -69,4 +124,5 @@ class ThreadManager():
         return self.threads.get(tid)
 
     def delete_thread(self, tid: str) -> None:
+        """delete a thread by id"""
         del self.threads[tid]

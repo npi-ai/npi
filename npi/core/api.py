@@ -11,10 +11,12 @@ from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
     ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
-from npi.core.context import Thread
+from npi.core.context import Thread, ThreadMessage
 from npi.constants.openai import Role
 
 
@@ -205,29 +207,23 @@ class App:
         Returns:
             The last chat message if return_history is False, otherwise a tuple of (last message, chat history)
         """
-        prompts: List[ChatCompletionMessageParam] = []
-
-        if self.system_role:
-            prompts.append(
-                {
-                    'role': Role.SYSTEM.value,
-                    'content': self.system_role
-                }
-            )
 
         user_prompt: str = message.task if isinstance(
             message, ChatParameters) else message
 
-        prompts.append(
-            {
-                'role': Role.USER.value,
-                'content': user_prompt
-            }
-        )
-
-        response, history = self._call_llm(context, prompts)
         msg = context.fork(user_prompt)
-        msg.append(history)
+
+        if self.system_role:
+            msg.append(
+                ChatCompletionSystemMessageParam(
+                    content=self.system_role, role=Role.SYSTEM.value)
+            )
+
+        msg.append(
+            ChatCompletionUserMessageParam(
+                content=user_prompt, role=Role.USER.value)
+        )
+        response = self._call_llm(msg)
         msg.set_result(response)
         return response
 
@@ -239,7 +235,7 @@ class App:
             FunctionRegistration
         """
 
-        class AppChatParameter(ChatParameters):
+        class AppChatParameter(ChatParameters):  # pylint: disable=missing-class-docstring
             task: str = Field(
                 description=f'The task you want {self.name} to do')
 
@@ -250,7 +246,7 @@ class App:
             description=self.description,
         )
 
-    def _call_llm(self, context: Thread, prompts: List[ChatCompletionMessageParam]) -> Tuple[str, List[ChatCompletionMessageParam]]:
+    def _call_llm(self, context: ThreadMessage) -> str:
         """
         Call llm with the given prompts
 
@@ -260,21 +256,17 @@ class App:
         Returns:
             (last message, chat history)
         """
-        history = prompts.copy()
-
         while True:
             response = self.llm.chat.completions.create(
                 model=self.default_model,
-                messages=history,
+                messages=context.raw(),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
             )
 
             response_message = response.choices[0].message
 
-            history.append(
-                response_message.dict(exclude_unset=True)
-            )
+            context.append(response_message)
 
             if response_message.content:
                 print(response_message.content + '\n')
@@ -290,10 +282,11 @@ class App:
                 args = json.loads(tool_call.function.arguments)
                 print(f'Calling {fn_name}({args})\n')
                 if fn_reg.Params is not None:
-                    res = fn_reg.fn(fn_reg.Params(_messages=history, **args))
+                    res = fn_reg.fn(fn_reg.Params(
+                        _messages=context.raw(), **args))
                 else:
                     res = fn_reg.fn()
-                history.append(
+                context.append(
                     {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -302,4 +295,4 @@ class App:
                     }
                 )
 
-        return response_message.content, history
+        return response_message.content
