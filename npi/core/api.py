@@ -3,14 +3,13 @@ import json
 import logging
 import inspect
 import functools
-from typing import Dict, List, Tuple, Optional, Union, overload
+from typing import Dict, List, Optional, Union
 
 from pydantic import Field
 from openai import Client
 from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
-    ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
@@ -27,7 +26,7 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 def npi_tool(
     tool_fn: ToolFunction = None,
     description: Optional[str] = None,
-    Params: Optional[Parameters] = None
+    params: Optional[Parameters] = None
 ):
     """
     NPi Tool decorator for methods
@@ -35,14 +34,14 @@ def npi_tool(
     Args:
         tool_fn: Tool function. This value will be set automatically.
         description: Tool description. This value will be inferred from the tool's docstring if not given.
-        Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
+        params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
 
     Returns:
         Wrapped tool function that will be registered on the app class
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Params': Params})
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Params': params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -80,15 +79,15 @@ def _register_tools(app: 'App'):
                 f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}'
             )
 
-        ParamsClass = None
+        params_class = None
 
         if params_count == 1:
             # this method is likely to receive a Parameter object
-            ParamsClass = tool_props['Params'] or params[0].annotation
+            params_class = tool_props['Params'] or params[0].annotation
 
-            if not ParamsClass or not issubclass(ParamsClass, Parameters):
+            if not params_class or not issubclass(params_class, Parameters):
                 raise TypeError(
-                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameters)}, got {type(ParamsClass)}'
+                    f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameters)}, got {type(params_class)}'
                 )
 
         description = tool_props['description'] or fn.__doc__
@@ -102,7 +101,7 @@ def _register_tools(app: 'App'):
             FunctionRegistration(
                 fn=fn,
                 description=description,
-                Params=ParamsClass
+                Params=params_class
             )
         )
 

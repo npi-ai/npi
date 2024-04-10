@@ -19,6 +19,7 @@ termcolor = "^2.4.0"
 pygithub = "^2.3.0"
 fastapi = "^0.110.1"
 uvicorn = "^0.29.0"
+grpcio = "^1.62.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -29,5 +30,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-server = "npi.server.main:main"
+server = "npi.server.app:main"
 negotiator = "examples.calendar_negotiator.main:main"

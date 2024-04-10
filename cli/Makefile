@@ -20,11 +20,11 @@ LD_FLAGS += -X 'main.GitCommit=${GIT_COMMIT}'
 LD_FLAGS += -X 'main.BuildDate=${DATE}'
 LD_FLAGS += -X 'main.Platform=${GOOS}/${GOARCH}'
 
-GO_BUILD = GO111MODULE=on CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath
+GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath
 
 
 build-npi:
-	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}/
+	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}
 
 clean:
 	rm -rf bin

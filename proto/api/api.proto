@@ -13,7 +13,7 @@ service ChatServer {
 }
 
 enum AppType {
-  UNKNOWN = 0;
+  APP_UNKNOWN = 0;
   GOOGLE_GMAIL = 1;
   GOOGLE_CALENDAR = 2;
   GITHUB = 3;
@@ -23,11 +23,23 @@ enum AppType {
 }
 
 message ChatRequest {
-  AppType app_type = 1;
-  string instruction = 2;
-  string thread_id = 3;
+  string request_id = 1;
+  AppType app_type = 2;
+  string instruction = 3;
+  string thread_id = 4;
+}
+
+enum ChatResponseType {
+  APP_UNSUPPORTED = 0;
+  SUCCESS = 1;
+  FAILED = 2;
+  MESSAGE = 3;
+  HUMAN_FEEDBACK = 4;
+  SAFEGUARD = 5;
 }
 
 message ChatResponse {
-  string message = 1;
+  string request_id = 1;
+  ChatResponseType type = 2;
+  string message = 3;
 }
