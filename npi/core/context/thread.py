@@ -2,10 +2,11 @@
 import datetime
 import uuid
 import json
-from typing import List
+from typing import List, Union
 
 from openai.types.chat import (
-    ChatCompletionMessageParam, ChatCompletionFunctionCallOptionParam)
+    ChatCompletionMessageParam, ChatCompletionMessage,
+)
 
 
 class ThreadMessage:
@@ -15,7 +16,7 @@ class ThreadMessage:
     task: str
     msg_id: str
     response: str
-    messages:  List[ChatCompletionMessageParam]
+    messages: List[Union[ChatCompletionMessageParam, ChatCompletionMessage]]
     metadata: dict
     born_at: datetime.date  # RFC3339
 
@@ -26,7 +27,7 @@ class ThreadMessage:
         self.born_at = datetime.datetime.now()
         self.messages = []
 
-    def append(self, msg: ChatCompletionMessageParam) -> None:
+    def append(self, msg: Union[ChatCompletionMessageParam, ChatCompletionMessage]) -> None:
         """add a message to the thread"""
         self.messages.append(msg)
 
@@ -51,19 +52,23 @@ class ThreadMessage:
             elif msg.tool_calls:
                 calls = []
                 for tool_call in msg.tool_calls:
-                    calls.append({
-                        "id": tool_call.id,
-                        "fn_name": tool_call.function.name,
-                        "fn_arguments": json.loads(tool_call.function.arguments),
-                    })
+                    calls.append(
+                        {
+                            "id": tool_call.id,
+                            "fn_name": tool_call.function.name,
+                            "fn_arguments": json.loads(tool_call.function.arguments),
+                        }
+                    )
                 history.append(calls)
             else:
-                history.append({
-                    "role": msg.role,
-                    "content": msg.content,
-                })
+                history.append(
+                    {
+                        "role": msg.role,
+                        "content": msg.content,
+                    }
+                )
         msgs['history'] = history
-        return msgs
+        return json.dumps(msgs)
 
 
 class Thread:
@@ -89,8 +94,10 @@ class Thread:
 
     def fork(self, task: str) -> ThreadMessage:
         """fork a child message, typically when call a new tools"""
-        tm = ThreadMessage(agent_id=self.agent_id,
-                           thread_id=self.id, task=task)
+        tm = ThreadMessage(
+            agent_id=self.agent_id,
+            thread_id=self.id, task=task
+        )
         self.history.append(tm)
         return tm
 
@@ -103,7 +110,7 @@ class Thread:
             else:
                 msgs.append(msg)
 
-        return print(json.dumps(msgs))
+        return json.dumps(msgs)
 
 
 class ThreadManager():

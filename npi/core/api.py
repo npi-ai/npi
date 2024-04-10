@@ -176,43 +176,30 @@ class App:
 
             self.tools.append(tool)
 
-    @overload
     def chat(
         self,
         message: str | ChatParameters,
-        context: Thread,
+        thread: Thread = None,
     ) -> str:
-        ...
-
-    @overload
-    def chat(
-        self,
-        message: str | ChatParameters,
-        context: Thread,
-    ) -> Tuple[str, List[ChatCompletionMessageParam]]:
-        ...
-
-    def chat(
-        self,
-        context: Thread,
-        message: str | ChatParameters,
-    ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
         """
         The chat function for the app
 
         Args:
             message: the message passing to the llm
-            context: the thread of this chat
+            thread: the thread of this chat. A new thread will be created if not given
 
         Returns:
-            The last chat message if return_history is False, otherwise a tuple of (last message, chat history)
+            The last chat message
         """
 
         user_prompt: str = message.task if isinstance(
             message, ChatParameters
         ) else message
 
-        msg = context.fork(user_prompt)
+        if thread is None:
+            thread = Thread()
+
+        msg = thread.fork(user_prompt)
 
         if self.system_role:
             msg.append(
@@ -228,6 +215,7 @@ class App:
         )
         response = self._call_llm(msg)
         msg.set_result(response)
+
         return response
 
     def as_tool(self) -> FunctionRegistration:
