@@ -243,7 +243,7 @@ class App:
         Call llm with the given prompts
 
         Args:
-            prompts: llm prompts
+            context: ThreadMessage context
 
         Returns:
             (last message, chat history)
