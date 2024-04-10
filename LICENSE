@@ -8,14 +8,22 @@ Licensor:              LLM Programming, Inc.
 Licensed Work:	       The Licensed Work is (c) 2024 LLM Programming, Inc.
 
 Additional Use Grant:  You may make production use of the Licensed Work, provided 
-                       that you may not use the Licensed Work for a Service.
+                       that you may not use the Licensed Work for an Agent Service.
 
-                       A "Service" is a offering that allows third parties(other 
-                       than your employees and contractors) to directly or indicretly
-                       access the functionality of the Licensed Work by using natural 
-                       langauge to interact with softwares.
+                       An "Agent Service" is a commercial offering that allows third
+                       parties(other than your employees and contractors) to access
+                       the functionality of the Licensed Work by performing an action
+                       directly or indirectly that causes the creation of an agent in
+                       the Licensed Work.
 
-Change Date:           Four years from the date the Licensed Work is published
+                       For clarity, an Agent Service would include providers of
+                       infrastructure services, such as cloud services, hosting services,
+                       data center services and similarly situated third parties (including
+                       affiliates of such entities) that would offer the Licensed Work in
+                       connection with a broader service offering to customers or subscribers
+                       of such of such third party’s core services.
+
+Change Date:           Four years from the release date. Please see [NPi Release](https://github.com/npi-ai/npi/releases/) for exact date.
 
 Change License:        Apache License, Version 2.0
 
