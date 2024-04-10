@@ -14,8 +14,8 @@ app.include_router(router)
 
 def main():
     """the main function"""
-    uvicorn.run("npi.server.app:app",
-                host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("npi.server.main:app",
+                host="0.0.0.0", port=9140, reload=True)
 
 
 if __name__ == "__main__":

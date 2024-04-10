@@ -1,14 +1,10 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"os"
-)
-
-var (
-	task string
 )
 
 func appCommand() *cobra.Command {
@@ -24,7 +20,6 @@ func appCommand() *cobra.Command {
 		gmailCommand(),
 		googleCalenderCommand(),
 	)
-	cmd.PersistentFlags().StringVar(&task, "task", "", "the task you want to do")
 	return cmd
 }
 
@@ -45,7 +40,7 @@ func googleCalenderCommand() *cobra.Command {
 		Aliases: []string{"gcal"},
 		Short:   "chat with Google Calendar",
 		Run: func(cmd *cobra.Command, args []string) {
-			doRequest("google-calendar", task)
+			doRequest("google-calendar", args[0])
 		},
 	}
 	return cmd
@@ -60,7 +55,8 @@ func doRequest(app, instruction string) {
 		handleError(app, err)
 	}
 	if resp.StatusCode() != 200 {
-		handleError(app, errors.New("response not 200"))
+		handleError(app, fmt.Errorf("code: %d, body: %s",
+			resp.StatusCode(), resp.Body()))
 	}
 	color.Green(string(resp.Body()))
 }
