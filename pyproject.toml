@@ -16,6 +16,7 @@ google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
 httplib2 = "^0.22.0"
 termcolor = "^2.4.0"
+pygithub = "^2.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
