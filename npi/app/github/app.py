@@ -3,13 +3,15 @@ import os
 from github import Github as PyGithub, Auth, IssueComment, PullRequestComment, Issue, PullRequest
 from github.GithubObject import NotSet
 from openai import OpenAI
-from typing import Union
+from typing import Union, TypeVar
 
 from npi.core import App, npi_tool
 from .schema import *
 
+_T = TypeVar('_T')
 
-def _default_not_set[T](value: T) -> Union[T, NotSet]:
+
+def _default_not_set(value: _T) -> Union[_T, NotSet]:
     return value if value is not None else NotSet
 
 
