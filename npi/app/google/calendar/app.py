@@ -106,7 +106,8 @@ class GoogleCalendar(App):
     def __get_timezone(self):
         """Get the user's timezone"""
         res = self.service.calendars().get(  # pylint: disable=maybe-no-member
-            calendarId='primary').execute()
+            calendarId='primary'
+        ).execute()
 
         return res.get('timeZone')
 
@@ -125,7 +126,8 @@ class GoogleCalendar(App):
             if time_min is None:
                 # 'Z' indicates UTC time
                 time_min = datetime.datetime.now(
-                    datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")  # pylint: disable=maybe-no-member
+                    datetime.UTC
+                ).strftime("%Y-%m-%dT%H:%M:%SZ")  # pylint: disable=maybe-no-member
 
             events_result = (
                 self.service.events().list(  # pylint: disable=maybe-no-member
@@ -145,9 +147,7 @@ class GoogleCalendar(App):
 
             return json.dumps(events)
         except HttpError as error:
-            # TODO: throw or return?
-            return f"An error occurred: {error}"
-            # raise error
+            raise error
 
     @npi_tool
     def __create_event(self, params: CreateEventParameters) -> str:

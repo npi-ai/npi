@@ -2,6 +2,7 @@
 **/__pycache__
 .VSCodeCounter
 .vscode
+.env
 
 credentials.json
 *token.json

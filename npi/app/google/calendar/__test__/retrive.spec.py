@@ -6,7 +6,7 @@ from npi.core.context import Thread
 
 if __name__ == '__main__':
     gc = GoogleCalendar()
-    ctx = Thread()
-    gc.chat(message='get meetings of ww@lifecycle.sh in tomorrow', context=ctx)
-    pt = ctx.plaintext()
-    print(json.dumps(pt))
+    thread = Thread()
+    gc.chat(message='get meetings of ww@lifecycle.sh in tomorrow', thread=thread)
+    pt = thread.plaintext()
+    print(json.loads(pt))

@@ -12,13 +12,12 @@ from openai.types.chat import (
     ChatCompletionToolParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam
+    ChatCompletionUserMessageParam,
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core.context import Thread, ThreadMessage
 from npi.constants.openai import Role
-
 
 logger = logging.getLogger()
 
@@ -43,8 +42,7 @@ def npi_tool(
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {
-                'description': description, 'Param': Params})
+        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Params': Params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -79,13 +77,14 @@ def _register_tools(app: 'App'):
 
         if params_count > 1:
             raise TypeError(
-                f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}')
+                f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}'
+            )
 
         ParamsClass = None
 
         if params_count == 1:
             # this method is likely to receive a Parameter object
-            ParamsClass = tool_props['Param'] or params[0].annotation
+            ParamsClass = tool_props['Params'] or params[0].annotation
 
             if not ParamsClass or not issubclass(ParamsClass, Parameters):
                 raise TypeError(
@@ -96,7 +95,8 @@ def _register_tools(app: 'App'):
 
         if not description:
             raise ValueError(
-                f'Unable to get the description of tool function `{fn.__name__}`')
+                f'Unable to get the description of tool function `{fn.__name__}`'
+            )
 
         app.register(
             FunctionRegistration(
@@ -176,55 +176,46 @@ class App:
 
             self.tools.append(tool)
 
-    @overload
     def chat(
         self,
         message: str | ChatParameters,
-        context: Thread,
+        thread: Thread = None,
     ) -> str:
-        ...
-
-    @overload
-    def chat(
-        self,
-        message: str | ChatParameters,
-        context: Thread,
-    ) -> Tuple[str, List[ChatCompletionMessageParam]]:
-        ...
-
-    def chat(
-        self,
-        context: Thread,
-        message: str | ChatParameters,
-    ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
         """
         The chat function for the app
 
         Args:
             message: the message passing to the llm
-            context: the thread of this chat
+            thread: the thread of this chat. A new thread will be created if not given
 
         Returns:
-            The last chat message if return_history is False, otherwise a tuple of (last message, chat history)
+            The last chat message
         """
 
         user_prompt: str = message.task if isinstance(
-            message, ChatParameters) else message
+            message, ChatParameters
+        ) else message
 
-        msg = context.fork(user_prompt)
+        if thread is None:
+            thread = Thread()
+
+        msg = thread.fork(user_prompt)
 
         if self.system_role:
             msg.append(
                 ChatCompletionSystemMessageParam(
-                    content=self.system_role, role=Role.SYSTEM.value)
+                    content=self.system_role, role=Role.SYSTEM.value
+                )
             )
 
         msg.append(
             ChatCompletionUserMessageParam(
-                content=user_prompt, role=Role.USER.value)
+                content=user_prompt, role=Role.USER.value
+            )
         )
         response = self._call_llm(msg)
         msg.set_result(response)
+
         return response
 
     def as_tool(self) -> FunctionRegistration:
@@ -237,7 +228,8 @@ class App:
 
         class AppChatParameter(ChatParameters):  # pylint: disable=missing-class-docstring
             task: str = Field(
-                description=f'The task you want {self.name} to do')
+                description=f'The task you want {self.name} to do'
+            )
 
         return FunctionRegistration(
             fn=self.chat,
@@ -281,11 +273,19 @@ class App:
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 print(f'Calling {fn_name}({args})\n')
-                if fn_reg.Params is not None:
-                    res = fn_reg.fn(fn_reg.Params(
-                        _messages=context.raw(), **args))
-                else:
-                    res = fn_reg.fn()
+
+                try:
+                    if fn_reg.Params is not None:
+                        res = fn_reg.fn(
+                            fn_reg.Params(
+                                _messages=context.raw(), **args
+                            )
+                        )
+                    else:
+                        res = fn_reg.fn()
+                except Exception as e:
+                    res = f'Error: {str(e)}'
+
                 context.append(
                     {
                         "tool_call_id": tool_call.id,
