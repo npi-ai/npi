@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package npi.core.api;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/npi-ai/npi/server";
+
+service ChatServer {
+  rpc Chat(stream ChatRequest) returns (stream ChatResponse);
+}
+
+enum AppType {
+  UNKNOWN = 0;
+  GOOGLE_GMAIL = 1;
+  GOOGLE_CALENDAR = 2;
+  GITHUB = 3;
+  SLACK = 4;
+  DISCORD = 5;
+  TWITTER = 6;
+}
+
+message ChatRequest {
+  AppType app_type = 1;
+  string instruction = 2;
+  string thread_id = 3;
+}
+
+message ChatResponse {
+  string message = 1;
+}
