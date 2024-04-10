@@ -3,7 +3,7 @@ import json
 import logging
 import inspect
 import functools
-from typing import Dict, List, Tuple, Literal, Optional, Union, overload
+from typing import Dict, List, Tuple, Optional, Union, overload
 
 from pydantic import Field
 from openai import Client
@@ -11,9 +11,13 @@ from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
     ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
+from npi.core.context import Thread, ThreadMessage
+from npi.constants.openai import Role
 
 logger = logging.getLogger()
 
@@ -72,7 +76,9 @@ def _register_tools(app: 'App'):
         params_count = len(params)
 
         if params_count > 1:
-            raise TypeError(f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}')
+            raise TypeError(
+                f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}'
+            )
 
         ParamsClass = None
 
@@ -88,7 +94,9 @@ def _register_tools(app: 'App'):
         description = tool_props['description'] or fn.__doc__
 
         if not description:
-            raise ValueError(f'Unable to get the description of tool function `{fn.__name__}`')
+            raise ValueError(
+                f'Unable to get the description of tool function `{fn.__name__}`'
+            )
 
         app.register(
             FunctionRegistration(
@@ -106,6 +114,7 @@ class ChatParameters(Parameters):
 class App:
     """The basic interface for the natural language programming interface"""
 
+    instant_id: str
     tools: List[ChatCompletionToolParam]
     fn_map: Dict[str, FunctionRegistration]
 
@@ -171,8 +180,7 @@ class App:
     def chat(
         self,
         message: str | ChatParameters,
-        context: List[ChatCompletionMessageParam] = None,
-        return_history: Literal[False] = False,
+        context: Thread,
     ) -> str:
         ...
 
@@ -180,57 +188,46 @@ class App:
     def chat(
         self,
         message: str | ChatParameters,
-        context: List[ChatCompletionMessageParam] = None,
-        return_history: Literal[True] = True,
+        context: Thread,
     ) -> Tuple[str, List[ChatCompletionMessageParam]]:
         ...
 
     def chat(
         self,
+        context: Thread,
         message: str | ChatParameters,
-        context: List[ChatCompletionMessageParam] = None,
-        return_history: bool = False,
     ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
         """
         The chat function for the app
 
         Args:
             message: the message passing to the llm
-            context: chat history context
-            return_history: whether to return the history of the llm call
+            context: the thread of this chat
 
         Returns:
             The last chat message if return_history is False, otherwise a tuple of (last message, chat history)
         """
-        prompts: List[ChatCompletionMessageParam] = []
+
+        user_prompt: str = message.task if isinstance(
+            message, ChatParameters
+        ) else message
+
+        msg = context.fork(user_prompt)
 
         if self.system_role:
-            prompts.append(
-                {
-                    'role': 'system',
-                    'content': self.system_role
-                }
+            msg.append(
+                ChatCompletionSystemMessageParam(
+                    content=self.system_role, role=Role.SYSTEM.value
+                )
             )
 
-        if context:
-            for msg in context:
-                if msg.get('role') != 'system':
-                    prompts.append(msg)
-
-        user_prompt: str = message.task if isinstance(message, ChatParameters) else message
-
-        prompts.append(
-            {
-                'role': 'user',
-                'content': user_prompt
-            }
+        msg.append(
+            ChatCompletionUserMessageParam(
+                content=user_prompt, role=Role.USER.value
+            )
         )
-
-        response, history = self._call_llm(prompts)
-
-        if return_history:
-            return response, history
-
+        response = self._call_llm(msg)
+        msg.set_result(response)
         return response
 
     def as_tool(self) -> FunctionRegistration:
@@ -241,8 +238,10 @@ class App:
             FunctionRegistration
         """
 
-        class AppChatParameter(ChatParameters):
-            task: str = Field(description=f'The task you want {self.name} to do')
+        class AppChatParameter(ChatParameters):  # pylint: disable=missing-class-docstring
+            task: str = Field(
+                description=f'The task you want {self.name} to do'
+            )
 
         return FunctionRegistration(
             fn=self.chat,
@@ -251,7 +250,7 @@ class App:
             description=self.description,
         )
 
-    def _call_llm(self, prompts: List[ChatCompletionMessageParam]) -> Tuple[str, List[ChatCompletionMessageParam]]:
+    def _call_llm(self, context: ThreadMessage) -> str:
         """
         Call llm with the given prompts
 
@@ -261,21 +260,17 @@ class App:
         Returns:
             (last message, chat history)
         """
-        history = prompts.copy()
-
         while True:
             response = self.llm.chat.completions.create(
                 model=self.default_model,
-                messages=history,
+                messages=context.raw(),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
             )
 
             response_message = response.choices[0].message
 
-            history.append(
-                response_message.dict(exclude_unset=True)
-            )
+            context.append(response_message)
 
             if response_message.content:
                 print(response_message.content + '\n')
@@ -290,15 +285,20 @@ class App:
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 print(f'Calling {fn_name}({args})\n')
+
                 try:
                     if fn_reg.Params is not None:
-                        res = fn_reg.fn(fn_reg.Params(_messages=history, **args))
+                        res = fn_reg.fn(
+                            fn_reg.Params(
+                                _messages=context.raw(), **args
+                            )
+                        )
                     else:
                         res = fn_reg.fn()
                 except Exception as e:
                     res = f'Error: {str(e)}'
-                # print(res)
-                history.append(
+
+                context.append(
                     {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -307,4 +307,4 @@ class App:
                     }
                 )
 
-        return response_message.content, history
+        return response_message.content

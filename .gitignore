@@ -6,3 +6,7 @@
 
 credentials.json
 *token.json
+
+credentials/
+
+**/bin
