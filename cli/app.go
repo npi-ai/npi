@@ -1,9 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"github.com/fatih/color"
+	"github.com/google/uuid"
+	api "github.com/npi-ai/npi/proto/go/api"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"log"
 	"os"
 )
 
@@ -47,18 +52,33 @@ func googleCalenderCommand() *cobra.Command {
 }
 
 func doRequest(app, instruction string) {
-	resp, err := httpClient.R().SetBody(map[string]interface{}{
-		"app":         app,
-		"instruction": instruction,
-	}).Post("/chat")
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(cfg.NPIServer, opts...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+	handle := api.NewChatServerClient(conn)
+	cli, err := handle.Chat(context.Background())
 	if err != nil {
 		handleError(app, err)
 	}
-	if resp.StatusCode() != 200 {
-		handleError(app, fmt.Errorf("code: %d, body: %s",
-			resp.StatusCode(), resp.Body()))
+	err = cli.Send(&api.ChatRequest{
+		RequestId:   uuid.NewString(),
+		AppType:     api.AppType_GOOGLE_CALENDAR,
+		Instruction: instruction,
+		ThreadId:    uuid.NewString(),
+	})
+	if err != nil {
+		handleError(app, err)
 	}
-	color.Green(string(resp.Body()))
+
+	resp, err := cli.Recv()
+	if err != nil {
+		handleError(app, err)
+	}
+	color.Green(resp.Message)
 }
 
 func handleError(app string, err error) {
