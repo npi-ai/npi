@@ -194,8 +194,8 @@ class App:
 
     def chat(
         self,
-        message: str | ChatParameters,
         context: Thread,
+        message: str | ChatParameters,
     ) -> str | Tuple[str, List[ChatCompletionMessageParam]]:
         """
         The chat function for the app

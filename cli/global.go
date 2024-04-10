@@ -46,7 +46,9 @@ func checkUpdate() {
 	latest := CMDLatestVersion{}
 	_ = json.Unmarshal(response.Body(), &latest)
 	if strings.Compare(Version, latest.Version) < 0 {
-		color.Green("new version %s is available, download from %s", latest.Version, latest.Download[Platform])
+		//color.Green("the newer version detected, we're forcing update to latest version due to version is unstable ",
+		//	latest.Version)
+		color.Green("downloading from %s", latest.Version, latest.Download[Platform])
 		// TODO
 	}
 }

@@ -28,5 +28,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-server = "npi.server.app:main"
+server = "npi.server.main:main"
 negotiator = "examples.calendar_negotiator.main:main"
