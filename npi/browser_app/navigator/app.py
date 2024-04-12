@@ -261,6 +261,8 @@ class Navigator(App):
 
         try:
             element = self._get_element_by_id(params.id)
+            element.click()
+            element.focus()
             element.fill(params.value)
         except TimeoutError:
             self.browser_app.page.evaluate(
