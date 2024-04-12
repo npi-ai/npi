@@ -52,8 +52,12 @@ export class BrowserUtils {
     return document.querySelector(`[data-marker-id="${id}"]`) as HTMLElement;
   }
 
-  async snapshot(screenshot?: string) {
+  clearBboxes() {
     clearBboxes();
+  }
+
+  async snapshot(screenshot?: string) {
+    this.clearBboxes();
 
     const addedIDs = new Set<string>();
     const prevElemSet = new Set(this.#prevElements);
