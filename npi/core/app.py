@@ -11,7 +11,7 @@ from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
     ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
+    ChatCompletionUserMessageParam, ChatCompletionMessageParam,
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
@@ -245,6 +245,18 @@ class App:
         """
         pass
 
+    def process_history(self, context: ThreadMessage) -> List[ChatCompletionMessageParam]:
+        """
+        Process history messages and return them as a list of ChatCompletionMessageParams
+
+        Args:
+            context: the thread message
+
+        Returns:
+            A list of ChatCompletionMessageParams
+        """
+        return context.raw()
+
     def _call_llm(self, context: ThreadMessage) -> str:
         """
         Call llm with the given prompts
@@ -253,12 +265,12 @@ class App:
             context: ThreadMessage context
 
         Returns:
-            (last message, chat history)
+            final response message
         """
         while True:
             response = self.llm.chat.completions.create(
                 model=self.default_model,
-                messages=context.raw(),
+                messages=self.process_history(context),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
                 max_tokens=4096,

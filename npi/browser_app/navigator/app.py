@@ -1,9 +1,10 @@
 import base64
 import json
 from textwrap import dedent
-from typing import Union
+from typing import Union, List
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from npi.core import App, BrowserApp, npi_tool, ChatParameters
 from .schema import *
@@ -17,7 +18,7 @@ Imagine that you are imitating humans doing web navigation for a task step by st
 - An annotated screenshot where the interactive elements are surrounded with rectangular bounding boxes in different colors. At the top left of each bounding box is a small rectangle in the same color as the bounding box. This is the label and it contains a number indicating the ID of that box. The label number starts from 0.
 - The title of the target page.
 - The task I want to perform.
-- Previous actions (you should use them to avoid duplicates).
+- Chat history containing previous tool calls (you should use them to avoid duplicates).
 - An array of the interactive elements inside the current viewport.
 - An array of newly added elements' ID since the last action. These elements reflect the impact of your last action.
 
@@ -58,7 +59,6 @@ Here are some conventions to choose a suitable tool:
 - If you need to select a value from a dropdown list, you should call the `select` tool and specify the `value` in the arguments.
 - If the page is scrollable and you need to scroll down to see the rest of the page, you call the `scroll` tool.
 - If you are performing a critical action, such as submitting a form to place an order, clicking a "Send" button to send a message, or clicking a "Save" button to save the form, you should ask for user confirmation.
-- If the task requires navigation or actions on another page beyond the provided elements, you should ask for human help.
 - If the task need other tools beyond this navigator, you should ask for human help. 
 - If the whole task is done, you should not call any further tools.
 """
@@ -209,6 +209,26 @@ class Navigator(App):
         self._current_task = None
 
         return response
+
+    def process_history(self, context: ThreadMessage) -> List[ChatCompletionMessageParam]:
+        # TODO: optimize chat history
+        # temporary workaround: delete previous user message
+        messages = []
+        last_user_msg_added = False
+
+        for msg in reversed(context.messages):
+            if isinstance(msg, dict):
+                role = msg.get('role', None)
+            else:
+                role = msg.role
+
+            if role != 'user':
+                messages.insert(0, msg)
+            elif not last_user_msg_added:
+                last_user_msg_added = True
+                messages.insert(0, msg)
+
+        return messages
 
     def on_round_end(self, context: ThreadMessage) -> None:
         # update page info
