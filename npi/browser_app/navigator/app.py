@@ -100,6 +100,10 @@ class Navigator(App):
             }"""
         )
 
+    def _clear_bboxes(self):
+        self._init_browser_utils()
+        self.browser_app.page.evaluate('() => npi.clearBboxes()')
+
     def _is_scrollable(self):
         self._init_browser_utils()
         return self.browser_app.page.evaluate('() => npi.isScrollable()')
@@ -139,6 +143,7 @@ class Navigator(App):
         self.browser_app.page.evaluate('() => npi.stable()')
 
     def _generate_user_prompt(self):
+        self._clear_bboxes()
         raw_screenshot = self._get_screenshot()
         elements, added_ids = self._get_interactive_elements(raw_screenshot)
 
