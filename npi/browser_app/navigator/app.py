@@ -1,6 +1,7 @@
 import base64
 import json
 from textwrap import dedent
+from typing import Union
 
 from openai import OpenAI
 
@@ -68,7 +69,7 @@ from npi.core.context import Thread, ThreadMessage
 class Navigator(App):
     browser_app: BrowserApp
     _selector: str
-    _current_task: str = None
+    _current_task: Union[str, None] = None
 
     def __init__(self, browser_app: BrowserApp, selector: str = None, llm=None):
         super().__init__(
@@ -204,6 +205,8 @@ class Navigator(App):
 
         response = self._call_llm(msg)
         msg.set_result(response)
+
+        self._current_task = None
 
         return response
 
