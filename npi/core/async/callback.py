@@ -1,3 +1,0 @@
-
-def ChatCallback():
-    print("ChatCallback")

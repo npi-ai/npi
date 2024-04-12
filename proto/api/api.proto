@@ -9,7 +9,46 @@ import "google/protobuf/wrappers.proto";
 option go_package = "github.com/npi-ai/npi/server";
 
 service ChatServer {
-  rpc Chat(stream ChatRequest) returns (stream ChatResponse);
+  rpc Chat(Request) returns (Response);
+}
+
+enum RequestCode {
+  REQUEST_UNKNOWN = 0;
+  CHAT = 1;
+  FETCH = 2;
+  ACTION_RESULT = 3;
+}
+
+message Request {
+    RequestCode code = 1;
+    string request_id = 2;
+    string thread_id = 3;
+    oneof request {
+        ChatRequest chat_request = 10;
+        ActionResultRequest action_result_request = 12;
+        google.protobuf.Empty empty = 99;
+    }
+}
+
+
+enum ResponseCode {
+  RESPONSE_UNKNOWN = 0;
+  SUCCESS = 1;
+  FAILED = 2;
+  MESSAGE = 3;
+  HUMAN_FEEDBACK = 4;
+  //  SAFEGUARD = 5;
+  CLIENT_ACTION = 6;
+}
+
+message Response {
+    ResponseCode code = 1;
+    string request_id = 2;
+    string thread_id = 3;
+    oneof response {
+        ChatResponse chat_response = 10;
+        google.protobuf.Empty empty = 99;
+    }
 }
 
 enum AppType {
@@ -23,23 +62,22 @@ enum AppType {
 }
 
 message ChatRequest {
-  string request_id = 1;
-  AppType app_type = 2;
-  string instruction = 3;
-  string thread_id = 4;
-}
-
-enum ChatResponseType {
-  APP_UNSUPPORTED = 0;
-  SUCCESS = 1;
-  FAILED = 2;
-  MESSAGE = 3;
-  HUMAN_FEEDBACK = 4;
-  SAFEGUARD = 5;
+  AppType app_type = 1;
+  string instruction = 2;
 }
 
 message ChatResponse {
-  string request_id = 1;
-  ChatResponseType type = 2;
-  string message = 3;
+  string thread_id = 1;
+  string message = 2;
 }
+
+message ActionResultRequest {
+  string action_id = 1;
+  string action_result = 2;
+}
+
+//message ChatResponse {
+//  string request_id = 1;
+//  ChatResponseType type = 2;
+//  string message = 3;
+//}

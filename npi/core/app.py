@@ -16,6 +16,7 @@ from openai.types.chat import (
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
+from npi.core import callback
 from npi.core.context import Thread, ThreadMessage
 from npi.constants.openai import Role
 
@@ -42,7 +43,8 @@ def npi_tool(
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {'description': description, 'Params': Params})
+        setattr(fn, __NPI_TOOL_ATTR__, {
+                'description': description, 'Params': Params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -176,10 +178,10 @@ class App:
 
             self.tools.append(tool)
 
-    def chat(
+    async def chat(
         self,
         message: str,
-        thread: Thread = None,
+        thread: Thread,
     ) -> str:
         """
         The chat function for the app
@@ -195,7 +197,6 @@ class App:
             thread = Thread()
 
         msg = thread.fork(message)
-
         if self.system_role:
             msg.append(
                 ChatCompletionSystemMessageParam(
@@ -210,10 +211,10 @@ class App:
                 role=Role.USER.value,
             )
         )
-        response = self._call_llm(msg)
-        msg.set_result(response)
-
-        return response
+        await self._call_llm(parent_ctx=thread, context=msg)
+        # msg.set_result(response)
+        #
+        # return response
 
     def as_tool(self, thread: Thread = None) -> FunctionRegistration:
         """
@@ -259,7 +260,10 @@ class App:
         """
         return context.raw()
 
-    def _call_llm(self, context: ThreadMessage) -> str:
+    # def _call_llm(self, context: ThreadMessage) -> str:
+
+    async def _call_llm(self, parent_ctx: Thread, context: ThreadMessage):
+
         """
         Call llm with the given prompts
 
@@ -270,14 +274,13 @@ class App:
             final response message
         """
         while True:
-            response = self.llm.chat.completions.create(
+            response = await self.llm.chat.completions.create(
                 model=self.default_model,
                 messages=self.process_history(context),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
                 max_tokens=4096,
             )
-
             response_message = response.choices[0].message
 
             context.append(response_message)
@@ -295,8 +298,9 @@ class App:
                 fn_name = tool_call.function.name
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
-                print(f'[{self.name}] Calling {fn_name}({args})\n')
-
+                call_msg = f'Calling {fn_name}({args})\n'
+                print(call_msg)
+                await parent_ctx.send_msg(callback.Callable(call_msg))
                 try:
                     if fn_reg.Params is not None:
                         res = fn_reg.fn(
@@ -321,4 +325,5 @@ class App:
                 )
                 self.on_round_end(context)
 
-        return response_message.content
+        await parent_ctx.send_msg(callback.Callable("done"))
+        # yield response_message.content
