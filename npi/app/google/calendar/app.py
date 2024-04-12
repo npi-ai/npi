@@ -5,7 +5,7 @@ import json
 import datetime
 from typing import List
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -47,7 +47,7 @@ class GoogleCalendar(App):
             self.llm = llm
         else:
             # create openai client
-            self.llm = OpenAI(
+            self.llm = AsyncOpenAI(
                 api_key="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"
             )
 

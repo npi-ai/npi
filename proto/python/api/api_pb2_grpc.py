@@ -14,17 +14,17 @@ class ChatServerStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Chat = channel.stream_stream(
+        self.Chat = channel.unary_unary(
                 '/npi.core.api.ChatServer/Chat',
-                request_serializer=api_dot_api__pb2.ChatRequest.SerializeToString,
-                response_deserializer=api_dot_api__pb2.ChatResponse.FromString,
+                request_serializer=api_dot_api__pb2.Request.SerializeToString,
+                response_deserializer=api_dot_api__pb2.Response.FromString,
                 )
 
 
 class ChatServerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def Chat(self, request_iterator, context):
+    def Chat(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -33,10 +33,10 @@ class ChatServerServicer(object):
 
 def add_ChatServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Chat': grpc.stream_stream_rpc_method_handler(
+            'Chat': grpc.unary_unary_rpc_method_handler(
                     servicer.Chat,
-                    request_deserializer=api_dot_api__pb2.ChatRequest.FromString,
-                    response_serializer=api_dot_api__pb2.ChatResponse.SerializeToString,
+                    request_deserializer=api_dot_api__pb2.Request.FromString,
+                    response_serializer=api_dot_api__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -49,7 +49,7 @@ class ChatServer(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Chat(request_iterator,
+    def Chat(request,
             target,
             options=(),
             channel_credentials=None,
@@ -59,8 +59,8 @@ class ChatServer(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/npi.core.api.ChatServer/Chat',
-            api_dot_api__pb2.ChatRequest.SerializeToString,
-            api_dot_api__pb2.ChatResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.ChatServer/Chat',
+            api_dot_api__pb2.Request.SerializeToString,
+            api_dot_api__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

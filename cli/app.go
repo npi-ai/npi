@@ -59,26 +59,18 @@ func doRequest(app, instruction string) {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	defer conn.Close()
-	handle := api.NewChatServerClient(conn)
-	cli, err := handle.Chat(context.Background())
-	if err != nil {
-		handleError(app, err)
-	}
-	err = cli.Send(&api.ChatRequest{
-		RequestId:   uuid.NewString(),
-		AppType:     api.AppType_GOOGLE_CALENDAR,
-		Instruction: instruction,
-		ThreadId:    uuid.NewString(),
+	cli := api.NewChatServerClient(conn)
+
+	resp, err := cli.Chat(context.Background(), &api.Request{
+		Code:      api.RequestCode_CHAT,
+		RequestId: uuid.New().String(),
+		Request:   nil,
 	})
 	if err != nil {
 		handleError(app, err)
 	}
 
-	resp, err := cli.Recv()
-	if err != nil {
-		handleError(app, err)
-	}
-	color.Green(resp.Message)
+	color.Green(resp.Code.String())
 }
 
 func handleError(app string, err error) {

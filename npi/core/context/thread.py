@@ -2,11 +2,16 @@
 import datetime
 import uuid
 import json
+import queue
+import asyncio
 from typing import List, Union
 
 from openai.types.chat import (
-    ChatCompletionMessageParam, ChatCompletionMessage,
+    ChatCompletionMessageParam,
+    ChatCompletionMessage,
 )
+
+from npi.core import callback
 
 
 class ThreadMessage:
@@ -77,12 +82,22 @@ class Thread:
     id: str
     history: List[ThreadMessage | str]
     born_at: datetime.date
+    q: asyncio.Queue[callback.Callable]
 
     def __init__(self) -> None:
         self.agent_id = 'default'
         self.id = str(uuid.uuid4())
         self.born_at = datetime.datetime.now()
         self.history = []
+        self.q = asyncio.Queue()
+
+    async def receive_msg(self) -> callback.Callable:
+        """receive a message"""
+        item = await self.q.get()
+        return item
+
+    async def send_msg(self, cb: callback.Callable) -> None:
+        await self.q.put(cb)
 
     def ask(self, msg: str) -> str:
         """retrieve the message from the thread"""
