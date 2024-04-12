@@ -274,7 +274,7 @@ class App:
             tool_calls = response_message.tool_calls
 
             if tool_calls is None:
-                self.on_round_end(context)
+                # self.on_round_end(context)
                 break
 
             for tool_call in tool_calls:
