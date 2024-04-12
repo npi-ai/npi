@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from termcolor import colored
 from openai.types.chat import ChatCompletionMessageParam
-from npi.core.api import App, ChatParameters
+from npi.core.app import App, ChatParameters
 
 
 class HumanFeedback(App):

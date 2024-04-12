@@ -2,6 +2,37 @@ import { getPageBrightness, isDark, randomBrightness } from './screenshot';
 import { getScrollTop } from './scroll';
 import { bboxClassName, markerAttr } from './constants';
 
+function ensureStyle() {
+  if (document.querySelector('style#lc-style')) {
+    return;
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .lc-marker {
+      position: absolute;
+      border: 2px solid var(--bg-color);
+      pointer-events: none;
+      box-sizing: border-box;
+      z-index: 1073741825;
+    }
+
+    .lc-marker::before {
+      content: attr(data-marker-id);
+      position: absolute;
+      /* bottom: 100%; */
+      /* left: -1px; */
+      top: 0;
+      left: 0;
+      padding: 0px 2px;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      font-size: 12px;
+    }
+  `;
+  document.head.append(style);
+}
+
 function getZindex(el: Element | null) {
   let zIndex = -Infinity;
 
@@ -19,6 +50,8 @@ function getZindex(el: Element | null) {
 }
 
 export function markElement(el: Element, id: number, pageBrightness: number) {
+  ensureStyle();
+
   const scrollTop = getScrollTop();
   const rects = el.getClientRects();
 

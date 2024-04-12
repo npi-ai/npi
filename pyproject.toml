@@ -20,6 +20,7 @@ pygithub = "^2.3.0"
 fastapi = "^0.110.1"
 uvicorn = "^0.29.0"
 grpcio = "^1.62.1"
+playwright = "^1.43.0"
 
 
 [tool.poetry.group.dev.dependencies]

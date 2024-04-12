@@ -4,7 +4,7 @@ from markdown import markdown
 from openai import OpenAI
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
-from npi.core.api import App, npi_tool
+from npi.core.app import App, npi_tool
 from .gmail_extended import GmailExtended
 from .schema import *
 

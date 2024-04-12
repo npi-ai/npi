@@ -237,6 +237,14 @@ class App:
             description=self.description,
         )
 
+    def on_round_end(self, context: ThreadMessage) -> None:
+        """
+        Callback function called at the end of a round
+        Args:
+            context: the thread message
+        """
+        pass
+
     def _call_llm(self, context: ThreadMessage) -> str:
         """
         Call llm with the given prompts
@@ -253,6 +261,7 @@ class App:
                 messages=context.raw(),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
+                max_tokens=4096,
             )
 
             response_message = response.choices[0].message
@@ -265,13 +274,14 @@ class App:
             tool_calls = response_message.tool_calls
 
             if tool_calls is None:
+                self.on_round_end(context)
                 break
 
             for tool_call in tool_calls:
                 fn_name = tool_call.function.name
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
-                print(f'Calling {fn_name}({args})\n')
+                print(f'[{self.name}] Calling {fn_name}({args})\n')
 
                 try:
                     if fn_reg.Params is not None:
@@ -293,5 +303,6 @@ class App:
                         "content": res,
                     }
                 )
+                self.on_round_end(context)
 
         return response_message.content
