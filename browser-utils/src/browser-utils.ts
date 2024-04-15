@@ -56,6 +56,50 @@ export class BrowserUtils {
     clearBboxes();
   }
 
+  elementToJSON(el: Element) {
+    const elemJSON: ElementJSON = {
+      id: el.getAttribute(markerAttr) || '',
+      tag: el.tagName.toLowerCase(),
+      role: getRole(el),
+      accessibleName: computeAccessibleName(el),
+      accessibleDescription: computeAccessibleDescription(el),
+      attributes: {},
+    };
+
+    if (el.tagName === 'SELECT') {
+      elemJSON.options = [...el.querySelectorAll('option')].map(
+        opt => (opt as HTMLOptionElement).value,
+      );
+    }
+
+    for (const attr of [...el.attributes]) {
+      if (attrsToKeepRegex.test(attr.name)) {
+        elemJSON.attributes[attr.name] = attr.value;
+      }
+    }
+
+    if (isFormComponent(el)) {
+      const value = el.value;
+
+      if (value && el.getAttribute('type') !== 'password') {
+        elemJSON.attributes.value = value;
+      }
+    }
+
+    // shorten url
+    const href = el.getAttribute('href');
+
+    if (href) {
+      if (!elemJSON.accessibleName && !elemJSON.accessibleDescription) {
+        elemJSON.attributes.href = href.slice(0, 100);
+      } else {
+        delete elemJSON.attributes.href;
+      }
+    }
+
+    return elemJSON;
+  }
+
   async snapshot(screenshot?: string) {
     this.clearBboxes();
 
@@ -67,57 +111,18 @@ export class BrowserUtils {
 
     const elementsAsJSON: ElementJSON[] = interactiveElements.map((el, i) => {
       markElement(el, i, pageBrightness);
+
       const markerId = el.getAttribute(markerAttr);
 
       if (markerId === null) {
         throw new Error(`Unable to find markerId for element: ${el.outerHTML}`);
       }
 
-      const elemJSON: ElementJSON = {
-        id: markerId,
-        tag: el.tagName.toLowerCase(),
-        role: getRole(el),
-        accessibleName: computeAccessibleName(el),
-        accessibleDescription: computeAccessibleDescription(el),
-        attributes: {},
-      };
-
-      if (el.tagName === 'SELECT') {
-        elemJSON.options = [...el.querySelectorAll('option')].map(
-          opt => (opt as HTMLOptionElement).value,
-        );
-      }
-
-      for (const attr of [...el.attributes]) {
-        if (attrsToKeepRegex.test(attr.name)) {
-          elemJSON.attributes[attr.name] = attr.value;
-        }
-      }
-
-      if (isFormComponent(el)) {
-        const value = el.value;
-
-        if (value && el.getAttribute('type') !== 'password') {
-          elemJSON.attributes.value = value;
-        }
-      }
-
-      // shorten url
-      const href = el.getAttribute('href');
-
-      if (href) {
-        if (!elemJSON.accessibleName && !elemJSON.accessibleDescription) {
-          elemJSON.attributes.href = href.slice(0, 100);
-        } else {
-          delete elemJSON.attributes.href;
-        }
-      }
-
       if (!prevElemSet.has(el)) {
         addedIDs.add(markerId);
       }
 
-      return elemJSON;
+      return this.elementToJSON(el);
     });
 
     this.#prevElements = interactiveElements;
