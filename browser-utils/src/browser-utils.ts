@@ -145,14 +145,11 @@ export class BrowserUtils {
     return scrollPageDown();
   }
 
-  async click(id: string) {
-    const el = this.getElement(id);
+  async click(el: HTMLElement) {
     return syntheticClick(el);
   }
 
-  async fill(id: string, value: string) {
-    const el = this.getElement(id);
-
+  async fill(el: HTMLElement, value: string) {
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
       return syntheticInput(el, value);
     }
@@ -164,9 +161,7 @@ export class BrowserUtils {
     throw new Error('Unable to fill in a non-form element');
   }
 
-  async select(id: string, value: string) {
-    const el = this.getElement(id);
-
+  async select(el: HTMLElement, value: string) {
     if (!(el instanceof HTMLSelectElement)) {
       throw new Error('Unable to select a non-select element');
     }
@@ -174,9 +169,7 @@ export class BrowserUtils {
     return syntheticInput(el, value);
   }
 
-  async enter(id: string) {
-    const el = this.getElement(id);
-
+  async enter(el: HTMLElement) {
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
       return syntheticEnter(el);
     }
