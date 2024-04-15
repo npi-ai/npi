@@ -211,10 +211,7 @@ class App:
                 role=Role.USER.value,
             )
         )
-        await self._call_llm(parent_ctx=thread, context=msg)
-        # msg.set_result(response)
-        #
-        # return response
+        return await self._call_llm(parent_ctx=thread, context=msg)
 
     def as_tool(self, thread: Thread = None) -> FunctionRegistration:
         """
@@ -326,4 +323,4 @@ class App:
                 self.on_round_end(context)
 
         await parent_ctx.send_msg(callback.Callable("done"))
-        # yield response_message.content
+        return response_message.content

@@ -45,13 +45,13 @@ func googleCalenderCommand() *cobra.Command {
 		Aliases: []string{"gcal"},
 		Short:   "chat with Google Calendar",
 		Run: func(cmd *cobra.Command, args []string) {
-			doRequest("google-calendar", args[0])
+			doRequest(api.AppType_GOOGLE_CALENDAR, args[0])
 		},
 	}
 	return cmd
 }
 
-func doRequest(app, instruction string) {
+func doRequest(app api.AppType, instruction string) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	conn, err := grpc.Dial(cfg.NPIServer, opts...)
@@ -64,16 +64,21 @@ func doRequest(app, instruction string) {
 	resp, err := cli.Chat(context.Background(), &api.Request{
 		Code:      api.RequestCode_CHAT,
 		RequestId: uuid.New().String(),
-		Request:   nil,
+		Request: &api.Request_ChatRequest{
+			ChatRequest: &api.ChatRequest{
+				AppType:     app,
+				Instruction: instruction,
+			},
+		},
 	})
 	if err != nil {
 		handleError(app, err)
 	}
 
-	color.Green(resp.Code.String())
+	color.Green("Code: %v\nMessage: %s", resp.GetCode(), resp.GetChatResponse().GetMessage())
 }
 
-func handleError(app string, err error) {
+func handleError(app api.AppType, err error) {
 	color.Red("failed to chat with [%s]: %v", app, err)
 	os.Exit(-1)
 }
