@@ -3,6 +3,7 @@ import json
 import logging
 import inspect
 import functools
+import traceback
 from typing import Dict, List, Optional, Union, Type
 
 from pydantic import Field
@@ -305,8 +306,10 @@ class App:
                         )
                     else:
                         res = fn_reg.fn()
-                except Exception as e:
-                    res = f'Error: {str(e)}'
+                except Exception as err:
+                    err_msg = ''.join(traceback.format_exception(err))
+                    print(err_msg)
+                    res = err_msg
 
                 context.append(
                     {
