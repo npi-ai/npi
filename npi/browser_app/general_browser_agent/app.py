@@ -1,7 +1,6 @@
 from openai import OpenAI
 
 from npi.core import BrowserApp, npi_tool
-from npi.browser_app.navigator import Navigator
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -20,9 +19,8 @@ class GeneralBrowserAgent(BrowserApp):
             system_role=__SYSTEM_PROMPT__,
             llm=llm,
             headless=headless,
+            use_navigator=True,
         )
-
-        self.register(Navigator(self, llm=llm))
 
     @npi_tool
     def goto(self, params: GotoParameters):
@@ -30,4 +28,4 @@ class GeneralBrowserAgent(BrowserApp):
         self.page.goto(params.url)
         # self.page.wait_for_url(params.url)
 
-        return f'Navigated to {self.page.url}, page title: {self.page.title}'
+        return f'Opened {self.page.url}, page title: {self.page.title}'
