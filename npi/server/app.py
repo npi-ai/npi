@@ -19,14 +19,14 @@ class Chat(api_pb2_grpc.ChatServerServicer):
             request: api_pb2.Request,
             context: grpc.ServicerContext,
     ) -> api_pb2.Response:
-        logging.info(
-            "received a request [%s]",
-            request.code,
-        )
+        logging.info("received a request, code:[%s], ", request.code)
         response = api_pb2.Response()
         response.request_id = request.request_id
         if request.code == api_pb2.RequestCode.CHAT:
-            pass
+            result = await self.__chat(request.chat_request, Thread())
+            response.code = api_pb2.ResponseCode.SUCCESS
+            print("result -> ", result)
+            response.chat_response.CopyFrom(api_pb2.ChatResponse(message=result))
         elif request.code == api_pb2.RequestCode.FETCH:
             pass
         elif request.code == api_pb2.RequestCode.ACTION_RESULT:
@@ -34,6 +34,13 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         else:
             raise RuntimeError("Unknown request")
         return response
+
+    async def __chat(self, req: api_pb2.ChatRequest, thread: Thread):
+        logging.info("chatting with [%s]", req.instruction)
+        if req.app_type == api_pb2.AppType.GOOGLE_CALENDAR:
+            gc = google.GoogleCalendar()
+            return await gc.chat(req.instruction, thread)
+
 
 
 _cleanup_coroutines = []
