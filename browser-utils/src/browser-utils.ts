@@ -108,6 +108,8 @@ export class BrowserUtils {
       if (href) {
         if (!elemJSON.accessibleName && !elemJSON.accessibleDescription) {
           elemJSON.attributes.href = href.slice(0, 100);
+        } else {
+          delete elemJSON.attributes.href;
         }
       }
 
