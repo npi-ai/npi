@@ -177,7 +177,7 @@ class App:
 
     def chat(
         self,
-        message: str | ChatParameters,
+        message: str,
         thread: Thread = None,
     ) -> str:
         """
@@ -190,26 +190,23 @@ class App:
         Returns:
             The last chat message
         """
-
-        user_prompt: str = message.task if isinstance(
-            message, ChatParameters
-        ) else message
-
         if thread is None:
             thread = Thread()
 
-        msg = thread.fork(user_prompt)
+        msg = thread.fork(message)
 
         if self.system_role:
             msg.append(
                 ChatCompletionSystemMessageParam(
-                    content=self.system_role, role=Role.SYSTEM.value
+                    content=self.system_role,
+                    role=Role.SYSTEM.value,
                 )
             )
 
         msg.append(
             ChatCompletionUserMessageParam(
-                content=user_prompt, role=Role.USER.value
+                content=message,
+                role=Role.USER.value,
             )
         )
         response = self._call_llm(msg)
@@ -217,7 +214,7 @@ class App:
 
         return response
 
-    def as_tool(self) -> FunctionRegistration:
+    def as_tool(self, thread: Thread = None) -> FunctionRegistration:
         """
         Wrap the chat function of this app to FunctionRegistration
 
@@ -230,8 +227,12 @@ class App:
                 description=f'The task you want {self.name} to do'
             )
 
+        def app_chat(params: ChatParameters) -> str:
+            nonlocal thread
+            return self.chat(params.task, thread)
+
         return FunctionRegistration(
-            fn=self.chat,
+            fn=app_chat,
             name=self.name,
             Params=AppChatParameter,
             description=self.description,
