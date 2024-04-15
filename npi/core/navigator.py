@@ -360,7 +360,7 @@ class Navigator(App):
                 result = self._select(elem, action['value'])
             case 'scroll':
                 result = self._scroll()
-            case ['confirmation', 'human-intervention', 'done']:
+            case 'confirmation' | 'human-intervention' | 'done':
                 result = None
             case _:
                 raise Exception(f'{self.name}: Unknown action: {action}')
