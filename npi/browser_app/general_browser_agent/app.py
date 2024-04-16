@@ -23,9 +23,9 @@ class GeneralBrowserAgent(BrowserApp):
         )
 
     @npi_tool
-    def goto(self, params: GotoParameters):
+    async def goto(self, params: GotoParameters):
         """Open the given URL in the browser"""
-        self.page.goto(params.url)
+        await self.page.goto(params.url)
         # self.page.wait_for_url(params.url)
 
         return f'Opened {self.page.url}, page title: {self.page.title}'
