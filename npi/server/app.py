@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import traceback
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,22 +22,26 @@ class Chat(api_pb2_grpc.ChatServerServicer):
             request: api_pb2.Request,
             context: grpc.ServicerContext,
     ) -> api_pb2.Response:
-        logging.info("received a request, code:[%s], ", request.code)
+        logging.info("received a request, code:[%s], id: [%s]", request.code, request.request_id)
         response = api_pb2.Response()
         if request.code == api_pb2.RequestCode.CHAT:
             try:
                 thread = self.thread_manager.new_thread(request.chat_request)
                 response.thread_id = thread.id
-                response.code = api_pb2.ResponseCode.MESSAGE
+                response.code = api_pb2.ResponseCode.SUCCESS
                 Chat.run(thread)
-            except Exception as e:
-                logging.error("error in chat: %s", e)
-                response.code = api_pb2.ResponseCode.ERROR
+            except Exception as err:
+                err_msg = ''.join(traceback.format_exception(err))
+                print(err_msg)
+                response.chat_response.message = err
+                response.code = api_pb2.ResponseCode.FAILED
         elif request.code == api_pb2.RequestCode.FETCH:
             await self.__fetch_thread(request, response)
             response.thread_id = request.thread_id
         elif request.code == api_pb2.RequestCode.ACTION_RESULT:
-            pass
+            await self.__action(request, response)
+            response.thread_id = request.thread_id
+            response.code = api_pb2.ResponseCode.SUCCESS
         else:
             raise RuntimeError("Unknown request")
         response.request_id = request.request_id
@@ -47,27 +52,56 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         thread = self.thread_manager.get_thread(req.thread_id)
         if not thread:
             logging.error("thread not found")
-            resp.code = api_pb2.ResponseCode.ERROR
+            resp.code = api_pb2.ResponseCode.FAILED
             return
 
         if thread.is_finished():
-            resp.code = api_pb2.ResponseCode.SUCCESS
+            resp.code = api_pb2.ResponseCode.FINISHED
             resp.chat_response.message = thread.get_result()
+            self.thread_manager.release(req.thread_id)
+        elif thread.is_failed():
+            resp.code = api_pb2.ResponseCode.FAILED
+            resp.chat_response.message = thread.get_failed_msg()
             self.thread_manager.release(req.thread_id)
         else:
             resp.code = api_pb2.ResponseCode.MESSAGE
             cb = await thread.fetch_msg()
+            print("get cb")
             if cb is None:
                 if thread.is_finished():
-                    resp.code = api_pb2.ResponseCode.SUCCESS
+                    resp.code = api_pb2.ResponseCode.FINISHED
                     resp.chat_response.message = thread.get_result()
+                    self.thread_manager.release(req.thread_id)
+                elif thread.is_failed():
+                    resp.code = api_pb2.ResponseCode.FAILED
+                    resp.chat_response.message = thread.get_failed_msg()
                     self.thread_manager.release(req.thread_id)
                 else:
                     resp.code = api_pb2.ResponseCode.FAILED
                     resp.chat_response.message = "error in fetching message"
             else:
-                print(cb.message)
-                resp.chat_response.message = cb.message()
+                resp.code = cb.type()
+                if cb.type() == api_pb2.ResponseCode.ACTION_REQUIRED:
+                    resp.action_response.CopyFrom(cb.client_response())
+                    logging.info("action required")
+                else:
+                    resp.chat_response.message = cb.message()
+
+    async def __action(self, req: api_pb2.Request, resp: api_pb2.Response):
+        logging.info("received action chat [%s]", req.thread_id)
+        thread = self.thread_manager.get_thread(req.thread_id)
+        if not thread:
+            logging.error("thread not found")
+            resp.code = api_pb2.ResponseCode.FAILED
+            return
+
+        cb = thread.get_callback(req.action_result_request.action_id)
+        if not cb:
+            logging.error("callback not found")
+            resp.code = api_pb2.ResponseCode.FAILED
+            resp.chat_response.message = "callback not found"
+            return
+        cb.callback(msg=req.action_result_request.action_result)
 
     @staticmethod
     def run(thread: Thread):
