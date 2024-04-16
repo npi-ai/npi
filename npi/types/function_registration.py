@@ -21,10 +21,9 @@ class FunctionRegistration:
     ):
         # wrap fn in an async wrapper
         async def func(*args, **kwargs):
-            if asyncio.iscoroutinefunction(fn):
-                res = await fn(*args, **kwargs)
-            else:
-                res = fn(*args, **kwargs)
+            res = fn(*args, **kwargs)
+            if asyncio.iscoroutine(res):
+                return await res
             return res
 
         self.fn = func

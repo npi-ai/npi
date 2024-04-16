@@ -3,11 +3,12 @@ import subprocess
 
 from openai import Client
 from openai.types.chat import ChatCompletionToolChoiceOptionParam
-from playwright.sync_api import sync_playwright, Playwright, Browser, BrowserContext, Page, FileChooser
+from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page, FileChooser
 from typing import Union
 
 from npi.core.app import App
 from npi.core.navigator import Navigator
+from npi.core.thread import Thread
 
 
 # TODO: publish the js package to npm
@@ -25,7 +26,9 @@ class BrowserApp(App):
     browser: Browser
     context: BrowserContext
     page: Page
+    headless: bool
     navigator: Union[Navigator, None] = None
+    started: bool = False
 
     def __init__(
         self,
@@ -52,32 +55,41 @@ class BrowserApp(App):
             headless: Whether to run playwright in headless mode
         """
         super().__init__(name, description, llm, system_role, model, tool_choice)
-
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=headless)
-
-        self.context = self.browser.new_context(locale='en-US')
-        self.context.set_default_timeout(3000)
-        self.context.add_init_script(path=_prepare_browser_utils())
-
-        self.page = self.context.new_page()
-        self.page.on('filechooser', self.on_filechooser)
-        self.page.on('popup', self.on_popup)
+        self.headless = headless
 
         if use_navigator:
             self.navigator = use_navigator if isinstance(use_navigator, Navigator) else Navigator(self)
             self.register(self.navigator)
 
-    def on_filechooser(self, chooser: FileChooser):
+    async def start(self):
+        """Start the Browser App"""
+        if self.started:
+            return
+
+        self.playwright = await async_playwright().start()
+        self.browser = await self.playwright.chromium.launch(headless=self.headless)
+
+        self.context = await self.browser.new_context(locale='en-US')
+        self.context.set_default_timeout(3000)
+        await self.context.add_init_script(path=_prepare_browser_utils())
+        await self.context.add_init_script(script="""window.npi = new window.BrowserUtils()""")
+
+        self.page = await self.context.new_page()
+        self.page.on('filechooser', self.on_filechooser)
+        self.page.on('popup', self.on_popup)
+
+        self.started = True
+
+    async def on_filechooser(self, chooser: FileChooser):
         """
         Callback function invoked when an input:file is clicked
 
         Args:
             chooser: FileChooser instance
         """
-        chooser.set_files('')
+        await chooser.set_files('')
 
-    def on_popup(self, popup: Page):
+    async def on_popup(self, popup: Page):
         """
         Callback function invoked when a tab is opened
 
@@ -86,8 +98,17 @@ class BrowserApp(App):
         """
         self.page = popup
 
-    def dispose(self):
+    async def dispose(self):
         """
         Dispose the browser app
         """
-        self.playwright.stop()
+        await self.playwright.stop()
+
+    async def chat(
+        self,
+        message: str,
+        thread: Thread = None,
+    ) -> str:
+        if not self.started:
+            await self.start()
+        return await super().chat(message, thread)

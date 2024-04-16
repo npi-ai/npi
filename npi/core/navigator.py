@@ -5,7 +5,7 @@ from textwrap import dedent
 from typing import Union, List, Literal, TYPE_CHECKING, Tuple
 
 from openai import AsyncOpenAI
-from playwright.sync_api import ElementHandle
+from playwright.async_api import ElementHandle
 from typing_extensions import NotRequired, TypedDict
 
 from npi.core.app import App
@@ -156,34 +156,21 @@ class Navigator(App):
         self._selector = selector
         self._previous_actions = []
 
-    def _get_page_title(self):
-        return self.browser_app.page.title()
+    async def _get_page_title(self):
+        return await self.browser_app.page.title()
 
-    def _get_screenshot(self):
-        screenshot = self.browser_app.page.screenshot()
+    async def _get_screenshot(self):
+        screenshot = await self.browser_app.page.screenshot()
         return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
 
-    def _init_browser_utils(self):
-        self.browser_app.page.evaluate(
-            """() => {
-                if (!window.npi) {
-                    window.npi = new window.BrowserUtils();
-                }
-            }"""
-        )
+    async def _clear_bboxes(self):
+        await self.browser_app.page.evaluate('() => npi.clearBboxes()')
 
-    def _clear_bboxes(self):
-        self._init_browser_utils()
-        self.browser_app.page.evaluate('() => npi.clearBboxes()')
+    async def _is_scrollable(self):
+        return await self.browser_app.page.evaluate('() => npi.isScrollable()')
 
-    def _is_scrollable(self):
-        self._init_browser_utils()
-        return self.browser_app.page.evaluate('() => npi.isScrollable()')
-
-    def _get_interactive_elements(self, screenshot: str):
-        self._init_browser_utils()
-
-        return self.browser_app.page.evaluate(
+    async def _get_interactive_elements(self, screenshot: str):
+        return await self.browser_app.page.evaluate(
             """async (screenshot) => {
                 const { elementsAsJSON, addedIDs } = await npi.snapshot(screenshot);
                 return [elementsAsJSON, addedIDs];
@@ -191,10 +178,8 @@ class Navigator(App):
             screenshot,
         )
 
-    def _get_element_by_id(self, elem_id: str):
-        self._init_browser_utils()
-
-        handle = self.browser_app.page.evaluate_handle(
+    async def _get_element_by_id(self, elem_id: str):
+        handle = await self.browser_app.page.evaluate_handle(
             'id => npi.getElement(id)',
             elem_id,
         )
@@ -206,32 +191,28 @@ class Navigator(App):
 
         return elem_handle
 
-    def _element_to_json(self, elem: ElementHandle):
-        self._init_browser_utils()
-
-        return self.browser_app.page.evaluate(
+    async def _element_to_json(self, elem: ElementHandle):
+        return await self.browser_app.page.evaluate(
             '(elem) => npi.elementToJSON(elem)',
             elem,
         )
 
-    def _init_observer(self):
-        self._init_browser_utils()
-        self.browser_app.page.evaluate('() => npi.initObserver()')
+    async def _init_observer(self):
+        await self.browser_app.page.evaluate('() => npi.initObserver()')
 
-    def _wait_for_stable(self):
-        self._init_browser_utils()
-        self.browser_app.page.evaluate('() => npi.stable()')
+    async def _wait_for_stable(self):
+        await self.browser_app.page.evaluate('() => npi.stable()')
 
-    def _generate_user_prompt(self, task: str, history: List[Response]):
-        self._clear_bboxes()
-        raw_screenshot = self._get_screenshot()
-        elements, added_ids = self._get_interactive_elements(raw_screenshot)
+    async def _generate_user_prompt(self, task: str, history: List[Response]):
+        await self._clear_bboxes()
+        raw_screenshot = await self._get_screenshot()
+        elements, added_ids = await self._get_interactive_elements(raw_screenshot)
 
         user_prompt: str = dedent(
             f"""
-            Page Title: {self._get_page_title()}
+            Page Title: {await self._get_page_title()}
             Task: {task}
-            Scrollable: {self._is_scrollable()}
+            Scrollable: {await self._is_scrollable()}
             Previous Actions: {json.dumps(history[-10:])}
             Elements: {json.dumps(elements)}
             Newly Added Elements' ID: {json.dumps(added_ids)}
@@ -240,7 +221,7 @@ class Navigator(App):
 
         # print(user_prompt)
 
-        annotated_screenshot = self._get_screenshot()
+        annotated_screenshot = await self._get_screenshot()
 
         return {
             'role': 'user',
@@ -271,7 +252,7 @@ class Navigator(App):
     ) -> str:
         if thread is None:
             thread = Thread('', api_pb2.APP_UNKNOWN)
-            
+
         history: List[Response] = []
 
         while True:
@@ -284,7 +265,7 @@ class Navigator(App):
                 }
             )
 
-            msg.append(self._generate_user_prompt(message, history))
+            msg.append(await self._generate_user_prompt(message, history))
 
             response_str = await self._call_llm(thread, msg)
             msg.set_result(response_str)
@@ -294,7 +275,7 @@ class Navigator(App):
                 # try again if the response can't be parsed correctly
                 continue
 
-            result, elem_json = self._run_action(response['action'])
+            result, elem_json = await self._run_action(response['action'])
 
             if not result:
                 # requires further intervention if the action is not executable
@@ -338,7 +319,7 @@ class Navigator(App):
 
         return response_message.content
 
-    def _run_action(self, action: Action) -> Tuple[Union[str, None], dict]:
+    async def _run_action(self, action: Action) -> Tuple[Union[str, None], dict]:
         """
         Run the given action
 
@@ -349,36 +330,36 @@ class Navigator(App):
             [0]: response message if the action is executable, None otherwise
             [1]: element json
         """
-        self._clear_bboxes()
-        self._init_observer()
+        await self._clear_bboxes()
+        await self._init_observer()
 
-        elem = self._get_element_by_id(action['id']) if 'id' in action else None
-        elem_json = self._element_to_json(elem) if elem else None
+        elem = await self._get_element_by_id(action['id']) if 'id' in action else None
+        elem_json = await self._element_to_json(elem) if elem else None
 
         match action['type']:
             case 'click':
-                result = self._click(elem)
+                result = await self._click(elem)
             case 'enter':
-                result = self._enter(elem)
+                result = await self._enter(elem)
             case 'fill':
-                result = self._fill(elem, action['value'])
+                result = await self._fill(elem, action['value'])
             case 'select':
-                result = self._select(elem, action['value'])
+                result = await self._select(elem, action['value'])
             case 'scroll':
-                result = self._scroll()
+                result = await self._scroll()
             case 'confirmation' | 'human-intervention' | 'done':
                 result = None
             case _:
                 raise Exception(f'{self.name}: Unknown action: {action}')
 
         if elem:
-            elem.dispose()
+            await elem.dispose()
 
-        self._wait_for_stable()
+        await self._wait_for_stable()
 
         return result, elem_json
 
-    def _click(self, elem: ElementHandle):
+    async def _click(self, elem: ElementHandle):
         """
         Click an element on the page
 
@@ -387,16 +368,16 @@ class Navigator(App):
         """
 
         try:
-            elem.click()
+            await elem.click()
         except TimeoutError:
-            self.browser_app.page.evaluate(
+            await self.browser_app.page.evaluate(
                 '(elem) => npi.click(elem)',
                 elem,
             )
 
         return f'Successfully clicked element'
 
-    def _fill(self, elem: ElementHandle, value: str):
+    async def _fill(self, elem: ElementHandle, value: str):
         """
         Fill in an input field on the page
 
@@ -406,16 +387,16 @@ class Navigator(App):
         """
 
         try:
-            elem.fill(value)
+            await elem.fill(value)
         except TimeoutError:
-            self.browser_app.page.evaluate(
+            await self.browser_app.page.evaluate(
                 '([elem, value]) => npi.fill(elem, value)',
                 [elem, value],
             )
 
         return f'Successfully filled value {value} into element'
 
-    def _select(self, elem: ElementHandle, value: str):
+    async def _select(self, elem: ElementHandle, value: str):
         """
         Select an option for a <select> element
 
@@ -425,16 +406,16 @@ class Navigator(App):
         """
 
         try:
-            elem.select_option(value)
+            await elem.select_option(value)
         except TimeoutError:
-            self.browser_app.page.evaluate(
+            await self.browser_app.page.evaluate(
                 '([elem, value]) => npi.select(elem, value)',
                 [elem, value],
             )
 
         return f'Successfully selected value {value} for element'
 
-    def _enter(self, elem: ElementHandle):
+    async def _enter(self, elem: ElementHandle):
         """
         Press Enter on an input field. This action usually submits a form.
 
@@ -443,21 +424,21 @@ class Navigator(App):
         """
 
         try:
-            elem.press('Enter')
+            await elem.press('Enter')
         except TimeoutError:
-            self.browser_app.page.evaluate(
+            await self.browser_app.page.evaluate(
                 '(elem) => npi.enter(elem)',
                 elem,
             )
 
         return f'Successfully pressed Enter on element'
 
-    def _scroll(self):
+    async def _scroll(self):
         """
         Scroll the page down to reveal more contents
         """
 
-        self.browser_app.page.evaluate('() => npi.scrollPageDown()')
-        self.browser_app.page.wait_for_timeout(300)
+        await self.browser_app.page.evaluate('() => npi.scrollPageDown()')
+        await self.browser_app.page.wait_for_timeout(300)
 
         return f'Successfully scrolled down to reveal more contents'
