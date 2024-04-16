@@ -11,7 +11,7 @@ class Callable:
 
     __id: str
     __type: api_pb2.ResponseCode = api_pb2.ResponseCode.MESSAGE
-    __callback_result: str = ''
+    __future: asyncio.Future
 
     def __init__(self, msg: str = None, action: api_pb2.ActionResponse = None):
         self.msg = msg
@@ -20,6 +20,7 @@ class Callable:
         if action:
             self.__type = api_pb2.ResponseCode.ACTION_REQUIRED
         self.__id = str(uuid.uuid4())
+        self.__future = asyncio.get_event_loop().create_future()
 
     def id(self):
         return self.__id
@@ -38,10 +39,7 @@ class Callable:
         return self.msg
 
     def callback(self, msg: str):
-        self.__callback_result = msg
-        self.called = True
+        self.__future.set_result(msg)
 
     async def wait(self) -> str:
-        while not self.called:
-            await asyncio.sleep(0.001)
-        return self.__callback_result
+        return await self.__future
