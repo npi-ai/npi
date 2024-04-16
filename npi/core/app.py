@@ -1,6 +1,5 @@
 """The basic interface for the natural language programming interface"""
 import json
-import logging
 import inspect
 import functools
 import traceback
@@ -19,9 +18,8 @@ from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core import callback
 from npi.core.thread import Thread, ThreadMessage
 from npi.constants.openai import Role
+from npi.utils import logger
 from proto.python.api import api_pb2
-
-logger = logging.getLogger()
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
@@ -199,7 +197,7 @@ class App:
         """
         if thread is None:
             thread = Thread('', api_pb2.APP_UNKNOWN)
-        
+
         msg = thread.fork(message)
         if self.system_role:
             msg.append(
@@ -300,7 +298,7 @@ class App:
                 args = json.loads(tool_call.function.arguments)
                 call_msg = f'Calling {fn_name}({args})'
                 await thread.send_msg(callback.Callable(call_msg))
-                logging.info(call_msg)
+                logger.info(call_msg)
                 try:
                     if fn_reg.Params is not None:
                         res = await fn_reg.fn(

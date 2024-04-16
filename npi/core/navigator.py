@@ -10,6 +10,7 @@ from typing_extensions import NotRequired, TypedDict
 
 from npi.core.app import App
 from npi.core.thread import Thread, ThreadMessage
+from npi.utils import logger
 from proto.python.api import api_pb2
 
 if TYPE_CHECKING:
@@ -313,7 +314,7 @@ class Navigator(App):
             thread.failed(err_msg)
             raise Exception(err_msg)
 
-        print(response_message.content + '\n')
+        logger.debug(response_message.content + '\n')
 
         thread.finish(response_message.content)
 
