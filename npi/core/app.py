@@ -17,7 +17,7 @@ from openai.types.chat import (
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core import callback
-from npi.core.context import Thread, ThreadMessage
+from npi.core.thread import Thread, ThreadMessage
 from npi.constants.openai import Role
 
 logger = logging.getLogger()
@@ -182,7 +182,7 @@ class App:
         self,
         message: str,
         thread: Thread,
-    ) -> str:
+    ) -> None:
         """
         The chat function for the app
 
@@ -211,7 +211,7 @@ class App:
                 role=Role.USER.value,
             )
         )
-        return await self._call_llm(parent_ctx=thread, context=msg)
+        await self._call_llm(parent_ctx=thread, context=msg)
 
     def as_tool(self, thread: Thread = None) -> FunctionRegistration:
         """
@@ -259,7 +259,7 @@ class App:
 
     # def _call_llm(self, context: ThreadMessage) -> str:
 
-    async def _call_llm(self, parent_ctx: Thread, context: ThreadMessage):
+    async def _call_llm(self, parent_ctx: Thread, context: ThreadMessage) -> None:
 
         """
         Call llm with the given prompts
@@ -296,7 +296,6 @@ class App:
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 call_msg = f'Calling {fn_name}({args})\n'
-                print(call_msg)
                 await parent_ctx.send_msg(callback.Callable(call_msg))
                 try:
                     if fn_reg.Params is not None:
@@ -322,5 +321,4 @@ class App:
                 )
                 self.on_round_end(context)
 
-        await parent_ctx.send_msg(callback.Callable("done"))
-        return response_message.content
+        parent_ctx.finish(response_message.content)

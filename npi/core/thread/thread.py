@@ -2,7 +2,6 @@
 import datetime
 import uuid
 import json
-import queue
 import asyncio
 from typing import List, Union
 
@@ -12,6 +11,8 @@ from openai.types.chat import (
 )
 
 from npi.core import callback
+
+from proto.python.api import api_pb2
 
 
 class ThreadMessage:
@@ -77,27 +78,59 @@ class ThreadMessage:
 
 
 class Thread:
-    """the abstraction of history management """
+    """the abstraction of chat context """
     agent_id: str
     id: str
     history: List[ThreadMessage | str]
     born_at: datetime.date
     q: asyncio.Queue[callback.Callable]
+    instruction: str
+    app_type: api_pb2.AppType
 
-    def __init__(self) -> None:
+    __is_finished = False
+    __result: str = ''
+
+    def __init__(self, instruction: str, app_type: api_pb2.AppType) -> None:
         self.agent_id = 'default'
         self.id = str(uuid.uuid4())
         self.born_at = datetime.datetime.now()
         self.history = []
         self.q = asyncio.Queue()
-
-    async def receive_msg(self) -> callback.Callable:
-        """receive a message"""
-        item = await self.q.get()
-        return item
+        self.instruction = instruction
+        self.app_type = app_type
 
     async def send_msg(self, cb: callback.Callable) -> None:
         await self.q.put(cb)
+
+    async def fetch_msg(self) -> callback.Callable:
+        """receive a message"""
+        while True:
+            try:
+                item = self.q.get_nowait()
+                if item:
+                    return item
+            except asyncio.QueueEmpty:
+                if not self.is_finished():
+                    await asyncio.sleep(0.01)
+                else:
+                    return None
+
+    def callback(self, msg: str):
+        pass
+
+    def finish(self, msg: str):
+        self.__result = msg
+        self.__is_finished = True
+        self.q.task_done()
+
+    def failed(self, msg: str):
+        pass
+
+    def is_finished(self) -> bool:
+        return self.__is_finished
+
+    def get_result(self) -> str:
+        return self.__result
 
     def ask(self, msg: str) -> str:
         """retrieve the message from the thread"""
@@ -126,25 +159,3 @@ class Thread:
                 msgs.append(msg)
 
         return json.dumps(msgs)
-
-
-class ThreadManager():
-    """the manager of the thread"""
-    threads: dict
-
-    def __init__(self):
-        self.threads = {}
-
-    def new_thread(self) -> Thread:
-        """create a thread"""
-        th = Thread()
-        self.threads[th.id] = th
-        return th
-
-    def get_thread(self, tid: str) -> Thread:
-        """get a thread by id"""
-        return self.threads.get(tid)
-
-    def delete_thread(self, tid: str) -> None:
-        """delete a thread by id"""
-        del self.threads[tid]

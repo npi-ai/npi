@@ -1,18 +1,20 @@
-import threading
 import logging
 import asyncio
 
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable
 
 import grpc
 
 from proto.python.api import api_pb2_grpc, api_pb2
+from npi.core.thread import ThreadManager, Thread
 from npi.app import google
-from npi.core.context import Thread
 
 
 class Chat(api_pb2_grpc.ChatServerServicer):
+    thread_manager: ThreadManager
+
+    def __init__(self):
+        self.thread_manager = ThreadManager()
 
     async def Chat(
             self,
@@ -21,26 +23,59 @@ class Chat(api_pb2_grpc.ChatServerServicer):
     ) -> api_pb2.Response:
         logging.info("received a request, code:[%s], ", request.code)
         response = api_pb2.Response()
-        response.request_id = request.request_id
         if request.code == api_pb2.RequestCode.CHAT:
-            result = await self.__chat(request.chat_request, Thread())
-            response.code = api_pb2.ResponseCode.SUCCESS
-            print("result -> ", result)
-            response.chat_response.CopyFrom(api_pb2.ChatResponse(message=result))
+            try:
+                thread = self.thread_manager.new_thread(request.chat_request)
+                response.thread_id = thread.id
+                response.code = api_pb2.ResponseCode.MESSAGE
+                Chat.run(thread)
+            except Exception as e:
+                logging.error("error in chat: %s", e)
+                response.code = api_pb2.ResponseCode.ERROR
         elif request.code == api_pb2.RequestCode.FETCH:
-            pass
+            await self.__fetch_thread(request, response)
+            response.thread_id = request.thread_id
         elif request.code == api_pb2.RequestCode.ACTION_RESULT:
             pass
         else:
             raise RuntimeError("Unknown request")
+        response.request_id = request.request_id
         return response
 
-    async def __chat(self, req: api_pb2.ChatRequest, thread: Thread):
-        logging.info("chatting with [%s]", req.instruction)
-        if req.app_type == api_pb2.AppType.GOOGLE_CALENDAR:
-            gc = google.GoogleCalendar()
-            return await gc.chat(req.instruction, thread)
+    async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
+        logging.info("fetching chat [%s]", req.thread_id)
+        thread = self.thread_manager.get_thread(req.thread_id)
+        if not thread:
+            logging.error("thread not found")
+            resp.code = api_pb2.ResponseCode.ERROR
+            return
 
+        if thread.is_finished():
+            resp.code = api_pb2.ResponseCode.SUCCESS
+            resp.chat_response.message = thread.get_result()
+            self.thread_manager.release(req.thread_id)
+        else:
+            resp.code = api_pb2.ResponseCode.MESSAGE
+            cb = await thread.fetch_msg()
+            if cb is None:
+                if thread.is_finished():
+                    resp.code = api_pb2.ResponseCode.SUCCESS
+                    resp.chat_response.message = thread.get_result()
+                    self.thread_manager.release(req.thread_id)
+                else:
+                    resp.code = api_pb2.ResponseCode.FAILED
+                    resp.chat_response.message = "error in fetching message"
+            else:
+                print(cb.message)
+                resp.chat_response.message = cb.message()
+
+    @staticmethod
+    def run(thread: Thread):
+        if thread.app_type == api_pb2.GOOGLE_CALENDAR:
+            gc = google.GoogleCalendar()
+            asyncio.create_task(gc.chat(thread.instruction, thread))
+        else:
+            raise Exception("unsupported application")
 
 
 _cleanup_coroutines = []
@@ -73,23 +108,6 @@ def main():
         loop.run_until_complete(*_cleanup_coroutines)
         loop.close()
 
-
-async def test0():
-    gc = google.GoogleCalendar()
-    thread = Thread()
-    tasks = [listen(thread), gc.chat("is ww@lifecycle.sh available tomorrow", thread)]
-    await asyncio.gather(*tasks)
-
-
-async def listen(thread: Thread):
-    while True:
-        try:
-            cb = await thread.receive_msg()
-            print("cb -> ", cb.message())
-            if cb.message() == "done":
-                break
-        except asyncio.QueueEmpty:  # Replace with the specific exception if different
-            await asyncio.sleep(1)
 
 if __name__ == "__main__":
     main()
