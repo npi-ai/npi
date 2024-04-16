@@ -1,4 +1,3 @@
-import logging
 import asyncio
 import traceback
 
@@ -9,6 +8,7 @@ import grpc
 from proto.python.api import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
 from npi.app import google
+from npi.utils import logger
 
 
 class Chat(api_pb2_grpc.ChatServerServicer):
@@ -18,11 +18,11 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         self.thread_manager = ThreadManager()
 
     async def Chat(
-            self,
-            request: api_pb2.Request,
-            context: grpc.ServicerContext,
+        self,
+        request: api_pb2.Request,
+        context: grpc.ServicerContext,
     ) -> api_pb2.Response:
-        logging.info("received a request, code:[%s], id: [%s]", request.code, request.request_id)
+        logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
         if request.code == api_pb2.RequestCode.CHAT:
             try:
@@ -48,10 +48,10 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         return response
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
-        logging.info("fetching chat [%s]", req.thread_id)
+        logger.info(f"fetching chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)
         if not thread:
-            logging.error("thread not found")
+            logger.error("thread not found")
             resp.code = api_pb2.ResponseCode.FAILED
             return
 
@@ -83,21 +83,21 @@ class Chat(api_pb2_grpc.ChatServerServicer):
                 resp.code = cb.type()
                 if cb.type() == api_pb2.ResponseCode.ACTION_REQUIRED:
                     resp.action_response.CopyFrom(cb.client_response())
-                    logging.info("action required")
+                    logger.info("action required")
                 else:
                     resp.chat_response.message = cb.message()
 
     async def __action(self, req: api_pb2.Request, resp: api_pb2.Response):
-        logging.info("received action chat [%s]", req.thread_id)
+        logger.info(f"received action chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)
         if not thread:
-            logging.error("thread not found")
+            logger.error("thread not found")
             resp.code = api_pb2.ResponseCode.FAILED
             return
 
         cb = thread.get_callback(req.action_result_request.action_id)
         if not cb:
-            logging.error("callback not found")
+            logger.error("callback not found")
             resp.code = api_pb2.ResponseCode.FAILED
             resp.chat_response.message = "callback not found"
             return
@@ -120,10 +120,10 @@ async def serve(address: str) -> None:
     api_pb2_grpc.add_ChatServerServicer_to_server(Chat(), server)
     server.add_insecure_port(address)
     await server.start()
-    logging.info("Server serving at %s", address)
+    logger.info(f"Server serving at {address}")
 
     async def server_graceful_shutdown():
-        logging.info("Starting graceful shutdown...")
+        logger.info("Starting graceful shutdown...")
         # Shuts down the server with 5 seconds of grace period. During the
         # grace period, the server won't accept new connections and allow
         # existing RPCs to continue within the grace period.
@@ -134,7 +134,6 @@ async def serve(address: str) -> None:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(serve("[::]:9140"))
