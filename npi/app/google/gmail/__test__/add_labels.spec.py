@@ -1,6 +1,13 @@
+import asyncio
+
 from npi.app.google.gmail import Gmail
 
-if __name__ == '__main__':
+
+async def main():
     gmail = Gmail()
-    res = gmail.chat('Add label "TEST" to the latest email from daofeng.wu@emory.edu')
+    return await gmail.chat('Add label "TEST" to the latest email from daofeng.wu@emory.edu')
+
+
+if __name__ == '__main__':
+    res = asyncio.run(main())
     print(res)
