@@ -1,7 +1,7 @@
 import json
 import time
 from markdown import markdown
-from openai import OpenAI
+from openai import AsyncOpenAI
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
 from npi.core.app import App, npi_tool
@@ -17,7 +17,7 @@ class Gmail(App):
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
-            llm=llm or OpenAI(),
+            llm=llm or AsyncOpenAI(),
         )
 
         self.gmail_client = GmailExtended(client_secret_file='./credentials.json')

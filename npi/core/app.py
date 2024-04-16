@@ -7,7 +7,7 @@ import traceback
 from typing import Dict, List, Optional, Union, Type
 
 from pydantic import Field
-from openai import Client
+from openai import AsyncClient
 from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
@@ -19,6 +19,7 @@ from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core import callback
 from npi.core.thread import Thread, ThreadMessage
 from npi.constants.openai import Role
+from proto.python.api import api_pb2
 
 logger = logging.getLogger()
 
@@ -28,7 +29,6 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 def npi_tool(
     tool_fn: ToolFunction = None,
     description: Optional[str] = None,
-    has_context: bool = False,
     Params: Optional[Type[Parameters]] = None
 ):
     """
@@ -37,7 +37,6 @@ def npi_tool(
     Args:
         tool_fn: Tool function. This value will be set automatically.
         description: Tool description. This value will be inferred from the tool's docstring if not given.
-        has_context: if this function needs thread context.
         Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
 
     Returns:
@@ -45,8 +44,11 @@ def npi_tool(
     """
 
     def decorator(fn: ToolFunction):
-        setattr(fn, __NPI_TOOL_ATTR__, {
-                'description': description, 'has_context': has_context, 'Params': Params})
+        setattr(
+            fn, __NPI_TOOL_ATTR__, {
+                'description': description, 'Params': Params
+            }
+        )
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -105,7 +107,6 @@ def _register_tools(app: 'App'):
         app.register(
             FunctionRegistration(
                 fn=fn,
-                has_context=tool_props['has_context'],
                 description=description,
                 Params=ParamsClass
             )
@@ -123,7 +124,7 @@ class App:
     tools: List[ChatCompletionToolParam]
     fn_map: Dict[str, FunctionRegistration]
 
-    llm: Client
+    llm: AsyncClient
     default_model: str
     tool_choice: ChatCompletionToolChoiceOptionParam
     name: str
@@ -134,7 +135,7 @@ class App:
         self,
         name: str,
         description: str,
-        llm: Client = None,
+        llm: AsyncClient = None,
         system_role: str = None,
         model: str = "gpt-4-turbo-preview",
         tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
@@ -184,8 +185,8 @@ class App:
     async def chat(
         self,
         message: str,
-        thread: Thread,
-    ) -> None:
+        thread: Thread = None,
+    ) -> str:
         """
         The chat function for the app
 
@@ -197,8 +198,8 @@ class App:
             The last chat message
         """
         if thread is None:
-            thread = Thread()
-
+            thread = Thread('', api_pb2.APP_UNKNOWN)
+        
         msg = thread.fork(message)
         if self.system_role:
             msg.append(
@@ -214,9 +215,10 @@ class App:
                 role=Role.USER.value,
             )
         )
-        await self._call_llm(parent_ctx=thread, context=msg)
 
-    def as_tool(self, thread: Thread = None) -> FunctionRegistration:
+        return await self._call_llm(thread, msg)
+
+    def as_tool(self) -> FunctionRegistration:
         """
         Wrap the chat function of this app to FunctionRegistration
 
@@ -229,9 +231,8 @@ class App:
                 description=f'The task you want {self.name} to do'
             )
 
-        def app_chat(params: ChatParameters) -> str:
-            nonlocal thread
-            return self.chat(params.task, thread)
+        async def app_chat(params: ChatParameters) -> str:
+            return await self.chat(params.task, params.get_thread())
 
         return FunctionRegistration(
             fn=app_chat,
@@ -240,50 +241,49 @@ class App:
             description=self.description,
         )
 
-    def on_round_end(self, context: ThreadMessage) -> None:
+    def on_round_end(self, message: ThreadMessage) -> None:
         """
         Callback function called at the end of a round
         Args:
-            context: the thread message
+            message: the thread message
         """
         pass
 
-    def process_history(self, context: ThreadMessage) -> List[ChatCompletionMessageParam]:
+    def process_history(self, message: ThreadMessage) -> List[ChatCompletionMessageParam]:
         """
         Process history messages and return them as a list of ChatCompletionMessageParams
 
         Args:
-            context: the thread message
+            message: the thread message
 
         Returns:
             A list of ChatCompletionMessageParams
         """
-        return context.raw()
+        return message.raw()
 
-    # def _call_llm(self, context: ThreadMessage) -> str:
-
-    async def _call_llm(self, parent_ctx: Thread, context: ThreadMessage) -> None:
-
+    async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         """
         Call llm with the given prompts
 
         Args:
-            context: ThreadMessage context
+            thread: the thread to call the llm with
+            message: ThreadMessage context
 
         Returns:
             final response message
         """
         while True:
+            # TODO: stream response
             response = await self.llm.chat.completions.create(
                 model=self.default_model,
-                messages=self.process_history(context),
+                messages=self.process_history(message),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
                 max_tokens=4096,
             )
             response_message = response.choices[0].message
 
-            context.append(response_message)
+            message.append(response_message)
 
             if response_message.content:
                 print(response_message.content + '\n')
@@ -299,26 +299,27 @@ class App:
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 call_msg = f'Calling {fn_name}({args})'
-                await parent_ctx.send_msg(callback.Callable(call_msg))
+                await thread.send_msg(callback.Callable(call_msg))
                 logging.info(call_msg)
                 try:
                     if fn_reg.Params is not None:
-                        res = fn_reg.fn(
+                        res = await fn_reg.fn(
                             params=fn_reg.Params(
-                                _messages=context.raw(), _ctx=parent_ctx, **args
+                                _thread=thread,
+                                _message=message,
+                                **args,
                             )
                         )
-                        if inspect.iscoroutine(res):
-                            res = await res
                     else:
-                        res = fn_reg.fn()
+                        res = await fn_reg.fn()
                 except Exception as err:
                     err_msg = ''.join(traceback.format_exception(err))
                     print(err_msg)
-                    parent_ctx.failed(err_msg)
-                    return
+                    thread.failed(err_msg)
 
-                context.append(
+                    return response_message.content
+
+                message.append(
                     {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -326,6 +327,8 @@ class App:
                         "content": res,
                     }
                 )
-                self.on_round_end(context)
+                self.on_round_end(message)
 
-        parent_ctx.finish(response_message.content)
+        thread.finish(response_message.content)
+
+        return response_message.content

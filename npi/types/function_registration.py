@@ -1,8 +1,9 @@
-from typing import Callable, Type, Optional
+from typing import Callable, Type, Optional, Awaitable
 import re
+import asyncio
 from npi.types.parameters import Parameters
 
-ToolFunction = Callable[[Parameters], str | None]
+ToolFunction = Callable[[Parameters], str | None | Awaitable[str | None]]
 
 
 class FunctionRegistration:
@@ -10,20 +11,25 @@ class FunctionRegistration:
     description: str
     name: str
     Params: Optional[Type[Parameters]] = None
-    has_context: bool = False
 
     def __init__(
         self,
         fn: ToolFunction,
         description: str,
         name: str = None,
-        has_context: bool = False,
         Params: Type[Parameters] = None,
     ):
-        self.fn = fn
+        # wrap fn in an async wrapper
+        async def func(*args, **kwargs):
+            if asyncio.iscoroutinefunction(fn):
+                res = await fn(*args, **kwargs)
+            else:
+                res = fn(*args, **kwargs)
+            return res
+
+        self.fn = func
         self.description = description
         self.Params = Params
-        self.has_context = has_context
 
         if name is None:
             # remove the leading and trailing underscores from the function name
