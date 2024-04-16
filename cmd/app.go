@@ -90,7 +90,6 @@ func doRequest(app api.AppType, instruction string) {
 			fallthrough
 		case api.ResponseCode_SUCCESS:
 			rid := uuid.New().String()
-			println(rid)
 			resp, err = cli.Chat(context.Background(), &api.Request{
 				Code:      api.RequestCode_FETCH,
 				RequestId: rid,

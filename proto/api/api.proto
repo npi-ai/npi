@@ -3,13 +3,12 @@ syntax = "proto3";
 package npi.core.api;
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/npi-ai/npi/server";
 
-service ChatServer {
+service AppServer {
   rpc Chat(Request) returns (Response);
+  rpc GetAppSchema(AppSchemaRequest) returns (AppSchemaResponse);
 }
 
 enum RequestCode {
@@ -38,6 +37,15 @@ enum AppType {
   SLACK = 4;
   DISCORD = 5;
   TWITTER = 6;
+}
+
+message AppSchemaRequest {
+  AppType type = 1;
+}
+
+message AppSchemaResponse {
+  string schema = 1;
+  string description = 2;
 }
 
 message ChatRequest {

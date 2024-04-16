@@ -3,7 +3,6 @@
 import os.path
 import json
 import datetime
-from typing import List
 
 from openai import AsyncOpenAI
 from google.auth.transport.requests import Request
@@ -12,8 +11,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from npi.core import App, npi_tool, callback, thread
-from npi.types import FunctionRegistration
+from npi.core import App, npi_tool, callback
 
 from npi.app.google.calendar.schema import *
 
@@ -36,8 +34,10 @@ class GoogleCalendar(App):
     def __init__(self, llm=None):
         super().__init__(
             name='google_calendar',
-            description='a function that can invoke natural language(English only) instruction to interact with Google Calendar, such as create the event, retrieve the events',
-            system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting the best function based the tool list.',
+            description='a function that can invoke natural language(English only) instruction to interact with '
+                        'Google Calendar, such as create the event, retrieve the events',
+            system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
+                        'the best function based the tool list.',
             llm=llm,
         )
 

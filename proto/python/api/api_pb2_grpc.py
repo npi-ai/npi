@@ -5,7 +5,7 @@ import grpc
 from . import api_pb2 as api_dot_api__pb2
 
 
-class ChatServerStub(object):
+class AppServerStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,13 +15,18 @@ class ChatServerStub(object):
             channel: A grpc.Channel.
         """
         self.Chat = channel.unary_unary(
-                '/npi.core.api.ChatServer/Chat',
+                '/npi.core.api.AppServer/Chat',
                 request_serializer=api_dot_api__pb2.Request.SerializeToString,
                 response_deserializer=api_dot_api__pb2.Response.FromString,
                 )
+        self.GetAppSchema = channel.unary_unary(
+                '/npi.core.api.AppServer/GetAppSchema',
+                request_serializer=api_dot_api__pb2.AppSchemaRequest.SerializeToString,
+                response_deserializer=api_dot_api__pb2.AppSchemaResponse.FromString,
+                )
 
 
-class ChatServerServicer(object):
+class AppServerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Chat(self, request, context):
@@ -30,22 +35,33 @@ class ChatServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetAppSchema(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
-def add_ChatServerServicer_to_server(servicer, server):
+
+def add_AppServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Chat': grpc.unary_unary_rpc_method_handler(
                     servicer.Chat,
                     request_deserializer=api_dot_api__pb2.Request.FromString,
                     response_serializer=api_dot_api__pb2.Response.SerializeToString,
             ),
+            'GetAppSchema': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAppSchema,
+                    request_deserializer=api_dot_api__pb2.AppSchemaRequest.FromString,
+                    response_serializer=api_dot_api__pb2.AppSchemaResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'npi.core.api.ChatServer', rpc_method_handlers)
+            'npi.core.api.AppServer', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class ChatServer(object):
+class AppServer(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -59,8 +75,25 @@ class ChatServer(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/npi.core.api.ChatServer/Chat',
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/Chat',
             api_dot_api__pb2.Request.SerializeToString,
             api_dot_api__pb2.Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetAppSchema(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/GetAppSchema',
+            api_dot_api__pb2.AppSchemaRequest.SerializeToString,
+            api_dot_api__pb2.AppSchemaResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -33,5 +33,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 server = "npi.server.app:main"
-server-test = "npi.server.app:test"
 negotiator = "examples.calendar_negotiator.main:main"

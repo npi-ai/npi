@@ -1,4 +1,5 @@
 import asyncio
+import json
 import traceback
 
 from concurrent.futures import ThreadPoolExecutor
@@ -11,7 +12,7 @@ from npi.app import google
 from npi.utils import logger
 
 
-class Chat(api_pb2_grpc.ChatServerServicer):
+class Chat(api_pb2_grpc.AppServerServicer):
     thread_manager: ThreadManager
 
     def __init__(self):
@@ -20,7 +21,7 @@ class Chat(api_pb2_grpc.ChatServerServicer):
     async def Chat(
         self,
         request: api_pb2.Request,
-        context: grpc.ServicerContext,
+        _: grpc.ServicerContext,
     ) -> api_pb2.Response:
         logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
@@ -47,6 +48,39 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         response.request_id = request.request_id
         return response
 
+    async def GetAppSchema(
+        self,
+        request: api_pb2.AppSchemaRequest,
+        _: grpc.ServicerContext,) -> api_pb2.AppSchemaResponse:
+        app = None
+        if request.type == api_pb2.GOOGLE_CALENDAR:
+            app = google.GoogleCalendar()
+        elif request.type == api_pb2.GOOGLE_GMAIL:
+            app = google.Gmail()
+        response = api_pb2.AppSchemaResponse()
+        response.description = app.description
+        schema = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "chat",
+                    "description": f"{ app.description }",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "type": "string",
+                                "description": f"the task you want to do with tool { app.name }",
+                            },
+                        },
+                        "required": ["message"],
+                    },
+                },
+            }
+        ]
+        response.schema = json.dumps(schema)
+        return response
+
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)
@@ -66,7 +100,6 @@ class Chat(api_pb2_grpc.ChatServerServicer):
         else:
             resp.code = api_pb2.ResponseCode.MESSAGE
             cb = await thread.fetch_msg()
-            print("get cb")
             if cb is None:
                 if thread.is_finished():
                     resp.code = api_pb2.ResponseCode.FINISHED
@@ -117,7 +150,7 @@ _cleanup_coroutines = []
 
 async def serve(address: str) -> None:
     server = grpc.aio.server(ThreadPoolExecutor())
-    api_pb2_grpc.add_ChatServerServicer_to_server(Chat(), server)
+    api_pb2_grpc.add_AppServerServicer_to_server(Chat(), server)
     server.add_insecure_port(address)
     await server.start()
     logger.info(f"Server serving at {address}")
