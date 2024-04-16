@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam
 from typing import List
 
+from npi.core.thread import Thread
+
 
 class Parameters(BaseModel):
     """
@@ -11,10 +13,12 @@ class Parameters(BaseModel):
               _messages: llm messages so far
     """
     _messages: List[ChatCompletionMessageParam]
+    _ctx: Thread
 
-    def __init__(self, _messages: List[ChatCompletionMessageParam], **args):
+    def __init__(self, _messages: List[ChatCompletionMessageParam], _ctx: Thread = None, **args):
         super().__init__(**args)
         self._prompt = _messages
+        self._ctx = _ctx
 
     # remove "title" property from pydantic json schema
     @classmethod

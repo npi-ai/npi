@@ -12,7 +12,7 @@ class ThreadManager:
 
     def new_thread(self, req: api_pb2.ChatRequest) -> Thread:
         """create a thread"""
-        th = Thread(app_type=req.app_type, instruction=req.instruction)
+        th = Thread(app_type=req.type, instruction=req.instruction)
         self.threads[th.id] = th
         return th
 

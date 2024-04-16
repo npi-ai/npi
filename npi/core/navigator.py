@@ -9,7 +9,7 @@ from playwright.sync_api import ElementHandle
 from typing_extensions import NotRequired, TypedDict
 
 from npi.core.app import App
-from npi.core.context import Thread, ThreadMessage
+from npi.core.thread import Thread, ThreadMessage
 
 if TYPE_CHECKING:
     from npi.core.browser_app import BrowserApp

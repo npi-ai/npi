@@ -28,6 +28,7 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 def npi_tool(
     tool_fn: ToolFunction = None,
     description: Optional[str] = None,
+    has_context: bool = False,
     Params: Optional[Type[Parameters]] = None
 ):
     """
@@ -36,6 +37,7 @@ def npi_tool(
     Args:
         tool_fn: Tool function. This value will be set automatically.
         description: Tool description. This value will be inferred from the tool's docstring if not given.
+        has_context: if this function needs thread context.
         Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
 
     Returns:
@@ -44,7 +46,7 @@ def npi_tool(
 
     def decorator(fn: ToolFunction):
         setattr(fn, __NPI_TOOL_ATTR__, {
-                'description': description, 'Params': Params})
+                'description': description, 'has_context': has_context, 'Params': Params})
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -103,6 +105,7 @@ def _register_tools(app: 'App'):
         app.register(
             FunctionRegistration(
                 fn=fn,
+                has_context=tool_props['has_context'],
                 description=description,
                 Params=ParamsClass
             )
@@ -295,21 +298,25 @@ class App:
                 fn_name = tool_call.function.name
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
-                call_msg = f'Calling {fn_name}({args})\n'
+                call_msg = f'Calling {fn_name}({args})'
                 await parent_ctx.send_msg(callback.Callable(call_msg))
+                logging.info(call_msg)
                 try:
                     if fn_reg.Params is not None:
                         res = fn_reg.fn(
-                            fn_reg.Params(
-                                _messages=context.raw(), **args
+                            params=fn_reg.Params(
+                                _messages=context.raw(), _ctx=parent_ctx, **args
                             )
                         )
+                        if inspect.iscoroutine(res):
+                            res = await res
                     else:
                         res = fn_reg.fn()
                 except Exception as err:
                     err_msg = ''.join(traceback.format_exception(err))
                     print(err_msg)
-                    res = err_msg
+                    parent_ctx.failed(err_msg)
+                    return
 
                 context.append(
                     {

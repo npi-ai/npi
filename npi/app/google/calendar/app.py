@@ -12,10 +12,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from npi.core import App, npi_tool
+from npi.core import App, npi_tool, callback, thread
 from npi.types import FunctionRegistration
 
 from npi.app.google.calendar.schema import *
+
+from proto.python.api import api_pb2
 
 
 # https://developers.google.com/calendar/quickstart/python
@@ -70,6 +72,14 @@ class GoogleCalendar(App):
             FunctionRegistration(
                 fn=self.__get_timezone,
                 description='Get the user\'s timezone'
+            ),
+            FunctionRegistration(
+                has_context=True,
+                fn=self.__get_user_email,
+                Params=GetUserEmailParameters,
+                description='Get the user\'s email address. If context isn\'t provided, please don\'t guess the '
+                            'user\'s email address instead of using this function request user to provide correct '
+                            'email.'
             )
         ]
 
@@ -111,10 +121,28 @@ class GoogleCalendar(App):
 
         return res.get('timeZone')
 
+    @npi_tool(has_context=True)
+    async def __get_user_email(self, params: GetUserEmailParameters):
+        """Get the user's email address"""
+
+        cb = callback.Callable(
+            action=api_pb2.ActionResponse(
+                type=api_pb2.ActionType.HUMAN_FEEDBACK,
+                human_feedback=api_pb2.HumanFeedbackAction(
+                    type=api_pb2.HumanFeedbackActionType.INPUT,
+                    notice=params.message,
+                )
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await params._ctx.send_msg(cb=cb)
+        print('waiting for email')
+        return await cb.wait()
+
     @npi_tool
     def __retrieve_events(self, params: RetrieveEventsParameters) -> str:
         """Retrieve events from Google Calendar"""
-        calendar_id = 'primary'
+        calendar_id = params.calendar_id
         time_min = params.time_min
         time_max = params.time_max
         max_result = 10

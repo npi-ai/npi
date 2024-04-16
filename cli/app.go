@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 	api "github.com/npi-ai/npi/proto/go/api"
@@ -65,7 +67,7 @@ func doRequest(app api.AppType, instruction string) {
 		RequestId: uuid.New().String(),
 		Request: &api.Request_ChatRequest{
 			ChatRequest: &api.ChatRequest{
-				AppType:     app,
+				Type:        app,
 				Instruction: instruction,
 			},
 		},
@@ -75,7 +77,7 @@ func doRequest(app api.AppType, instruction string) {
 	}
 	for {
 		switch resp.GetCode() {
-		case api.ResponseCode_SUCCESS:
+		case api.ResponseCode_FINISHED:
 			color.Green("Answer: %s", resp.GetChatResponse().GetMessage())
 			return
 		case api.ResponseCode_FAILED:
@@ -85,13 +87,17 @@ func doRequest(app api.AppType, instruction string) {
 			if resp.GetChatResponse().GetMessage() != "" {
 				color.Yellow("Message: %s", resp.GetChatResponse().GetMessage())
 			}
+			fallthrough
+		case api.ResponseCode_SUCCESS:
+			rid := uuid.New().String()
+			println(rid)
 			resp, err = cli.Chat(context.Background(), &api.Request{
 				Code:      api.RequestCode_FETCH,
-				RequestId: uuid.New().String(),
+				RequestId: rid,
 				ThreadId:  resp.ThreadId,
 				Request: &api.Request_ChatRequest{
 					ChatRequest: &api.ChatRequest{
-						AppType:     app,
+						Type:        app,
 						Instruction: instruction,
 					},
 				},
@@ -99,10 +105,35 @@ func doRequest(app api.AppType, instruction string) {
 			if err != nil {
 				handleError(app, err)
 			}
-		//case api.SAFEGUARD:
-		case api.ResponseCode_HUMAN_FEEDBACK:
-		case api.ResponseCode_CLIENT_ACTION:
-
+		case api.ResponseCode_ACTION_REQUIRED:
+			ar := resp.GetActionResponse()
+			switch ar.GetType() {
+			case api.ActionType_HUMAN_FEEDBACK:
+				fb := ar.GetHumanFeedback()
+				arr := &api.ActionResultRequest{
+					ActionId: ar.GetActionId(),
+				}
+				switch fb.GetType() {
+				case api.HumanFeedbackActionType_INPUT:
+					reader := bufio.NewReader(os.Stdin)
+					fmt.Printf("Action Required: %s\n", fb.GetNotice())
+					arr.ActionResult, _ = reader.ReadString('\n')
+				}
+				resp, err = cli.Chat(context.Background(), &api.Request{
+					Code:      api.RequestCode_ACTION_RESULT,
+					RequestId: uuid.New().String(),
+					ThreadId:  resp.ThreadId,
+					Request: &api.Request_ActionResultRequest{
+						ActionResultRequest: arr,
+					},
+				})
+				if err != nil {
+					handleError(app, err)
+				}
+			case api.ActionType_SAFEGUARD:
+				println("Action SAFEGUARD")
+			}
+			// skip
 		}
 	}
 

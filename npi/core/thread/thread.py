@@ -86,9 +86,12 @@ class Thread:
     q: asyncio.Queue[callback.Callable]
     instruction: str
     app_type: api_pb2.AppType
+    cb_dict: dict[str, callback.Callable] = {}
 
     __is_finished = False
     __result: str = ''
+    __is_failed = False
+    __failed_msg: str = ''
 
     def __init__(self, instruction: str, app_type: api_pb2.AppType) -> None:
         self.agent_id = 'default'
@@ -100,23 +103,22 @@ class Thread:
         self.app_type = app_type
 
     async def send_msg(self, cb: callback.Callable) -> None:
+        """send a message to the thread"""
+        self.cb_dict[cb.id()] = cb
         await self.q.put(cb)
 
     async def fetch_msg(self) -> callback.Callable:
         """receive a message"""
-        while True:
+        while not self.is_failed() and not self.is_finished():
             try:
                 item = self.q.get_nowait()
                 if item:
                     return item
             except asyncio.QueueEmpty:
-                if not self.is_finished():
-                    await asyncio.sleep(0.01)
-                else:
-                    return None
+                await asyncio.sleep(0.01)
 
-    def callback(self, msg: str):
-        pass
+    def get_callback(self, cb_id: str) -> callback.Callable:
+        return self.cb_dict[cb_id]
 
     def finish(self, msg: str):
         self.__result = msg
@@ -124,13 +126,21 @@ class Thread:
         self.q.task_done()
 
     def failed(self, msg: str):
-        pass
+        self.__failed_msg = msg
+        self.__is_failed = True
+        self.q.task_done()
 
     def is_finished(self) -> bool:
         return self.__is_finished
 
     def get_result(self) -> str:
         return self.__result
+
+    def is_failed(self) -> bool:
+        return self.__is_failed
+
+    def get_failed_msg(self) -> str:
+        return self.__failed_msg
 
     def ask(self, msg: str) -> str:
         """retrieve the message from the thread"""

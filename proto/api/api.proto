@@ -30,27 +30,6 @@ message Request {
     }
 }
 
-
-enum ResponseCode {
-  RESPONSE_UNKNOWN = 0;
-  SUCCESS = 1;
-  FAILED = 2;
-  MESSAGE = 3;
-  HUMAN_FEEDBACK = 4;
-  //  SAFEGUARD = 5;
-  CLIENT_ACTION = 6;
-}
-
-message Response {
-    ResponseCode code = 1;
-    string request_id = 2;
-    string thread_id = 3;
-    oneof response {
-        ChatResponse chat_response = 10;
-        google.protobuf.Empty empty = 99;
-    }
-}
-
 enum AppType {
   APP_UNKNOWN = 0;
   GOOGLE_GMAIL = 1;
@@ -62,13 +41,8 @@ enum AppType {
 }
 
 message ChatRequest {
-  AppType app_type = 1;
+  AppType type = 1;
   string instruction = 2;
-}
-
-message ChatResponse {
-  string thread_id = 1;
-  string message = 2;
 }
 
 message ActionResultRequest {
@@ -76,8 +50,61 @@ message ActionResultRequest {
   string action_result = 2;
 }
 
-//message ChatResponse {
-//  string request_id = 1;
-//  ChatResponseType type = 2;
-//  string message = 3;
-//}
+
+enum ResponseCode {
+  RESPONSE_UNKNOWN = 0;
+  SUCCESS = 1;
+  FAILED = 2;
+  MESSAGE = 3;
+  ACTION_REQUIRED = 4;
+  FINISHED = 5;
+}
+
+message Response {
+    ResponseCode code = 1;
+    string request_id = 2;
+    string thread_id = 3;
+    oneof response {
+        ChatResponse chat_response = 10;
+        ActionResponse action_response = 11;
+        google.protobuf.Empty empty = 99;
+    }
+}
+
+message ChatResponse {
+  string message = 1;
+}
+
+enum ActionType {
+  UNKNOWN_ACTION = 0;
+  HUMAN_FEEDBACK = 1;
+  SAFEGUARD = 2;
+}
+
+message ActionResponse {
+  ActionType type = 1;
+  string action_id = 2;
+  oneof response {
+    HumanFeedbackAction human_feedback = 10;
+    SafeguardAction safeguard = 11;
+  }
+}
+
+enum HumanFeedbackActionType {
+    UNKNOWN_FEEDBACK = 0;
+    INPUT = 1;
+    SINGLE_SELECTION = 2;
+    MULTIPLE_SELECTION = 3;
+    CONFIRMATION = 4;
+}
+
+message HumanFeedbackAction {
+  HumanFeedbackActionType type = 1;
+  string notice = 2;
+  repeated string options = 3;
+}
+
+message SafeguardAction {
+  string action_id = 1;
+  string safeguard = 2;
+}
