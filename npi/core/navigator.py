@@ -280,6 +280,7 @@ class Navigator(App):
 
             if not result:
                 # requires further intervention if the action is not executable
+                thread.finish(response_str)
                 return response_str
 
             # remove element id from history to reduce noise
@@ -315,8 +316,6 @@ class Navigator(App):
             raise Exception(err_msg)
 
         logger.debug(response_message.content + '\n')
-
-        thread.finish(response_message.content)
 
         return response_message.content
 
