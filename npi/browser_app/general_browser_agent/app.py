@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from npi.core import BrowserApp, npi_tool
 from .schema import *
@@ -11,7 +11,7 @@ You are a general browser-based autonomous agent helping user to finish any task
 class GeneralBrowserAgent(BrowserApp):
     def __init__(self, llm=None, headless: bool = True):
         if not llm:
-            llm = OpenAI()
+            llm = AsyncOpenAI()
 
         super().__init__(
             name='general-browser-agent',

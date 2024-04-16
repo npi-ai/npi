@@ -2,23 +2,25 @@ from pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam
 from typing import List
 
-from npi.core.thread import Thread
+from npi.core.thread import Thread, ThreadMessage
 
 
 class Parameters(BaseModel):
-    """
-        Base parameter model for tool definitions
+    """Base parameter model for tool definitions"""
 
-        Attributes:
-              _messages: llm messages so far
-    """
-    _messages: List[ChatCompletionMessageParam]
-    _ctx: Thread
+    _thread: Thread
+    _message: ThreadMessage
 
-    def __init__(self, _messages: List[ChatCompletionMessageParam], _ctx: Thread = None, **args):
+    def __init__(self, _thread: Thread, _message: ThreadMessage, **args):
         super().__init__(**args)
-        self._prompt = _messages
-        self._ctx = _ctx
+        self._thread = _thread
+        self._message = _message
+
+    def get_thread(self) -> Thread:
+        return self._thread
+
+    def get_message(self) -> ThreadMessage:
+        return self._message
 
     # remove "title" property from pydantic json schema
     @classmethod
@@ -46,3 +48,8 @@ class Parameters(BaseModel):
             schema.pop('properties', None)
 
         return schema
+
+
+if __name__ == '__main__':
+    p = Parameters(_thread={}, _message={})
+    print(p)

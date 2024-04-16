@@ -53,36 +53,6 @@ class GoogleCalendar(App):
                 api_key="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"
             )
 
-    def get_functions(self) -> List[FunctionRegistration]:
-        return [
-            FunctionRegistration(
-                fn=self.__create_event,
-                Params=CreateEventParameters,
-                description='Create and add an event to Google Calendar',
-            ),
-            FunctionRegistration(
-                fn=self.__retrieve_events,
-                Params=RetrieveEventsParameters,
-                description='Retrieve events from Google Calendar',
-            ),
-            FunctionRegistration(
-                fn=self.__get_today,
-                description='Get today\'s date',
-            ),
-            FunctionRegistration(
-                fn=self.__get_timezone,
-                description='Get the user\'s timezone'
-            ),
-            FunctionRegistration(
-                has_context=True,
-                fn=self.__get_user_email,
-                Params=GetUserEmailParameters,
-                description='Get the user\'s email address. If context isn\'t provided, please don\'t guess the '
-                            'user\'s email address instead of using this function request user to provide correct '
-                            'email.'
-            )
-        ]
-
     @staticmethod
     def __get_creds():
         creds = None
@@ -121,7 +91,7 @@ class GoogleCalendar(App):
 
         return res.get('timeZone')
 
-    @npi_tool(has_context=True)
+    @npi_tool
     async def __get_user_email(self, params: GetUserEmailParameters):
         """Get the user's email address"""
 
@@ -135,7 +105,7 @@ class GoogleCalendar(App):
             ),
         )
         cb.action.action_id = cb.id()
-        await params._ctx.send_msg(cb=cb)
+        await params.get_thread().send_msg(cb=cb)
         print('waiting for email')
         return await cb.wait()
 

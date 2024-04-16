@@ -4,12 +4,13 @@ import re
 from textwrap import dedent
 from typing import Union, List, Literal, TYPE_CHECKING, Tuple
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from playwright.sync_api import ElementHandle
 from typing_extensions import NotRequired, TypedDict
 
 from npi.core.app import App
 from npi.core.thread import Thread, ThreadMessage
+from proto.python.api import api_pb2
 
 if TYPE_CHECKING:
     from npi.core.browser_app import BrowserApp
@@ -147,7 +148,7 @@ class Navigator(App):
             name='navigator',
             description='Perform any task by simulating keyboard/mouse interaction on a specific web page',
             system_role=__PROMPT__,
-            llm=llm or OpenAI(),
+            llm=llm or AsyncOpenAI(),
             model=vision_model,
         )
 
@@ -263,14 +264,14 @@ class Navigator(App):
             ]
         }
 
-    def chat(
+    async def chat(
         self,
         message: str,
         thread: Thread = None,
     ) -> str:
         if thread is None:
-            thread = Thread()
-
+            thread = Thread('', api_pb2.APP_UNKNOWN)
+            
         history: List[Response] = []
 
         while True:
@@ -285,7 +286,7 @@ class Navigator(App):
 
             msg.append(self._generate_user_prompt(message, history))
 
-            response_str = self._call_llm(msg)
+            response_str = await self._call_llm(thread, msg)
             msg.set_result(response_str)
             response = _parse_response(response_str)
 
@@ -305,30 +306,35 @@ class Navigator(App):
             history.append(response)
             self.on_round_end(msg)
 
-    def _call_llm(self, context: ThreadMessage) -> str:
+    async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         """
         Call llm for one round with the given prompts
 
         Args:
-            context: ThreadMessage context
+            thread: the thread to call the llm with
+            message: ThreadMessage context
 
         Returns:
             response message
         """
-        response = self.llm.chat.completions.create(
+        response = await self.llm.chat.completions.create(
             model=self.default_model,
-            messages=self.process_history(context),
+            messages=self.process_history(message),
             max_tokens=4096,
         )
 
         response_message = response.choices[0].message
 
-        context.append(response_message)
+        message.append(response_message)
 
         if not response_message.content:
-            raise Exception(f'{self.name}: No response message')
+            err_msg = f'{self.name}: No response message'
+            thread.failed(err_msg)
+            raise Exception(err_msg)
 
         print(response_message.content + '\n')
+
+        thread.finish(response_message.content)
 
         return response_message.content
 
