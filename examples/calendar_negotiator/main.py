@@ -69,7 +69,10 @@ def main():
         llm=OpenAI(),
     )
 
-    negotiator.use(Calendar(), Gmail())
+    negotiator.use(
+        Calendar(npi_endpoint="localhost:9140"),
+        Gmail("localhost:9140"),
+    )
     print('Negotiator: What\'s your task for me?')
     task = input('User: ')
     print('')

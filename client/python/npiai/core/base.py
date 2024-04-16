@@ -1,5 +1,7 @@
 import json
 from typing import Union, List
+import grpc
+import uuid
 
 from openai import OpenAI
 from openai.types.chat import (
@@ -9,31 +11,78 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
+from proto.python.api import api_pb2_grpc, api_pb2
+
 
 class App:
     __app_name: str
+    __app_type: api_pb2.AppType
     __npi_endpoint: str
+    stub: api_pb2_grpc.AppServerStub
 
-    def __init__(self, app_name: str, endpoint: str):
+    def __init__(self, app_name: str, app_type: api_pb2.AppType, endpoint: str):
         self.__app_name = app_name
         self.__npi_endpoint = endpoint
-
-    def chat(self):
-        pass
+        self.__app_type = app_type
+        channel = grpc.insecure_channel(self.__npi_endpoint)
+        self.stub = api_pb2_grpc.AppServerStub(channel)
 
     def tool_name(self):
         return self.__app_name
 
     def schema(self):
-        return {
-            'type': 'app',
-            'app': {
-                'name': self.__app_name,
-            }
-        }
+        resp = self.stub.GetAppSchema(api_pb2.AppSchemaRequest(
+            type=self.__app_type
+        ))
+        return json.loads(resp.schema)
 
-    def call(self, args: dict) -> str:
-        pass
+    def chat(self, msg: str) -> str:
+        resp = self.stub.Chat(api_pb2.Request(
+            code=api_pb2.RequestCode.CHAT,
+            chat_request=api_pb2.ChatRequest(
+                type=self.__app_type,
+                instruction=msg
+            )
+        ))
+        while True:
+            if resp.code is api_pb2.ResponseCode.SUCCESS:
+                return resp.chat_response.message
+            elif resp.code is api_pb2.ResponseCode.MESSAGE:
+                print(resp.chat_response.message)
+            elif resp.code is api_pb2.ResponseCode.SUCCESS:
+                resp = self.stub.Chat(api_pb2.Request(
+                    code=api_pb2.RequestCode.FETCH,
+                    request_id=str(uuid.uuid4()),
+                    thread_id=resp.thread_id,
+                    chat_request=api_pb2.ChatRequest(
+                        type=self.__app_type,
+                    )
+                ))
+                continue
+            elif resp.code is api_pb2.ResponseCode.ACTION_REQUIRED:
+                ar = resp.action_response
+                if ar.type is api_pb2.ActionType.HUMAN_FEEDBACK:
+                    fb = ar.human_feedback
+                    arr = api_pb2.ActionResultRequest(
+                        action_id=ar.action_id,
+                    )
+
+                    if fb.type is api_pb2.HumanFeedbackActionType.INPUT:
+                        arr.action_result = input(f"Action Required: {fb.notice}\n")
+
+                    resp = self.stub.Chat(api_pb2.Request(
+                        code=api_pb2.RequestCode.FETCH,
+                        request_id=str(uuid.uuid4()),
+                        thread_id=resp.thread_id,
+                        chat_request=api_pb2.ChatRequest(
+                            type=self.__app_type,
+                        )
+                    ))
+                    continue
+            else:
+                return "Error: failed to call function"
+        return resp.chat_response.message
+
 
 class Agent:
     __agent_name: str
@@ -72,8 +121,7 @@ class Agent:
         )]
 
         while True:
-            # TODO: stream response
-            response = await self.__llm.chat.completions.create(
+            response = self.__llm.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=messages,
                 tools=self.__tools(),
@@ -112,7 +160,7 @@ class Agent:
         print(call_msg)
         fn = self.fn_map[fn_name]
         if fn is not None:
-            return fn.call(args)
+            return fn.call(args['msg'])
         return "Error: tool not found"
 
     def __tools(self) -> List[ChatCompletionToolParam]:

@@ -1,6 +1,4 @@
 from google.protobuf import empty_pb2 as _empty_pb2
-from google.protobuf import timestamp_pb2 as _timestamp_pb2
-from google.protobuf import wrappers_pb2 as _wrappers_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -89,6 +87,20 @@ class Request(_message.Message):
     action_result_request: ActionResultRequest
     empty: _empty_pb2.Empty
     def __init__(self, code: _Optional[_Union[RequestCode, str]] = ..., request_id: _Optional[str] = ..., thread_id: _Optional[str] = ..., chat_request: _Optional[_Union[ChatRequest, _Mapping]] = ..., action_result_request: _Optional[_Union[ActionResultRequest, _Mapping]] = ..., empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...) -> None: ...
+
+class AppSchemaRequest(_message.Message):
+    __slots__ = ("type",)
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: AppType
+    def __init__(self, type: _Optional[_Union[AppType, str]] = ...) -> None: ...
+
+class AppSchemaResponse(_message.Message):
+    __slots__ = ("schema", "description")
+    SCHEMA_FIELD_NUMBER: _ClassVar[int]
+    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
+    schema: str
+    description: str
+    def __init__(self, schema: _Optional[str] = ..., description: _Optional[str] = ...) -> None: ...
 
 class ChatRequest(_message.Message):
     __slots__ = ("type", "instruction")
