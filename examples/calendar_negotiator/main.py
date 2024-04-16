@@ -1,13 +1,11 @@
 """ the example of the calendar negotiator"""
 
-from typing import List
-
 from openai import OpenAI
 
-from npi.core import App
 from npi.app.google.gmail import Gmail
-from npi.app.google.calendar import GoogleCalendar
-from npi.app.feedback.console import HumanFeedback
+
+from client.python.npiai.core.base import Agent
+from client.python.npiai.app.google import Gmail, Calendar
 
 PROMPT = """
 Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.
@@ -28,9 +26,6 @@ The tools you can use are: Google Calendar, Google Gmail, and Human Feedback:
 
 1. Use Gmail to send an email to the attendee to ask if a specific time is ok for them. You should ask for user's confirmation before sending an email.
 2. Wait for the attendee's response after sending an email.
-
-## Human Feedback
-1. Use Human Feedback to ask the user for further information.
 
 ## Instructions
 
@@ -66,30 +61,19 @@ Steps:
 """
 
 
-class CalendarNegotiator(App):
-    apps: List[App]
-
-    def __init__(self):
-        super().__init__(
-            name='calendar_negotiator',
-            description='Schedule meetings with others using gmail and google calendar',
-            system_role=PROMPT,
-            llm=OpenAI(),
-        )
-
-        self.register(
-            GoogleCalendar(),
-            Gmail(),
-            HumanFeedback(),
-        )
-
-
 def main():
-    negotiator = CalendarNegotiator()
+    negotiator = Agent(
+        agent_name='calendar_negotiator',
+        description='Schedule meetings with others using gmail and google calendar',
+        prompt=PROMPT,
+        llm=OpenAI(),
+    )
+
+    negotiator.use(Calendar(), Gmail())
     print('Negotiator: What\'s your task for me?')
     task = input('User: ')
-    print()
-    negotiator.chat(task)
+    print('')
+    negotiator.run(task)
 
 
 if __name__ == "__main__":
