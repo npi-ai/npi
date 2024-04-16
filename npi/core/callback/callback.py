@@ -2,6 +2,9 @@ import time
 
 
 class Callable:
+    msg: str
+    fn: callable
+    called: bool
 
     def __init__(self, msg: str, fn=None):
         self.fn = fn

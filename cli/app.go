@@ -60,7 +60,6 @@ func doRequest(app api.AppType, instruction string) {
 	}
 	defer conn.Close()
 	cli := api.NewChatServerClient(conn)
-
 	resp, err := cli.Chat(context.Background(), &api.Request{
 		Code:      api.RequestCode_CHAT,
 		RequestId: uuid.New().String(),
@@ -74,8 +73,39 @@ func doRequest(app api.AppType, instruction string) {
 	if err != nil {
 		handleError(app, err)
 	}
+	for {
+		switch resp.GetCode() {
+		case api.ResponseCode_SUCCESS:
+			color.Green("Answer: %s", resp.GetChatResponse().GetMessage())
+			return
+		case api.ResponseCode_FAILED:
+			color.Green("Failed: %s", resp.GetChatResponse().GetMessage())
+			return
+		case api.ResponseCode_MESSAGE:
+			if resp.GetChatResponse().GetMessage() != "" {
+				color.Yellow("Message: %s", resp.GetChatResponse().GetMessage())
+			}
+			resp, err = cli.Chat(context.Background(), &api.Request{
+				Code:      api.RequestCode_FETCH,
+				RequestId: uuid.New().String(),
+				ThreadId:  resp.ThreadId,
+				Request: &api.Request_ChatRequest{
+					ChatRequest: &api.ChatRequest{
+						AppType:     app,
+						Instruction: instruction,
+					},
+				},
+			})
+			if err != nil {
+				handleError(app, err)
+			}
+		//case api.SAFEGUARD:
+		case api.ResponseCode_HUMAN_FEEDBACK:
+		case api.ResponseCode_CLIENT_ACTION:
 
-	color.Green("Code: %v\nMessage: %s", resp.GetCode(), resp.GetChatResponse().GetMessage())
+		}
+	}
+
 }
 
 func handleError(app api.AppType, err error) {

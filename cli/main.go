@@ -25,7 +25,7 @@ func init() {
 	cobra.EnableCommandSorting = false
 
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		checkUpdate()
+		//checkUpdate()
 		checkConfig()
 		if cmd.Name() == "connect" || cmd.Name() == "version" {
 			return
