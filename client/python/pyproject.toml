@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "npiai"
+version = "0.0.1"
+description = ""
+authors = ["wenfeng <w@npi.ai>"]
+readme = "README.md"
+
+packages = [
+    { include = "npi", from = "." },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -271,7 +271,6 @@ class App:
             final response message
         """
         while True:
-            # TODO: stream response
             response = await self.llm.chat.completions.create(
                 model=self.default_model,
                 messages=self.process_history(message),
