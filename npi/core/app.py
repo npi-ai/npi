@@ -298,6 +298,8 @@ class App:
 
             for tool_call in tool_calls:
                 fn_name = tool_call.function.name
+                if fn_name not in self.fn_map:
+                    raise Exception(f'Function not found: {fn_name}')
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
                 call_msg = f'Calling {fn_name}({args})'

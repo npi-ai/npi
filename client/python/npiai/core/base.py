@@ -20,8 +20,10 @@ class App:
     __npi_endpoint: str
     stub: api_pb2_grpc.AppServerStub
 
-    def __init__(self, app_name: str, app_type: api_pb2.AppType, endpoint: str):
+    def __init__(self, app_name: str, app_type: api_pb2.AppType, endpoint: str = "localhost:9140"):
         self.__app_name = app_name
+        if endpoint is None:
+            endpoint = "localhost:9140"
         self.__npi_endpoint = endpoint
         self.__app_type = app_type
         channel = grpc.insecure_channel(self.__npi_endpoint)
@@ -49,31 +51,11 @@ class App:
             )
         ))
         while True:
-            if resp.code is api_pb2.ResponseCode.SUCCESS:
-                return resp.chat_response.message
-            elif resp.code is api_pb2.ResponseCode.MESSAGE:
-                print(resp.chat_response.message)
-            elif resp.code is api_pb2.ResponseCode.SUCCESS:
-                resp = self.stub.Chat(api_pb2.Request(
-                    code=api_pb2.RequestCode.FETCH,
-                    request_id=str(uuid.uuid4()),
-                    thread_id=resp.thread_id,
-                    chat_request=api_pb2.ChatRequest(
-                        type=self.__app_type,
-                    )
-                ))
-                continue
-            elif resp.code is api_pb2.ResponseCode.ACTION_REQUIRED:
-                ar = resp.action_response
-                if ar.type is api_pb2.ActionType.HUMAN_FEEDBACK:
-                    fb = ar.human_feedback
-                    arr = api_pb2.ActionResultRequest(
-                        action_id=ar.action_id,
-                    )
-
-                    if fb.type is api_pb2.HumanFeedbackActionType.INPUT:
-                        arr.action_result = input(f"Action Required: {fb.notice}\n")
-
+            match resp.code:
+                case api_pb2.ResponseCode.FINISHED:
+                    return resp.chat_response.message
+                case api_pb2.ResponseCode.MESSAGE:
+                    print(resp.chat_response.message)
                     resp = self.stub.Chat(api_pb2.Request(
                         code=api_pb2.RequestCode.FETCH,
                         request_id=str(uuid.uuid4()),
@@ -82,10 +64,34 @@ class App:
                             type=self.__app_type,
                         )
                     ))
-                    continue
-            else:
-                return "Error: failed to call function"
-        return resp.chat_response.message
+                case api_pb2.ResponseCode.SUCCESS:
+                    resp = self.stub.Chat(api_pb2.Request(
+                        code=api_pb2.RequestCode.FETCH,
+                        request_id=str(uuid.uuid4()),
+                        thread_id=resp.thread_id,
+                        chat_request=api_pb2.ChatRequest(
+                            type=self.__app_type,
+                        )
+                    ))
+                case api_pb2.ResponseCode.ACTION_REQUIRED:
+                    ar = resp.action_response
+                    if ar.type is api_pb2.ActionType.HUMAN_FEEDBACK:
+                        fb = ar.human_feedback
+                        arr = api_pb2.ActionResultRequest(
+                            action_id=ar.action_id,
+                        )
+
+                        if fb.type is api_pb2.HumanFeedbackActionType.INPUT:
+                            arr.action_result = input(f"Action Required: {fb.notice}\n")
+
+                        resp = self.stub.Chat(api_pb2.Request(
+                            code=api_pb2.RequestCode.ACTION_RESULT,
+                            request_id=str(uuid.uuid4()),
+                            thread_id=resp.thread_id,
+                            action_result_request=arr,
+                        ))
+                case _:
+                    return "Error: failed to call function"
 
 
 class Agent:
@@ -149,6 +155,7 @@ class Agent:
                 args = json.loads(tool_call.function.arguments)
 
                 res = self.__call(fn_name, args)
+                print(f"Response: {res}")
                 messages.append(
                     {
                         "tool_call_id": tool_call.id,

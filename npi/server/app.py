@@ -141,11 +141,19 @@ class Chat(api_pb2_grpc.AppServerServicer):
 
     @staticmethod
     def run(thread: Thread):
-        if thread.app_type == api_pb2.GOOGLE_CALENDAR:
-            gc = google.GoogleCalendar()
-            asyncio.create_task(gc.chat(thread.instruction, thread))
-        else:
-            raise Exception("unsupported application")
+        try:
+            app = None
+            if thread.app_type == api_pb2.GOOGLE_GMAIL:
+                app = google.Gmail()
+            elif thread.app_type == api_pb2.GOOGLE_CALENDAR:
+                app = google.GoogleCalendar()
+            else:
+                raise Exception("unsupported application")
+            asyncio.create_task(app.chat(thread.instruction, thread))
+        except Exception as e:
+            err_msg = ''.join(traceback.format_exception(e))
+            print(err_msg)
+            raise e
 
 
 _cleanup_coroutines = []
