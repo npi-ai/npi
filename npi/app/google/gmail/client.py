@@ -12,7 +12,7 @@ import dateutil.parser as parser
 from typing import Optional, List
 
 
-class GmailExtended(Gmail):
+class GmailClientWrapper(Gmail):
     def _create_message(
         self,
         sender: str,
@@ -509,8 +509,3 @@ class GmailExtended(Gmail):
             # Pass along the error
             raise error
 
-
-if __name__ == '__main__':
-    gmail = GmailExtended(client_secret_file='./credentials.json')
-    msg = gmail.get_messages(max_results=1)[0]
-    print(msg)

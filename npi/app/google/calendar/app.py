@@ -5,15 +5,14 @@ import json
 import datetime
 
 from openai import AsyncOpenAI
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
 
 from npi.core import App, npi_tool, callback
 
 from npi.app.google.calendar.schema import *
+from npi.app.google import GoogleApp
 
 from proto.python.api import api_pb2
 
@@ -22,14 +21,12 @@ from proto.python.api import api_pb2
 # API Reference: https://developers.google.com/calendar/api/v3/reference
 
 
-class GoogleCalendar(App):
+class GoogleCalendar(GoogleApp):
     """the function wrapper of Google Calendar App"""
 
     __scopes = ["https://www.googleapis.com/auth/calendar"]
     __service_name = "calendar"
     __api_version = "v3"
-
-    llm = None
 
     def __init__(self, llm=None):
         super().__init__(
@@ -39,43 +36,15 @@ class GoogleCalendar(App):
             system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
                         'the best function based the tool list.',
             llm=llm,
+            token_file="credentials/gc_token.json",
+            secret_file="credentials/google.json",
+            scopes=self.__scopes,
         )
 
-        self.creds = self.__get_creds()
+        self.creds = super()._get_creds()
         self.service = build(
-            self.__service_name, self.__api_version, credentials=self.__get_creds()
+            self.__service_name, self.__api_version, credentials=self._get_creds()
         )
-        if llm:
-            self.llm = llm
-        else:
-            # create openai client
-            self.llm = AsyncOpenAI(
-                api_key="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"
-            )
-
-    @staticmethod
-    def __get_creds():
-        creds = None
-        if os.path.exists("credentials/gc_token.json"):
-            with open("credentials/gc_token.json", encoding="utf-8") as file:
-                creds = Credentials.from_authorized_user_info(
-                    json.load(file), GoogleCalendar.__scopes
-                )
-
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials/google.json", GoogleCalendar.__scopes
-                )
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open("credentials/gc_token.json", "w", encoding="utf-8") as token:
-                token.write(creds.to_json())
-
-        return creds
 
     @npi_tool
     def __get_today(self):
