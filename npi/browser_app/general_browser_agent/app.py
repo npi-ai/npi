@@ -10,9 +10,6 @@ You are a general browser-based autonomous agent helping user to finish any task
 
 class GeneralBrowserAgent(BrowserApp):
     def __init__(self, llm=None, headless: bool = True):
-        if not llm:
-            llm = AsyncOpenAI()
-
         super().__init__(
             name='general-browser-agent',
             description='Perform any task on any webpage',

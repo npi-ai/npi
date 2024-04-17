@@ -1,19 +1,14 @@
 """The definition of Google Calendar App"""
 
-import os.path
-import json
 import datetime
+import json
 
-from openai import AsyncOpenAI
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-
-from npi.core import App, npi_tool, callback
-
-from npi.app.google.calendar.schema import *
 from npi.app.google import GoogleApp
-
+from npi.app.google.calendar.schema import *
+from npi.core import npi_tool, callback
 from proto.python.api import api_pb2
 
 
