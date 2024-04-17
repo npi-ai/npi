@@ -109,6 +109,10 @@ class Twitter(BrowserApp):
                 if await tweet.get_by_text('Ad', exact=True).count() > 0:
                     logger.debug(f'Skipping ad: {await tweet.text_content()}')
                     continue
+                # skip spaces
+                if await tweet.get_by_role('button', name='Play recording', exact=True).count() > 0:
+                    logger.debug(f'Skipping space: {await tweet.text_content()}')
+                    continue
                 author = await tweet.get_by_test_id('User-Name').first.text_content()
                 content = author + ': ' + await tweet.get_by_test_id('tweetText').first.text_content()
                 # extract social context
