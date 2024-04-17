@@ -297,7 +297,11 @@ class App:
                     raise Exception(f'Function not found: {fn_name}')
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
-                call_msg = f'Calling {fn_name}({args})'
+                call_msg = f'[{self.name}]: Calling {fn_name}'
+                if len(args) > 0:
+                    call_msg += f'({args})'
+                else:
+                    call_msg += '()'
                 await thread.send_msg(callback.Callable(call_msg))
                 logger.info(call_msg)
                 try:
