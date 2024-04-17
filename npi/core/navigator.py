@@ -65,8 +65,9 @@ Here are some conventions to choose a suitable tool:
 - If you need to click on an element, you should set the `action.type` field to "click";
 - If you need to press the enter key on an input or textarea to trigger a search or submit a form, you should set the `action.type` to "enter".
 - If you need to type or fill something into an input box, you should set the `action.type` to "fill" and specify the text in the `value` field.
-- If you need to select a value for a <select> element, you should set the `action.type` to "select" and specify the value in the `value` field;
+- If you need to select a value for a <select> element, you should set the `action.type` to "select" and specify the value in the `value` field.
 - If the page is scrollable and the task requires actions beyond the provided viewport, you can set the `action` to "scroll" to scroll down to reveal the rest of the page.
+- If you think you have missed something and need to scroll back to the top of the page to start over, you can set the `action` to "back_to_top".
 - If you are performing a critical action, such as submitting a form to place an order, clicking a "Send" button to send a message, or clicking a "Save" button to save the form, you should set the `action.type` to "confirmation" and ask for user confirmation.
 - If you need more information from the user to fulfill the task, such as requesting the user's name and making a choice, you should set the `action.type` to "human-intervention" and wait for user response.
 - If the whole task is done, you should set the `action.type` to "done" not call any further tools.
@@ -80,7 +81,7 @@ You must exactly follow the following response format and avoid adding any expla
   "thoughts": string,
   "action": {
       "description": string,
-      "type": 'fill' | 'click' | 'enter' | 'select' | 'scroll' | 'confirmation' | 'human-intervention' | 'done',
+      "type": 'fill' | 'click' | 'enter' | 'select' | 'scroll' | 'back-to-top' | | 'confirmation' | 'human-intervention' | 'done',
       "value"?: string, // input value for 'type' or 'select' actions, if applicable
       "id"?: string, // element ID, unnecessary for the 'scroll' action
     }
@@ -111,7 +112,7 @@ Newly Added Elements' ID: ["0", "1", "2", ...]
 
 class Action(TypedDict):
     description: str
-    type: Literal["type", "click", "enter", "select", "scroll", "confirmation", "not-found", "done"]
+    type: Literal["type", "click", "enter", "select", "scroll", "back-to-top", "confirmation", "not-found", "done"]
     value: NotRequired[str]
     id: NotRequired[str]
     element: NotRequired[dict]  # element json used for recording
@@ -146,7 +147,7 @@ class Navigator(App):
     ):
         super().__init__(
             name='navigator',
-            description='Perform any task by simulating keyboard/mouse interaction on a specific web page',
+            description='Perform any task by simulating keyboard/mouse interaction on a specific web page. If the some action needs user confirmation, please specify them.',
             system_role=__PROMPT__,
             llm=llm,
             model=vision_model,
@@ -326,6 +327,16 @@ class Navigator(App):
 
         return f'Successfully scrolled down to reveal more contents'
 
+    async def back_to_top(self):
+        """
+        Scroll the page back to the top to start over
+        """
+
+        await self.browser_app.page.evaluate('() => window.scrollTo(0, 0)')
+        await self.browser_app.page.wait_for_timeout(300)
+
+        return f'Successfully scrolled to top'
+
     async def chat(
         self,
         message: str,
@@ -416,6 +427,8 @@ class Navigator(App):
         elem = await self.get_element_by_marker_id(action['id']) if 'id' in action else None
         elem_json = await self.element_to_json(elem) if elem else None
 
+        logger.info(f'[{self.name}]: ' + action['description'])
+
         match action['type']:
             case 'click':
                 result = await self.click(elem)
@@ -427,6 +440,8 @@ class Navigator(App):
                 result = await self.select(elem, action['value'])
             case 'scroll':
                 result = await self.scroll()
+            case 'back-to-top':
+                result = await self.back_to_top()
             case 'confirmation' | 'human-intervention' | 'done':
                 result = None
             case _:
