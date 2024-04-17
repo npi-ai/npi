@@ -35,25 +35,36 @@ __ROUTES__ = {
 
 
 class ImageFilterConverter(MarkdownConverter):
+    def process_text(self, el):
+        text = el.text
+
+        if text == 'Quote':
+            return '\nQuote Tweet: '
+
+        # remove messages inside the video component
+        if el.find_parent(name='div', attrs={'data-testid': re.compile(r'videoComponent|tweetPhoto')}):
+            return ''
+
+        parent = el.find_parent(name='div', attrs={'data-testid': re.compile(r'reply|retweet|like')})
+
+        if not parent:
+            return super().process_text(el)
+
+        # annotate footer icons
+        match parent.attrs.get('data-testid'):
+            case 'reply':
+                return f' Replies: {text or '0'} '
+            case 'retweet':
+                return f' Retweets: {text or '0'} '
+            case 'like':
+                return f' Likes: {text or '0'} '
+            case _:
+                return super().process_text(el)
+
     def convert_a(self, el, text, convert_as_inline):
         if re.search(r'analytics', el.attrs.get('href', '')):
             return f' Views: {el.text or '0'}'
         return super().convert_a(el, text, convert_as_inline)
-
-    def convert_span(self, el, _text, _convert_as_inline):
-        parent = el.find_parent(name='div', attrs={'data-testid': re.compile(r'reply|retweet|like')})
-        if not parent:
-            return el.text
-        # annotate footer icons
-        match parent.attrs.get('data-testid'):
-            case 'reply':
-                return f' Replies: {el.text or '0'} '
-            case 'retweet':
-                return f' Retweets: {el.text or '0'} '
-            case 'like':
-                return f' Likes: {el.text or '0'} '
-            case _:
-                return el.text
 
     def convert_img(self, el, text, convert_as_inline):
         src = el.attrs.get('src', '')
