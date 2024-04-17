@@ -128,7 +128,7 @@ class Twitter(BrowserApp):
                     content += '\n Retweet: ' + await retweet.text_content()
 
                 # extract link
-                link = await tweet.locator('a:has(time)').first.get_attribute('href')
+                link = await tweet.locator('a[href*="/status/"]').first.get_attribute('href')
                 results.append(
                     {
                         'link': f'https://twitter.com{link}',
