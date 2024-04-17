@@ -105,8 +105,16 @@ class Twitter(BrowserApp):
 
         for tweet in await tweets.all():
             try:
+                # skip ads
+                if await tweet.get_by_text('Ad', exact=True).count() > 0:
+                    logger.debug(f'Skipping ad: {await tweet.text_content()}')
+                    continue
                 author = await tweet.get_by_test_id('User-Name').first.text_content()
                 content = author + ': ' + await tweet.get_by_test_id('tweetText').first.text_content()
+                # extract social context
+                social_context = tweet.get_by_test_id('socialContext')
+                if await social_context.count() == 1:
+                    content = await social_context.text_content() + '\n' + content
                 # extract media
                 media = tweet.locator(
                     '[data-testid="videoPlayer"]:has([src]), \
