@@ -161,7 +161,7 @@ class Navigator(App):
         return await self.browser_app.page.title()
 
     async def get_screenshot(self):
-        screenshot = await self.browser_app.page.screenshot()
+        screenshot = await self.browser_app.page.screenshot(caret='initial')
         return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
 
     async def is_scrollable(self):
