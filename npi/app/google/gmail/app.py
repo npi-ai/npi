@@ -3,7 +3,7 @@ import time
 from markdown import markdown
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
-from npi.core.app import App, npi_tool
+from npi.core.app import npi_tool
 from .client import GmailClientWrapper
 from .schema import *
 from npi.app.google import GoogleApp
@@ -21,14 +21,11 @@ class Gmail(GoogleApp):
             token_file="credentials/gm_token.json",
             secret_file="credentials/google.json",
             scopes=[
-                'https://www.googleapis.com/auth/gmail.modify',
-                'https://www.googleapis.com/auth/gmail.settings.basic',
+                'https://www.googleapis.com/auth/gmail',
             ],
         )
-        root='/Users/wenfeng/workspace/npi-ai/npi'
         self.gmail_client = GmailClientWrapper(
-            client_secret_file='/'.join([root, self._secret_file]),
-            # creds_file='/'.join([root, self._token_file]),
+            client_secret_file=self._secret_file,
         )
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:
@@ -57,8 +54,10 @@ class Gmail(GoogleApp):
 
     @npi_tool
     def add_labels(self, params: AddLabelsParameters) -> str:
-        """Add labels to the related emails in the previous chat. If the target email is not provided, you should
-        search for it first"""
+        """
+        Add labels to the related emails in the previous chat.
+        If the target email is not provided, you should search for it first.
+        """
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
@@ -81,8 +80,10 @@ class Gmail(GoogleApp):
 
     @npi_tool
     def remove_labels(self, params: RemoveLabelsParameters):
-        """Remove labels from the related emails in the previous chat. If the target email is not provided,
-        you should search for it first"""
+        """
+        Remove labels from the related emails in the previous chat.
+        If the target email is not provided, you should search for it first.
+        """
         messages = self._get_messages_from_ids(params.message_ids)
 
         if len(messages) == 0:
@@ -119,8 +120,10 @@ class Gmail(GoogleApp):
 
     @npi_tool
     def create_reply_draft(self, params: CreateReplyDraftParameter):
-        """Create a draft that replies to the last email retrieved in the previous chat. If the target email is not
-        provided, you should search for it first"""
+        """
+        Create a draft that replies to the last email retrieved in the previous chat.
+        If the target email is not provided, you should search for it first.
+        """
         msg = self.gmail_client.create_draft(
             sender='',
             to=params.to,
@@ -136,8 +139,10 @@ class Gmail(GoogleApp):
 
     @npi_tool
     def reply(self, params: ReplyParameter):
-        """Reply to the last email retrieved in the previous chat. If the target email is not provided, you should
-        search for it first"""
+        """
+        Reply to the last email retrieved in the previous chat.
+        If the target email is not provided, you should search for it first.
+        """
         msg = self.gmail_client.send_message(
             sender='',
             to=params.to,
