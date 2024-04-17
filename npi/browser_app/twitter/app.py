@@ -1,6 +1,8 @@
 import json
 import os
+import re
 from playwright.async_api import TimeoutError
+from markdownify import MarkdownConverter
 
 from npi.core import BrowserApp, npi_tool
 from npi.utils import logger
@@ -30,6 +32,43 @@ __ROUTES__ = {
     'login': 'https://twitter.com/',
     'home': 'https://twitter.com/home'
 }
+
+
+class ImageFilterConverter(MarkdownConverter):
+    def convert_a(self, el, text, convert_as_inline):
+        if re.search(r'analytics', el.attrs.get('href', '')):
+            return f' Views: {el.text or '0'}'
+        return super().convert_a(el, text, convert_as_inline)
+
+    def convert_span(self, el, _text, _convert_as_inline):
+        parent = el.find_parent(name='div', attrs={'data-testid': re.compile(r'reply|retweet|like')})
+        if not parent:
+            return el.text
+        # annotate footer icons
+        match parent.attrs.get('data-testid'):
+            case 'reply':
+                return f' Replies: {el.text or '0'} '
+            case 'retweet':
+                return f' Retweets: {el.text or '0'} '
+            case 'like':
+                return f' Likes: {el.text or '0'} '
+            case _:
+                return el.text
+
+    def convert_img(self, el, text, convert_as_inline):
+        src = el.attrs.get('src', '')
+        # remove profile/card pictures
+        if re.search(r'profile_images|card_img', src):
+            return ''
+        # remove emoji images
+        if re.search(r'emoji', src):
+            return el.attrs.get('alt')
+
+        return super().convert_img(el, text, convert_as_inline)
+
+
+def html_to_md(html: str, **options) -> str:
+    return ImageFilterConverter(**options).convert(html)
 
 
 class Twitter(BrowserApp):
@@ -113,38 +152,38 @@ class Twitter(BrowserApp):
                 if await tweet.get_by_role('button', name='Play recording', exact=True).count() > 0:
                     logger.debug(f'Skipping space: {await tweet.text_content()}')
                     continue
-                author = await tweet.get_by_test_id('User-Name').first.text_content()
-                content = author + ': ' + await tweet.get_by_test_id('tweetText').first.text_content()
-                # extract social context
-                social_context = tweet.get_by_test_id('socialContext')
-                if await social_context.count() == 1:
-                    content = await social_context.text_content() + '\n' + content
-                # extract media
-                media = tweet.locator(
-                    '[data-testid="videoPlayer"]:has([src]), \
-                     [data-testid="tweetPhoto"]:not(:has([data-testid="videoPlayer"])):has([src])'
-                )
-                if await media.count() > 0:
-                    content += ' ' + await media.evaluate_all(
-                        """elems => {
-                            return elems.map(el => {
-                                const mediaType = el.getAttribute('data-testid') === 'tweetPhoto' ? 'image' : 'video';
-                                const src = el.querySelector('[src]')?.src;
-                                return `![${mediaType}][${src}]`;
-                            }).join(' ')
-                        }"""
-                    )
-                # extract retweet
-                retweet = tweet.locator('div[role="link"]:has([data-testid="tweetText"])')
-                if await retweet.count() == 1:
-                    content += '\n Retweet: ' + await retweet.text_content()
+                # author = await tweet.get_by_test_id('User-Name').first.text_content()
+                # content = author + ': ' + await tweet.get_by_test_id('tweetText').first.text_content()
+                # # extract social context
+                # social_context = tweet.get_by_test_id('socialContext')
+                # if await social_context.count() == 1:
+                #     content = await social_context.text_content() + '\n' + content
+                # # extract media
+                # media = tweet.locator(
+                #     '[data-testid="videoPlayer"]:has([src]), \
+                #      [data-testid="tweetPhoto"]:not(:has([data-testid="videoPlayer"])):has([src])'
+                # )
+                # if await media.count() > 0:
+                #     content += ' ' + await media.evaluate_all(
+                #         """elems => {
+                #             return elems.map(el => {
+                #                 const mediaType = el.getAttribute('data-testid') === 'tweetPhoto' ? 'image' : 'video';
+                #                 const src = el.querySelector('[src]')?.src;
+                #                 return `![${mediaType}][${src}]`;
+                #             }).join(' ')
+                #         }"""
+                #     )
+                # # extract retweet
+                # retweet = tweet.locator('div[role="link"]:has([data-testid="tweetText"])')
+                # if await retweet.count() == 1:
+                #     content += '\n Retweet: ' + await retweet.text_content()
 
                 # extract link
                 link = await tweet.locator('a[href*="/status/"]').first.get_attribute('href')
                 results.append(
                     {
                         'link': f'https://twitter.com{link}',
-                        'content': content
+                        'content': html_to_md(await tweet.inner_html()),
                     }
                 )
             except TimeoutError as e:
@@ -179,3 +218,6 @@ class Twitter(BrowserApp):
         await self.page.goto(params.url, timeout=10_000)
 
         return f'Tweet opened. Current URL: {self.page.url}, page title: {await self.page.title()}'
+
+
+__all__ = ['Twitter']

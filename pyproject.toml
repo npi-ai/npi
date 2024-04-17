@@ -22,6 +22,7 @@ uvicorn = "^0.29.0"
 grpcio = "^1.62.1"
 playwright = "^1.43.0"
 loguru = "^0.7.2"
+markdownify = "^0.12.1"
 
 
 [tool.poetry.group.dev.dependencies]
