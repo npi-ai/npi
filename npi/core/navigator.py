@@ -4,7 +4,6 @@ import re
 from textwrap import dedent
 from typing import Union, List, Literal, TYPE_CHECKING, Tuple
 
-from openai import AsyncOpenAI
 from playwright.async_api import ElementHandle
 from typing_extensions import NotRequired, TypedDict
 
@@ -149,7 +148,7 @@ class Navigator(App):
             name='navigator',
             description='Perform any task by simulating keyboard/mouse interaction on a specific web page',
             system_role=__PROMPT__,
-            llm=llm or AsyncOpenAI(),
+            llm=llm,
             model=vision_model,
         )
 

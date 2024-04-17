@@ -3,7 +3,7 @@ import json
 import inspect
 import functools
 import traceback
-from typing import Dict, List, Optional, Union, Type
+from typing import Dict, List, Optional, Union, Type, cast
 
 from pydantic import Field
 from openai import AsyncClient
@@ -135,23 +135,18 @@ class App:
         description: str,
         llm: AsyncClient = None,
         system_role: str = None,
-        model: str = "gpt-4-turbo-preview",
-        tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
+        model: str = None,
+        tool_choice: ChatCompletionToolChoiceOptionParam = None
     ):
         self.name = name
         self.description = description
-        self.llm = llm
-        self.default_model = model
-        self.tool_choice = tool_choice
+        self.llm = llm or AsyncClient()
+        self.default_model = model or 'gpt-4-turbo-preview'
+        self.tool_choice = cast(ChatCompletionToolChoiceOptionParam, tool_choice or 'auto')
         self.system_role = system_role
         self.tools = []
         self.fn_map = {}
         _register_tools(self)
-        if llm:
-            self.llm = llm
-        else:
-            # create openai client
-            self.llm = AsyncClient()
 
     def register(
         self,

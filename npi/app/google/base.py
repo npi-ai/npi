@@ -1,4 +1,3 @@
-import json
 import os
 from typing import List
 
@@ -16,10 +15,10 @@ class GoogleApp(App):
 
     def __init__(
         self,
-        llm,
         name,
         description,
         system_role,
+        llm=None,
         secret_file: str = None,
         token_file: str = None,
         scopes: List[str] = None
