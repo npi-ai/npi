@@ -31,9 +31,13 @@ class App:
         return self.__app_name
 
     def schema(self):
-        resp = self.stub.GetAppSchema(api_pb2.AppSchemaRequest(
-            type=self.__app_type
-        ))
+        try:
+            resp = self.stub.GetAppSchema(api_pb2.AppSchemaRequest(
+                type=self.__app_type
+            ))
+        except Exception as e:
+            print(e)
+            return None
         return json.loads(resp.schema)
 
     def chat(self, msg: str) -> str:
@@ -160,7 +164,7 @@ class Agent:
         print(call_msg)
         fn = self.fn_map[fn_name]
         if fn is not None:
-            return fn.call(args['msg'])
+            return fn.chat(args['message'])
         return "Error: tool not found"
 
     def __tools(self) -> List[ChatCompletionToolParam]:

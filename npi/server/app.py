@@ -53,32 +53,35 @@ class Chat(api_pb2_grpc.AppServerServicer):
         request: api_pb2.AppSchemaRequest,
         _: grpc.ServicerContext,) -> api_pb2.AppSchemaResponse:
         app = None
-        if request.type == api_pb2.GOOGLE_CALENDAR:
-            app = google.GoogleCalendar()
-        elif request.type == api_pb2.GOOGLE_GMAIL:
-            app = google.Gmail()
+        try:
+
+            if request.type == api_pb2.GOOGLE_CALENDAR:
+                app = google.GoogleCalendar()
+            elif request.type == api_pb2.GOOGLE_GMAIL:
+                app = google.Gmail()
+        except Exception as e:
+            logger.error(''.join(traceback.format_exception(e)))
+            raise e
         response = api_pb2.AppSchemaResponse()
         response.description = app.description
-        schema = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "chat",
-                    "description": f"{ app.description }",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "message": {
-                                "type": "string",
-                                "description": f"the task you want to do with tool { app.name }",
-                            },
+        schema = {
+            "type": "function",
+            "function": {
+                "name": f"{ app.name }",
+                "description": f"{ app.description }",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string",
+                            "description": f"the task you want to do with tool { app.name }",
                         },
-                        "required": ["message"],
                     },
+                    "required": ["message"],
                 },
-            }
-        ]
-        response.schema = json.dumps(schema)
+            },
+        }
+        response.schema = f"{ json.dumps(schema) }"
         return response
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):

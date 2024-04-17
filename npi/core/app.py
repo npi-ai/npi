@@ -147,6 +147,11 @@ class App:
         self.tools = []
         self.fn_map = {}
         _register_tools(self)
+        if llm:
+            self.llm = llm
+        else:
+            # create openai client
+            self.llm = AsyncClient()
 
     def register(
         self,
