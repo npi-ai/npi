@@ -159,8 +159,6 @@ class Twitter(BrowserApp):
 
         for tweet in await tweets.all():
             try:
-                # mark as visited
-                await tweet.evaluate('el => el.setAttribute("data-visited", "true")')
                 # skip ads
                 if await tweet.get_by_text('Ad', exact=True).count() > 0:
                     logger.debug(f'Skipping ad: {await tweet.text_content()}')
@@ -208,6 +206,9 @@ class Twitter(BrowserApp):
             finally:
                 if -1 < params.max_results <= len(results):
                     break
+
+        # mark as visited
+        await tweets.evaluate_all('elems => elems.forEach(el => el.setAttribute("data-visited", "true"))')
 
         logger.debug(f'{len(results)} tweets retrieved: {json.dumps(results, indent=2, ensure_ascii=False)}')
 
