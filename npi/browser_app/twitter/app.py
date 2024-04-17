@@ -139,7 +139,10 @@ class Twitter(BrowserApp):
 
     @npi_tool
     async def get_tweets(self, params: GetTweetsParameters) -> str:
-        """Retrieve tweets on the current page. You should ensure you are on the correct page (home, user profile, etc.) before calling this tool."""
+        """
+        Retrieve tweets on the current page.
+        You should ensure you are on the correct page (home, user profile, etc.) before calling this tool.
+        """
         scrollable = await self.navigator.is_scrollable()
 
         if not scrollable:
@@ -148,13 +151,16 @@ class Twitter(BrowserApp):
 
         results = []
 
-        tweets = self.page.get_by_test_id('tweet')
+        # match unvisited tweets only
+        tweets = self.page.locator('[data-testid="tweet"]:not([data-visited])')
         await tweets.first.wait_for(state='attached', timeout=10_000)
 
         logger.debug(f'{await tweets.count()} tweets found.')
 
         for tweet in await tweets.all():
             try:
+                # mark as visited
+                await tweet.evaluate('el => el.setAttribute("data-visited", "true")')
                 # skip ads
                 if await tweet.get_by_text('Ad', exact=True).count() > 0:
                     logger.debug(f'Skipping ad: {await tweet.text_content()}')
@@ -212,7 +218,12 @@ class Twitter(BrowserApp):
         """Scroll to bottom of the page to load more tweets."""
         scroll_y_old = await self.page.evaluate('() => window.scrollY')
 
-        await self.page.evaluate('() => window.scrollTo(window.scrollX, Number.MAX_SAFE_INTEGER)')
+        await self.page.evaluate(
+            """() => {
+                const tweets = document.querySelectorAll('[data-testid="tweet"]');
+                tweets[tweets.length - 1]?.scrollIntoView();
+            }"""
+        )
 
         scroll_y_new = await self.page.evaluate('() => window.scrollY')
 
