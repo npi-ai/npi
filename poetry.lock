@@ -915,6 +915,21 @@ docs = ["mdx-gh-links (>=0.2)", "mkdocs (>=1.5)", "mkdocs-gen-files", "mkdocs-li
 testing = ["coverage", "pyyaml"]
 
 [[package]]
+name = "markdownify"
+version = "0.12.1"
+description = "Convert HTML to markdown."
+optional = false
+python-versions = "*"
+files = [
+    {file = "markdownify-0.12.1-py3-none-any.whl", hash = "sha256:a3805abd8166dbb7b27783c5599d91f54f10d79894b2621404d85b333c7ce561"},
+    {file = "markdownify-0.12.1.tar.gz", hash = "sha256:1fb08c618b30e0ee7a31a39b998f44a18fb28ab254f55f4af06b6d35a2179e27"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.9,<5"
+six = ">=1.15,<2"
+
+[[package]]
 name = "oauth2client"
 version = "4.1.3"
 description = "OAuth 2.0 client library"
@@ -1609,4 +1624,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8e11eff3f2d62bdda71569224e340e96586deeec196a45bfacad36e44e479cab"
+content-hash = "972f0580c02d86fc1357563ebf155f96a8f1ac248e30b4d0f53bdaf965509b2d"
