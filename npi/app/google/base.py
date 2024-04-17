@@ -10,18 +10,24 @@ from npi.core import App
 
 
 class GoogleApp(App):
-    _scopes = []
-    _secret_file = None
-    _token_file = None
+    _scopes: List[str]
+    _secret_file: str
+    _token_file: str
 
-    def __init__(self, llm, name, description, system_role,
-                 secret_file: str = None,
-                 token_file: str = None,
-                 scopes: List[str] = None):
+    def __init__(
+        self,
+        llm,
+        name,
+        description,
+        system_role,
+        secret_file: str = None,
+        token_file: str = None,
+        scopes: List[str] = None
+    ):
+        super().__init__(name=name, description=description, system_role=system_role, llm=llm)
         self._secret_file = secret_file
         self._token_file = token_file
         self._scopes = scopes
-        super().__init__(name=name, description=description, system_role=system_role, llm=llm)
 
     def _get_creds(self):
         creds = None
