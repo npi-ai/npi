@@ -317,7 +317,7 @@ class App:
                         res = await fn_reg.fn()
                 except Exception as err:
                     err_msg = ''.join(traceback.format_exception(err))
-                    print(err_msg)
+                    logger.error(err_msg)
                     thread.failed(err_msg)
 
                     return response_message.content

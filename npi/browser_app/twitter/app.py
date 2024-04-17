@@ -135,13 +135,13 @@ class Twitter(BrowserApp):
                         'content': content
                     }
                 )
-            except TimeoutError:
-                ...
+            except TimeoutError as e:
+                logger.error(e)
             finally:
                 if -1 < params.max_results <= len(results):
                     break
 
-        logger.debug(f'Tweets retrieved: {json.dumps(results, indent=2, ensure_ascii=False)}')
+        logger.debug(f'{len(results)} tweets retrieved: {json.dumps(results, indent=2, ensure_ascii=False)}')
 
         return json.dumps(results, ensure_ascii=False)
 
