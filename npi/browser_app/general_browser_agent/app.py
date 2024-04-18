@@ -1,6 +1,7 @@
 from openai import AsyncOpenAI
 
 from npi.core import BrowserApp, npi_tool
+from npi.browser_app.navigator import Navigator
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -16,13 +17,12 @@ class GeneralBrowserAgent(BrowserApp):
             system_role=__SYSTEM_PROMPT__,
             llm=llm,
             headless=headless,
-            use_navigator=True,
         )
 
     @npi_tool
     async def goto(self, params: GotoParameters):
         """Open the given URL in the browser"""
-        await self.page.goto(params.url)
+        await self.playwright.page.goto(params.url)
         # self.page.wait_for_url(params.url)
 
-        return f'Opened {self.page.url}, page title: {self.page.title}'
+        return f'Opened {await self.get_page_url()}, page title: {await self.get_page_title()}'

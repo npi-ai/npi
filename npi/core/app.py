@@ -1,9 +1,8 @@
-"""The basic interface for the natural language programming interface"""
+"""The basic interface for NPi Apps"""
 import json
 import inspect
 import functools
-import traceback
-from typing import Dict, List, Optional, Union, Type, cast
+from typing import Dict, List, Optional, Union, Type, cast, TYPE_CHECKING
 
 from pydantic import Field
 from openai import AsyncClient
@@ -11,7 +10,7 @@ from openai.types.chat import (
     ChatCompletionToolChoiceOptionParam,
     ChatCompletionToolParam,
     ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam, ChatCompletionMessageParam,
+    ChatCompletionUserMessageParam,
 )
 
 from npi.types import FunctionRegistration, Parameters, ToolFunction
@@ -129,6 +128,8 @@ class App:
     description: str
     system_role: Optional[str]
 
+    _started: bool = False
+
     def __init__(
         self,
         name: str,
@@ -148,6 +149,14 @@ class App:
         self.fn_map = {}
         _register_tools(self)
 
+    async def start(self):
+        """Start the app"""
+        self._started = True
+
+    async def dispose(self):
+        """Stop and dispose the app"""
+        self._started = False
+
     def register(
         self,
         *tools: Union[FunctionRegistration, 'App'],
@@ -156,9 +165,8 @@ class App:
         Register a tool to this application
 
         Args:
-            *tools: the tools to register. If an app is provided, the `app.as_tool()` method will be called.
+            *tools: the tools to register. If a tool app is provided, the `app.as_tool()` method will be called.
         """
-
         for tool in tools:
             fn_reg = tool.as_tool() if isinstance(tool, App) else tool
 
@@ -180,6 +188,29 @@ class App:
 
             self.tools.append(tool)
 
+    def as_tool(self) -> FunctionRegistration:
+        """
+        Wrap the chat function of this app to FunctionRegistration
+
+        Returns:
+            FunctionRegistration
+        """
+
+        class ToolChatParameter(Parameters):  # pylint: disable=missing-class-docstring
+            task: str = Field(
+                description=f'The task you want {self.name} to do'
+            )
+
+        async def tool_chat(params: ToolChatParameter) -> str:
+            return await self.chat(params.task, params.get_thread())
+
+        return FunctionRegistration(
+            fn=tool_chat,
+            name=self.name,
+            Params=ToolChatParameter,
+            description=self.description,
+        )
+
     async def chat(
         self,
         message: str,
@@ -195,6 +226,9 @@ class App:
         Returns:
             The last chat message
         """
+        if not self._started:
+            await self.start()
+
         if thread is None:
             thread = Thread('', api_pb2.APP_UNKNOWN)
 
@@ -216,49 +250,6 @@ class App:
 
         return await self._call_llm(thread, msg)
 
-    def as_tool(self) -> FunctionRegistration:
-        """
-        Wrap the chat function of this app to FunctionRegistration
-
-        Returns:
-            FunctionRegistration
-        """
-
-        class AppChatParameter(ChatParameters):  # pylint: disable=missing-class-docstring
-            task: str = Field(
-                description=f'The task you want {self.name} to do'
-            )
-
-        async def app_chat(params: ChatParameters) -> str:
-            return await self.chat(params.task, params.get_thread())
-
-        return FunctionRegistration(
-            fn=app_chat,
-            name=self.name,
-            Params=AppChatParameter,
-            description=self.description,
-        )
-
-    def on_round_end(self, message: ThreadMessage) -> None:
-        """
-        Callback function called at the end of a round
-        Args:
-            message: the thread message
-        """
-        pass
-
-    def process_history(self, message: ThreadMessage) -> List[ChatCompletionMessageParam]:
-        """
-        Process history messages and return them as a list of ChatCompletionMessageParams
-
-        Args:
-            message: the thread message
-
-        Returns:
-            A list of ChatCompletionMessageParams
-        """
-        return message.raw()
-
     async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         """
         Call llm with the given prompts
@@ -273,54 +264,52 @@ class App:
         while True:
             response = await self.llm.chat.completions.create(
                 model=self.default_model,
-                messages=self.process_history(message),
+                messages=message.raw(),
                 tools=self.tools,
                 tool_choice=self.tool_choice,
                 max_tokens=4096,
             )
+
             response_message = response.choices[0].message
 
             message.append(response_message)
 
             if response_message.content:
-                print(response_message.content + '\n')
+                logger.debug(response_message.content + '\n')
 
             tool_calls = response_message.tool_calls
 
             if tool_calls is None:
-                # self.on_round_end(context)
                 break
 
             for tool_call in tool_calls:
                 fn_name = tool_call.function.name
+
                 if fn_name not in self.fn_map:
                     raise Exception(f'Function not found: {fn_name}')
+
                 fn_reg = self.fn_map[fn_name]
                 args = json.loads(tool_call.function.arguments)
+
                 call_msg = f'[{self.name}]: Calling {fn_name}'
                 if len(args) > 0:
                     call_msg += f'({args})'
                 else:
                     call_msg += '()'
+
                 await thread.send_msg(callback.Callable(call_msg))
                 logger.info(call_msg)
-                try:
-                    if fn_reg.Params is not None:
-                        res = await fn_reg.fn(
-                            params=fn_reg.Params(
-                                _thread=thread,
-                                _message=message,
-                                **args,
-                            )
-                        )
-                    else:
-                        res = await fn_reg.fn()
-                except Exception as err:
-                    err_msg = ''.join(traceback.format_exception(err))
-                    logger.error(err_msg)
-                    thread.failed(err_msg)
 
-                    return response_message.content
+                if fn_reg.Params is not None:
+                    res = await fn_reg.fn(
+                        params=fn_reg.Params(
+                            _thread=thread,
+                            _message=message,
+                            **args,
+                        )
+                    )
+                else:
+                    res = await fn_reg.fn()
 
                 message.append(
                     {
@@ -330,8 +319,5 @@ class App:
                         "content": res,
                     }
                 )
-                self.on_round_end(message)
-
-        thread.finish(response_message.content)
 
         return response_message.content
