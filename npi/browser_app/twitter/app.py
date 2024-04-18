@@ -220,7 +220,8 @@ class Twitter(BrowserApp):
     @npi_tool
     async def load_more_tweets(self) -> str:
         """Scroll to bottom of the page to load more tweets."""
-        scroll_y_old = await self.playwright.page.evaluate('() => window.scrollY')
+        if not await self.is_scrollable():
+            return 'All tweets loaded. No more tweets.'
 
         await self.playwright.page.evaluate(
             """() => {
@@ -228,11 +229,6 @@ class Twitter(BrowserApp):
                 tweets[tweets.length - 1]?.scrollIntoView();
             }"""
         )
-
-        scroll_y_new = await self.playwright.page.evaluate('() => window.scrollY')
-
-        if scroll_y_old == scroll_y_new:
-            return 'All tweets loaded. No more tweets.'
 
         await self.playwright.page.wait_for_timeout(3000)
 
