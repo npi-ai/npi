@@ -31,7 +31,6 @@ class FunctionRegistration:
         self.Params = Params
 
         if name is None:
-            # remove the leading and trailing underscores from the function name
-            self.name = f'{re.sub(r"^_+|_+$", "", fn.__name__)}_{hash(fn)}'
+            self.name = fn.__name__
         else:
             self.name = name
