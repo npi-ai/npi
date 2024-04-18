@@ -1,5 +1,6 @@
 import json
 import time
+import asyncio
 from markdown import markdown
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
@@ -182,7 +183,7 @@ class Gmail(GoogleApp):
         return 'The following message is sent:\n' + self._message_to_string(msg)
 
     @npi_tool
-    def wait_for_reply(self, params: WaitForReplyParameters):
+    async def wait_for_reply(self, params: WaitForReplyParameters):
         """Wait for reply from the last email sent in the previous chats"""
         while True:
             messages = self.gmail_client.get_messages(
@@ -195,4 +196,4 @@ class Gmail(GoogleApp):
                 msg.mark_as_read()
                 return self._message_to_string(msg)
 
-            time.sleep(3)
+            await asyncio.sleep(3)
