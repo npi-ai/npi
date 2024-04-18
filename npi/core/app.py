@@ -2,7 +2,7 @@
 import json
 import inspect
 import functools
-from typing import Dict, List, Optional, Union, Type, cast, TYPE_CHECKING
+from typing import Dict, List, Optional, Union, Type, cast
 
 from pydantic import Field
 from openai import AsyncClient
@@ -310,6 +310,8 @@ class App:
                     )
                 else:
                     res = await fn_reg.fn()
+
+                logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
                 message.append(
                     {
