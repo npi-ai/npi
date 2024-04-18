@@ -275,7 +275,8 @@ class App:
             message.append(response_message)
 
             if response_message.content:
-                logger.debug(response_message.content + '\n')
+                logger.info(response_message.content)
+                await thread.send_msg(callback.Callable(response_message.content))
 
             tool_calls = response_message.tool_calls
 
