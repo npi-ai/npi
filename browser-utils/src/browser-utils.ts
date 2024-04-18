@@ -10,6 +10,7 @@ import {
   attrsToKeepRegex,
   getInteractiveElements,
   markElement,
+  addBboxes,
   clearBboxes,
   getPageBrightness,
   isFormComponent,
@@ -50,6 +51,11 @@ export class BrowserUtils {
     }
 
     return document.querySelector(`[data-marker-id="${id}"]`) as HTMLElement;
+  }
+
+  async addBboxes() {
+    const interactiveElements = await getInteractiveElements(this.selector);
+    addBboxes(interactiveElements);
   }
 
   clearBboxes() {
