@@ -1,5 +1,4 @@
 import json
-import time
 import asyncio
 from markdown import markdown
 from simplegmail.message import Message
