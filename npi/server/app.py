@@ -30,7 +30,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 thread = self.thread_manager.new_thread(request.chat_request)
                 response.thread_id = thread.id
                 response.code = api_pb2.ResponseCode.SUCCESS
-                await self.run(thread)
+                # await self.run(thread)
+                # create background task
+                asyncio.create_task(self.run(thread))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -185,12 +187,10 @@ async def serve(address: str) -> None:
 
 
 def main():
-    loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(serve("[::]:9140"))
+        asyncio.run(serve("[::]:9140"))
     finally:
-        loop.run_until_complete(*_cleanup_coroutines)
-        loop.close()
+        asyncio.run(*_cleanup_coroutines)
 
 
 if __name__ == "__main__":
