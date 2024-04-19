@@ -1,36 +1,18 @@
-import pathlib
-import subprocess
+import base64
 
 from openai import Client
 from openai.types.chat import ChatCompletionToolChoiceOptionParam
-from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page, FileChooser
-from typing import Union
+from playwright.async_api import ElementHandle
 
 from npi.core.app import App
-from npi.core.navigator import Navigator
 from npi.core.thread import Thread
 from proto.python.api import api_pb2
-
-
-# TODO: publish the js package to npm
-def _prepare_browser_utils():
-    # path to the js bundle
-    js_dir = pathlib.Path(__file__).parent / '../../browser-utils'
-
-    subprocess.call('pnpm install && pnpm build', shell=True, cwd=js_dir)
-
-    return js_dir / 'dist/index.global.js'
+from .playwright_context import PlaywrightContext
 
 
 class BrowserApp(App):
-    playwright: Playwright
-    browser: Browser
-    context: BrowserContext
-    page: Page
-    headless: bool
+    playwright: PlaywrightContext
     use_screenshot: bool
-    navigator: Union[Navigator, None] = None
-    started: bool = False
 
     def __init__(
         self,
@@ -40,7 +22,7 @@ class BrowserApp(App):
         system_role: str = None,
         model: str = "gpt-4-vision-preview",
         tool_choice: ChatCompletionToolChoiceOptionParam = "auto",
-        use_navigator: Union[bool, Navigator] = True,
+        playwright: PlaywrightContext = None,
         use_screenshot: bool = True,
         headless: bool = True,
     ):
@@ -54,62 +36,24 @@ class BrowserApp(App):
             system_role: System prompt of the browser app
             model: LLM model to use
             tool_choice: LLM tool choice
-            use_navigator: Whether to use navigator. If True, the default navigator will be used. If a navigator instance is provided, it will replace the default navigator
             use_screenshot: Whether to send a screenshot of the current page to the vision model. This should be used with a navigator and a vision model.
             headless: Whether to run playwright in headless mode
         """
         super().__init__(name, description, llm, system_role, model, tool_choice)
-        self.headless = headless
         self.use_screenshot = use_screenshot
-
-        if use_navigator:
-            self.navigator = use_navigator if isinstance(use_navigator, Navigator) else Navigator(self)
-            self.register(self.navigator)
+        self.playwright = playwright or PlaywrightContext(headless)
 
     async def start(self):
         """Start the Browser App"""
-        if self.started:
-            return
-
-        self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=self.headless)
-
-        self.context = await self.browser.new_context(
-            locale='en-US',
-            **self.playwright.devices['Desktop Chrome'],
-        )
-        self.context.set_default_timeout(3000)
-        await self.context.add_init_script(path=_prepare_browser_utils())
-        await self.context.add_init_script(script="""window.npi = new window.BrowserUtils()""")
-
-        self.page = await self.context.new_page()
-        self.page.on('filechooser', self.on_filechooser)
-        self.page.on('popup', self.on_popup)
-
-        self.started = True
-
-    async def on_filechooser(self, chooser: FileChooser):
-        """
-        Callback function invoked when an input:file is clicked
-
-        Args:
-            chooser: FileChooser instance
-        """
-        await chooser.set_files('')
-
-    async def on_popup(self, popup: Page):
-        """
-        Callback function invoked when a tab is opened
-
-        Args:
-            popup: Page instance
-        """
-        self.page = popup
+        if not self._started:
+            await super().start()
+            await self.playwright.start()
 
     async def dispose(self):
         """
         Dispose the browser app
         """
+        await super().dispose()
         await self.playwright.stop()
 
     async def chat(
@@ -117,16 +61,16 @@ class BrowserApp(App):
         message: str,
         thread: Thread = None,
     ) -> str:
-        if not self.started:
+        if not self._started:
             await self.start()
 
-        if not self.use_screenshot or not self.navigator:
+        if not self.use_screenshot:
             return await super().chat(message, thread)
 
         if thread is None:
             thread = Thread('', api_pb2.APP_UNKNOWN)
 
-        screenshot = await self.navigator.get_screenshot()
+        screenshot = await self.get_screenshot()
 
         msg = thread.fork(message)
 
@@ -157,3 +101,169 @@ class BrowserApp(App):
         )
 
         return await self._call_llm(thread, msg)
+
+    async def get_screenshot(self):
+        """Get the screenshot of the current page"""
+        screenshot = await self.playwright.page.screenshot(caret='initial')
+        return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
+
+    async def get_page_url(self):
+        """Get the URL of the current page"""
+        return self.playwright.page.url
+
+    async def get_page_title(self):
+        """Get the page title of the current page"""
+        return await self.playwright.page.title()
+
+    async def is_scrollable(self):
+        """Check if the current page is scrollable"""
+        return await self.playwright.page.evaluate('() => npi.isScrollable()')
+
+    async def get_interactive_elements(self, screenshot: str):
+        """Get the interactive elements of the current page"""
+        return await self.playwright.page.evaluate(
+            """async (screenshot) => {
+                const { elementsAsJSON, addedIDs } = await npi.snapshot(screenshot);
+                return [elementsAsJSON, addedIDs];
+            }""",
+            screenshot,
+        )
+
+    async def get_element_by_marker_id(self, elem_id: str):
+        """Get the element by marker id"""
+        handle = await self.playwright.page.evaluate_handle(
+            'id => npi.getElement(id)',
+            elem_id,
+        )
+
+        elem_handle = handle.as_element()
+
+        if not elem_handle:
+            raise Exception(f'Element not found (id: {elem_id})')
+
+        return elem_handle
+
+    async def element_to_json(self, elem: ElementHandle):
+        """
+        Convert the element into JSON
+
+        Args:
+            elem: Playwright element handle
+
+        Returns:
+            JSON representation of the element
+        """
+        return await self.playwright.page.evaluate(
+            '(elem) => npi.elementToJSON(elem)',
+            elem,
+        )
+
+    async def init_observer(self):
+        """Initialize a mutation observer on the current page"""
+        await self.playwright.page.evaluate('() => npi.initObserver()')
+
+    async def wait_for_stable(self):
+        """Wait for the current page to be stable"""
+        await self.playwright.page.evaluate('() => npi.stable()')
+
+    async def add_bboxes(self):
+        """Add bounding boxes to the interactive elements on the current page"""
+        await self.playwright.page.evaluate('() => npi.addBboxes()')
+
+    async def clear_bboxes(self):
+        """Clear the bounding boxes on the current page"""
+        await self.playwright.page.evaluate('() => npi.clearBboxes()')
+
+    async def click(self, elem: ElementHandle):
+        """
+        Click an element on the page
+
+        Args:
+            elem: Element Handle of the target element
+        """
+
+        try:
+            await elem.click()
+        except TimeoutError:
+            await self.playwright.page.evaluate(
+                '(elem) => npi.click(elem)',
+                elem,
+            )
+
+        return f'Successfully clicked element'
+
+    async def fill(self, elem: ElementHandle, value: str):
+        """
+        Fill in an input field on the page
+
+        Args:
+            elem: Element Handle of the target element
+            value: value to fill
+        """
+
+        try:
+            await elem.fill(value)
+        except TimeoutError:
+            await self.playwright.page.evaluate(
+                '([elem, value]) => npi.fill(elem, value)',
+                [elem, value],
+            )
+
+        return f'Successfully filled value {value} into element'
+
+    async def select(self, elem: ElementHandle, value: str):
+        """
+        Select an option for a <select> element
+
+        Args:
+            elem: Element Handle of the target element
+            value: value to select
+        """
+
+        try:
+            await elem.select_option(value)
+        except TimeoutError:
+            await self.playwright.page.evaluate(
+                '([elem, value]) => npi.select(elem, value)',
+                [elem, value],
+            )
+
+        return f'Successfully selected value {value} for element'
+
+    async def enter(self, elem: ElementHandle):
+        """
+        Press Enter on an input field. This action usually submits a form.
+
+        Args:
+            elem: Element Handle of the target element
+        """
+
+        try:
+            await elem.press('Enter')
+        except TimeoutError:
+            await self.playwright.page.evaluate(
+                '(elem) => npi.enter(elem)',
+                elem,
+            )
+
+        return f'Successfully pressed Enter on element'
+
+    async def scroll(self):
+        """
+        Scroll the page down to reveal more contents
+        """
+
+        await self.playwright.page.evaluate('() => npi.scrollPageDown()')
+        await self.playwright.page.wait_for_timeout(300)
+
+        return f'Successfully scrolled down to reveal more contents'
+
+    async def back_to_top(self):
+        """
+        Scroll the page back to the top to start over
+        """
+
+        await self.playwright.page.evaluate('() => window.scrollTo(0, 0)')
+        await self.playwright.page.wait_for_timeout(300)
+
+        return f'Successfully scrolled to top'

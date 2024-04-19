@@ -1,7 +1,4 @@
 from pydantic import BaseModel
-from openai.types.chat import ChatCompletionMessageParam
-from typing import List
-
 from npi.core.thread import Thread, ThreadMessage
 
 
@@ -48,8 +45,3 @@ class Parameters(BaseModel):
             schema.pop('properties', None)
 
         return schema
-
-
-if __name__ == '__main__':
-    p = Parameters(_thread={}, _message={})
-    print(p)

@@ -1,4 +1,4 @@
-from . import Thread
+from .thread import Thread
 
 from proto.python.api import api_pb2
 

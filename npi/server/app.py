@@ -30,7 +30,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 thread = self.thread_manager.new_thread(request.chat_request)
                 response.thread_id = thread.id
                 response.code = api_pb2.ResponseCode.SUCCESS
-                Chat.run(thread)
+                # await self.run(thread)
+                # create background task
+                asyncio.create_task(self.run(thread))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -51,7 +53,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
     async def GetAppSchema(
         self,
         request: api_pb2.AppSchemaRequest,
-        _: grpc.ServicerContext,) -> api_pb2.AppSchemaResponse:
+        _: grpc.ServicerContext, ) -> api_pb2.AppSchemaResponse:
         app = None
         try:
 
@@ -67,21 +69,21 @@ class Chat(api_pb2_grpc.AppServerServicer):
         schema = {
             "type": "function",
             "function": {
-                "name": f"{ app.name }",
-                "description": f"{ app.description }",
+                "name": f"{app.name}",
+                "description": f"{app.description}",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "message": {
                             "type": "string",
-                            "description": f"the task you want to do with tool { app.name }",
+                            "description": f"the task you want to do with tool {app.name}",
                         },
                     },
                     "required": ["message"],
                 },
             },
         }
-        response.schema = f"{ json.dumps(schema) }"
+        response.schema = f"{json.dumps(schema)}"
         return response
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
@@ -140,20 +142,27 @@ class Chat(api_pb2_grpc.AppServerServicer):
         cb.callback(msg=req.action_result_request.action_result)
 
     @staticmethod
-    def run(thread: Thread):
+    async def run(thread: Thread):
+        app = None
         try:
-            app = None
             if thread.app_type == api_pb2.GOOGLE_GMAIL:
                 app = google.Gmail()
             elif thread.app_type == api_pb2.GOOGLE_CALENDAR:
                 app = google.GoogleCalendar()
             else:
                 raise Exception("unsupported application")
-            asyncio.create_task(app.chat(thread.instruction, thread))
+            await app.start()
+            result = await app.chat(thread.instruction, thread)
+            thread.finish(result)
         except Exception as e:
             err_msg = ''.join(traceback.format_exception(e))
-            print(err_msg)
-            raise e
+            logger.error(err_msg)
+            thread.failed(err_msg)
+            # raise e
+        finally:
+            if app is not None:
+                # clean up
+                await app.dispose()
 
 
 _cleanup_coroutines = []
@@ -178,12 +187,10 @@ async def serve(address: str) -> None:
 
 
 def main():
-    loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(serve("[::]:9140"))
+        asyncio.run(serve("[::]:9140"))
     finally:
-        loop.run_until_complete(*_cleanup_coroutines)
-        loop.close()
+        asyncio.run(*_cleanup_coroutines)
 
 
 if __name__ == "__main__":

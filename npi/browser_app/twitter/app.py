@@ -6,6 +6,7 @@ from markdownify import MarkdownConverter
 
 from npi.core import BrowserApp, npi_tool
 from npi.utils import logger
+from npi.browser_app.navigator import Navigator
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -94,22 +95,24 @@ class Twitter(BrowserApp):
             system_role=__SYSTEM_PROMPT__,
             llm=llm,
             headless=headless,
-            use_navigator=True,
         )
 
+        self.register(Navigator(playwright=self.playwright))
+
     async def start(self):
-        await super().start()
-        await self._login()
+        if not self._started:
+            await super().start()
+            await self._login()
 
     async def _login(self):
         if os.path.exists(self.state_file):
             with open(self.state_file, 'r') as f:
                 state = json.load(f)
-                await self.context.add_cookies(state['cookies'])
-            await self.page.goto(__ROUTES__['home'])
+                await self.playwright.context.add_cookies(state['cookies'])
+            await self.playwright.page.goto(__ROUTES__['home'])
             try:
                 # validate cookies
-                await self.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
+                await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
                 logger.debug('Twitter cookies restored.')
                 return
             except TimeoutError:
@@ -117,23 +120,23 @@ class Twitter(BrowserApp):
                 logger.debug('Twitter cookies expired. Continue login process.')
 
         credentials = json.load(open(self.secret_file))
-        await self.page.goto(__ROUTES__['login'])
-        await self.page.get_by_test_id('loginButton').click()
-        await self.page.get_by_label('Phone, email, or username').fill(credentials['username'])
-        await self.page.get_by_role('button', name='Next').click()
-        await self.page.get_by_label('Password', exact=True).fill(credentials['password'])
-        await self.page.get_by_test_id('LoginForm_Login_Button').click()
-        await self.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
+        await self.playwright.page.goto(__ROUTES__['login'])
+        await self.playwright.page.get_by_test_id('loginButton').click()
+        await self.playwright.page.get_by_label('Phone, email, or username').fill(credentials['username'])
+        await self.playwright.page.get_by_role('button', name='Next').click()
+        await self.playwright.page.get_by_label('Password', exact=True).fill(credentials['password'])
+        await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
+        await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
 
         # save state
-        await self.context.storage_state(path=self.state_file)
+        await self.playwright.context.storage_state(path=self.state_file)
 
     @npi_tool
     async def get_current_page(self):
         """Get the title and url of the current page."""
         result = {
-            'title': await self.page.title(),
-            'url': self.page.url,
+            'title': await self.playwright.page.title(),
+            'url': self.playwright.page.url,
         }
         return json.dumps(result, ensure_ascii=False)
 
@@ -143,7 +146,7 @@ class Twitter(BrowserApp):
         Retrieve tweets on the current page.
         You should ensure you are on the correct page (home, user profile, etc.) before calling this tool.
         """
-        scrollable = await self.navigator.is_scrollable()
+        scrollable = await self.is_scrollable()
 
         if not scrollable:
             # no more tweets
@@ -152,7 +155,7 @@ class Twitter(BrowserApp):
         results = []
 
         # match unvisited tweets only
-        tweets = self.page.locator('[data-testid="tweet"]:not([data-visited])')
+        tweets = self.playwright.page.locator('[data-testid="tweet"]:not([data-visited])')
         await tweets.first.wait_for(state='attached', timeout=10_000)
 
         logger.debug(f'{await tweets.count()} tweets found.')
@@ -217,30 +220,26 @@ class Twitter(BrowserApp):
     @npi_tool
     async def load_more_tweets(self) -> str:
         """Scroll to bottom of the page to load more tweets."""
-        scroll_y_old = await self.page.evaluate('() => window.scrollY')
+        if not await self.is_scrollable():
+            return 'All tweets loaded. No more tweets.'
 
-        await self.page.evaluate(
+        await self.playwright.page.evaluate(
             """() => {
                 const tweets = document.querySelectorAll('[data-testid="tweet"]');
                 tweets[tweets.length - 1]?.scrollIntoView();
             }"""
         )
 
-        scroll_y_new = await self.page.evaluate('() => window.scrollY')
-
-        if scroll_y_old == scroll_y_new:
-            return 'All tweets loaded. No more tweets.'
-
-        await self.page.wait_for_timeout(3000)
+        await self.playwright.page.wait_for_timeout(3000)
 
         return 'More tweets loaded.'
 
     @npi_tool
     async def open_tweet(self, params: OpenTweetParameters) -> str:
         """Open a tweet with the given URL."""
-        await self.page.goto(params.url, timeout=10_000)
+        await self.playwright.page.goto(params.url, timeout=10_000)
 
-        return f'Tweet opened. Current URL: {self.page.url}, page title: {await self.page.title()}'
+        return f'Tweet opened. Current URL: {await self.get_page_url()}, page title: {await self.get_page_title()}'
 
 
 __all__ = ['Twitter']
