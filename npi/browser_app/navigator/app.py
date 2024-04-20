@@ -8,7 +8,7 @@ from typing_extensions import NotRequired, TypedDict
 from npi.core import BrowserApp, PlaywrightContext
 from npi.core.thread import Thread, ThreadMessage
 from npi.utils import logger
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 
 __PROMPT__ = """
 Imagine that you are imitating humans doing web navigation for a task step by step. I will provide you with the following context and you should call the best tool to fulfill the task.

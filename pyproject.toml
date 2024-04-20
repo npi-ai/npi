@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "npi"
 version = "0.0.1"
-description = "Natural language API"
+description = "Open Source **tool using** API platform for Agent builders"
 authors = ["Wells Wang <wells@npi.ai>"]
 readme = "README.md"
 
@@ -23,6 +23,8 @@ grpcio = "^1.62.1"
 playwright = "^1.43.0"
 loguru = "^0.7.2"
 markdownify = "^0.12.1"
+npiai-proto = "0.0.1.dev1"
+npiai = "0.0.2.dev2"
 
 
 [tool.poetry.group.dev.dependencies]

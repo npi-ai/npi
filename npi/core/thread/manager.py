@@ -1,6 +1,6 @@
 from .thread import Thread
 
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 
 
 class ThreadManager:

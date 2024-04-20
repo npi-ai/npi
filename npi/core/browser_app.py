@@ -6,7 +6,7 @@ from playwright.async_api import ElementHandle
 
 from npi.core.app import App
 from npi.core.thread import Thread
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 from .playwright_context import PlaywrightContext
 
 
