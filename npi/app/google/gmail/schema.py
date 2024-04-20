@@ -40,7 +40,8 @@ class ReplyParameter(SendEmailParameters):
         )
     )
     recipient_id: str = Field(
-        description='The ID of the recipient being replied to. You can find this in the "Sender ID: ..." line of the email'
+        description='The ID of the recipient being replied to. You can find this in the "Sender ID: ..." line of the '
+                    'email'
     )
 
 
@@ -52,16 +53,24 @@ class CreateReplyDraftParameter(ReplyParameter):
     pass
 
 
+class ConfirmEmailSendingParameters(Parameters):
+    body: str = Field(
+        description='The body of the email to will be sent',
+    )
+
+
 class AddLabelsParameters(Parameters):
     message_ids: List[str] = Field(
-        description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." line of the email'
+        description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." '
+                    'line of the email'
     )
     labels: List[str] = Field(description='A list of labels to add')
 
 
 class RemoveLabelsParameters(Parameters):
     message_ids: List[str] = Field(
-        description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." line of the email'
+        description='A list of IDs of messages that should be labeled. You can find this in the "Message ID: ..." '
+                    'line of the email'
     )
     labels: List[str] = Field(description='A list of labels to remove')
 
@@ -72,5 +81,6 @@ class WaitForReplyParameters(Parameters):
     #     description='The ID of the thread to wait. You can find this in the "Thread ID: ..." line of the email'
     # )
     sent_from: str = Field(
-        description='The reply message sender. This should be the recipient of the last email and you can find it in the "To: ..." line'
+        description='The reply message sender. This should be the recipient of the last email and you can find it in '
+                    'the "To: ..." line'
     )

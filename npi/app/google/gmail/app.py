@@ -1,12 +1,16 @@
 import json
 import asyncio
+import time
+import loguru
+
 from markdown import markdown
 from simplegmail.message import Message
 from googleapiclient.errors import HttpError
-from npi.core.app import npi_tool
+from npi.core.app import npi_tool, callback
 from .client import GmailClientWrapper
 from .schema import *
 from npi.app.google import GoogleApp
+from npiai_proto import api_pb2
 
 
 class Gmail(GoogleApp):
@@ -102,6 +106,30 @@ class Gmail(GoogleApp):
                 self.gmail_client.remove_labels(msg, labels_to_remove)
 
         return 'Labels removed'
+
+    @npi_tool(description='Before sending the email, you must need to call this function for waiting user approve '
+                          'sending email. If user asks to revise the email, you must call this function again after '
+                          'revising.')
+    async def confirm_email_sending(self, params: ConfirmEmailSendingParameters):
+        """Confirm the email sending"""
+        loguru.logger.info(f"Waiting for user approve")
+        cb = callback.Callable(
+            action=api_pb2.ActionResponse(
+                type=api_pb2.ActionType.HUMAN_FEEDBACK,
+                human_feedback=api_pb2.HumanFeedbackAction(
+                    type=api_pb2.HumanFeedbackActionType.INPUT,
+                    notice=f"following is the email content will be sent, please confirm:\n{params.body}",
+                )
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await params.get_thread().send_msg(cb=cb)
+        loguru.logger.info(f"Waiting for user input")
+        response = await cb.wait()
+        if response == 'yes':
+            return "OK, please send"
+        else:
+            return f"please based this response to revise the email content: {response}"
 
     @npi_tool
     def create_draft(self, params: CreateDraftParameter):

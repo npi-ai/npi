@@ -35,7 +35,7 @@ func gmailCommand() *cobra.Command {
 		Use:   "gmail",
 		Short: "chat with Gmail",
 		Run: func(cmd *cobra.Command, args []string) {
-
+			doRequest(api.AppType_GOOGLE_GMAIL, args[0])
 		},
 	}
 	return cmd
@@ -45,7 +45,7 @@ func googleCalenderCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "google-calendar",
 		Aliases: []string{"gcal"},
-		Short:   "chat with Google Calendar",
+		Short:   "chat with Google Calendar, alias: gcal",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_GOOGLE_CALENDAR, args[0])
 		},

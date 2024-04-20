@@ -3,6 +3,7 @@
 import datetime
 import json
 
+import loguru
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -70,7 +71,7 @@ class GoogleCalendar(GoogleApp):
         )
         cb.action.action_id = cb.id()
         await params.get_thread().send_msg(cb=cb)
-        print('waiting for email')
+        loguru.logger.info(f"Waiting for user input")
         return await cb.wait()
 
     @npi_tool
