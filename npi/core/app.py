@@ -18,7 +18,7 @@ from npi.core import callback
 from npi.core.thread import Thread, ThreadMessage
 from npi.constants.openai import Role
 from npi.utils import logger
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 

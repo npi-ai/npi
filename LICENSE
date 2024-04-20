@@ -3,25 +3,31 @@ License 1.1 (BSL).
 
 ---------------------------------------------------------------------------------
 
-Licensor:              LLM Programming, Inc.	
+Licensor:              Lifecycle AI, LLC.
 
-Licensed Work:	       The Licensed Work is (c) 2024 LLM Programming, Inc.
+Licensed Work:	       The Licensed Work is (c) 2024 Lifecycle AI, LLC.
 
 Additional Use Grant:  You may make production use of the Licensed Work, provided 
-                       that you may not use the Licensed Work for an Agent Service.
+                       that you may meet at least one of following criteria.
 
-                       An "Agent Service" is a commercial offering that allows third
-                       parties(other than your employees and contractors) to access
-                       the functionality of the Licensed Work by performing an action
-                       directly or indirectly that causes the creation of an agent in
-                       the Licensed Work.
+                       1. The total annual gross revenue of your Company, including
+                          all its divisions, branches, and affiliated entities, for
+                          the preceding fiscal year not exceed 2 million United
+                          States Dollars (USD $2,000,000).
 
-                       For clarity, an Agent Service would include providers of
-                       infrastructure services, such as cloud services, hosting services,
-                       data center services and similarly situated third parties (including
-                       affiliates of such entities) that would offer the Licensed Work in
-                       connection with a broader service offering to customers or subscribers
-                       of such of such third party’s core services.
+                       2. Not use the Licensed Work for an "Agent Service".
+                          An "Agent Service" is a commercial offering that allows third
+                          parties(other than your employees and contractors) to access
+                          the functionality of the Licensed Work by performing an action
+                          directly or indirectly that causes the creation of an agent in
+                          the Licensed Work.
+
+                          For clarity, an Agent Service would include providers of
+                          infrastructure services, such as cloud services, hosting services,
+                          data center services and similarly situated third parties (including
+                          affiliates of such entities) that would offer the Licensed Work in
+                          connection with a broader service offering to customers or subscribers
+                          of such of such third party’s core services.
 
 Change Date:           Four years from the release date. Please see [NPi Release](https://github.com/npi-ai/npi/releases/) for exact date.
 

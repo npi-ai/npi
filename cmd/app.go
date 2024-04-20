@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
-	api "github.com/npi-ai/npi/proto/go/api"
+	api "github.com/npi-ai/proto/go/api"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -61,7 +61,7 @@ func doRequest(app api.AppType, instruction string) {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	defer conn.Close()
-	cli := api.NewChatServerClient(conn)
+	cli := api.NewAppServerClient(conn)
 	resp, err := cli.Chat(context.Background(), &api.Request{
 		Code:      api.RequestCode_CHAT,
 		RequestId: uuid.New().String(),

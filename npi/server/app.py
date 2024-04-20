@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 
-from proto.python.api import api_pb2_grpc, api_pb2
+from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
 from npi.app import google
 from npi.utils import logger

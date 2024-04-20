@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/go-resty/resty/v2 v2.12.0
 	github.com/google/uuid v1.6.0
-	github.com/npi-ai/npi/proto v0.0.0
+	github.com/npi-ai/proto v0.0.0-20240420001309-4fc9d23fab40
 	github.com/spf13/cobra v1.8.0
 	google.golang.org/grpc v1.63.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -24,5 +24,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
-
-replace github.com/npi-ai/npi/proto => ../proto

@@ -9,7 +9,7 @@ from googleapiclient.errors import HttpError
 from npi.app.google import GoogleApp
 from npi.app.google.calendar.schema import *
 from npi.core import npi_tool, callback
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 
 
 # https://developers.google.com/calendar/quickstart/python

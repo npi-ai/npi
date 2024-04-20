@@ -12,7 +12,7 @@ from openai.types.chat import (
 
 from npi.core import callback
 
-from proto.python.api import api_pb2
+from npiai_proto import api_pb2
 
 
 class ThreadMessage:
