@@ -10,3 +10,6 @@ credentials.json
 credentials/
 
 **/bin
+
+**/.next
+**/node_modules
