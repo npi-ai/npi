@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-from typing import List
 
 import discord
 
