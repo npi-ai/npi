@@ -19,6 +19,8 @@ class GeneralBrowserAgent(BrowserApp):
             headless=headless,
         )
 
+        self.register(Navigator(playwright=self.playwright))
+
     @npi_tool
     async def goto(self, params: GotoParameters):
         """Open the given URL in the browser"""
