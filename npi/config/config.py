@@ -4,25 +4,11 @@ CONFIG = {}
 
 
 def get_project_root():
-    try:
-        if 'npi_root' in CONFIG:
-            return CONFIG["npi_root"]
-        if os.environ["NPI_ROOT"]:
-            return os.environ["NPI_ROOT"]
-    except KeyError:
-        pass
-    return "/npiai"
+    return CONFIG.get('npi_root', os.environ.get('NPI_ROOT', '/npiai'))
 
 
 def get_oai_key():
-    try:
-        if CONFIG["openai_api_key"]:
-            return CONFIG["openai_api_key"]
-        if os.environ["OPENAI_API_KEY"]:
-            return os.environ["OPENAI_API_KEY"]
-    except KeyError:
-        pass
-    return ""
+    return CONFIG.get('openai_api_key', os.environ.get('OPENAI_API_KEY', ''))
 
 
 def create_credentials():
