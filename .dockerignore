@@ -1,0 +1,15 @@
+.idea
+**/__pycache__
+.VSCodeCounter
+.vscode
+.env
+
+credentials.json
+
+credentials/
+
+**/bin
+
+**/.next
+**/node_modules
+config

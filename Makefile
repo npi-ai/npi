@@ -2,11 +2,8 @@ NPI_CMD_ROOT = $(shell pwd)
 GIT_COMMIT = $(shell git log -1 --format='%h' | awk '{print $0}')
 DATE = $(shell date +%Y-%m-%d_%H:%M:%S%z)
 
-DOCKER_REGISTRY ?= public.ecr.aws
-DOCKER_REPO ?= ${DOCKER_REGISTRY}/npi
-IMAGE_PREFIX ?=
-IMAGE_TAG ?= ${GIT_COMMIT}
-VERSION ?= ${IMAGE_TAG}
+VERSION ?= ${GIT_COMMIT}
+IMAGE_TAG ?= ${VERSION}
 
 #os linux or darwin
 GOOS ?= darwin
@@ -21,10 +18,13 @@ LD_FLAGS += -X 'main.BuildDate=${DATE}'
 LD_FLAGS += -X 'main.Platform=${GOOS}/${GOARCH}'
 
 GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath
-
+DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 
 build-npi:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}
+
+docker-build:
+	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
 
 clean:
 	rm -rf bin
