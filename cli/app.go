@@ -56,7 +56,7 @@ func googleCalenderCommand() *cobra.Command {
 func doRequest(app api.AppType, instruction string) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := grpc.Dial(cfg.NPIServer, opts...)
+	conn, err := grpc.Dial(cfg.GetGRPCEndpoint(), opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}

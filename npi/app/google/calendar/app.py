@@ -21,7 +21,9 @@ from npiai_proto import api_pb2
 class GoogleCalendar(GoogleApp):
     """the function wrapper of Google Calendar App"""
 
-    __scopes = ["https://www.googleapis.com/auth/calendar"]
+    SCOPE = ["https://www.googleapis.com/auth/calendar"]
+    TOKEN_FILE = "config/credentials/gc_token.json"
+
     __service_name = "calendar"
     __api_version = "v3"
 
@@ -33,9 +35,9 @@ class GoogleCalendar(GoogleApp):
             system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
                         'the best function based the tool list.',
             llm=llm,
-            token_file="/".join([config.get_project_root(), "config/credentials/gc_token.json"]),
-            secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
-            scopes=self.__scopes,
+            token_file=GoogleCalendar.TOKEN_FILE,
+            # secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
+            scopes=self.SCOPE,
         )
 
         self.creds = super()._get_creds()

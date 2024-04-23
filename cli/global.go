@@ -118,6 +118,6 @@ func readConfig() {
 		color.Red("failed to read config file: %v ", err)
 		os.Exit(-1)
 	}
-	httpClient = resty.New().SetBaseURL("http://" + cfg.NPIServer)
+	httpClient = resty.New().SetBaseURL("http://" + cfg.GetHTTPEndpoint())
 	httpClient.SetHeader("Authorization", cfg.APIKey)
 }

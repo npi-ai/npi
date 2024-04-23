@@ -39,6 +39,7 @@ func init() {
 	}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(
+		authCommand(),
 		connectCommand(),
 		appCommand(),
 		versionCommand(),

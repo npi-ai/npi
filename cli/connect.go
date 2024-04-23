@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -11,7 +12,17 @@ import (
 
 type CMDConfig struct {
 	NPIServer string `yaml:"endpoint"`
+	gRPCPort  int32  `yaml:"grpc_port"`
+	httpPort  int32  `yaml:"http_port"`
 	APIKey    string `yaml:"apiKey"`
+}
+
+func (c *CMDConfig) GetGRPCEndpoint() string {
+	return fmt.Sprintf("%s:%d", c.NPIServer, c.gRPCPort)
+}
+
+func (c *CMDConfig) GetHTTPEndpoint() string {
+	return fmt.Sprintf("%s:%d", c.NPIServer, c.httpPort)
 }
 
 func connectCommand() *cobra.Command {
@@ -50,7 +61,9 @@ func connectCommand() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().StringVar(&cfg.NPIServer, "endpoint", "localhost:9140", "the endpoint of NPI Server")
+	cmd.Flags().StringVar(&cfg.NPIServer, "endpoint", "localhost", "the endpoint of NPI Server")
+	cmd.Flags().Int32Var(&cfg.gRPCPort, "grpc-port", 9140, "the port of gRPC Server")
+	cmd.Flags().Int32Var(&cfg.httpPort, "http-port", 9141, "the port of HTTP Server")
 	cmd.Flags().StringVar(&cfg.APIKey, "apiKey", "", "the api key for NPI Server")
 	return cmd
 }
