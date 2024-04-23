@@ -1,17 +1,22 @@
 import pathlib
-import subprocess
+import os
+from urllib.request import urlretrieve
 
 from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page, FileChooser
 
+__BROWSER_UTILS_VERSION__ = '0.0.1'
 
-# TODO: publish the js package to npm
+
 def _prepare_browser_utils():
     # path to the js bundle
-    js_dir = pathlib.Path(__file__).parent / '../../browser-utils'
+    cache_dir = pathlib.Path(__file__).parent / '../../.cache'
+    js_path = cache_dir / f'browser-utils@{__BROWSER_UTILS_VERSION__}.js'
 
-    subprocess.call('pnpm install && pnpm build', shell=True, cwd=js_dir)
+    os.makedirs(cache_dir, exist_ok=True)
 
-    return js_dir / 'dist/index.global.js'
+    urlretrieve(f'https://unpkg.com/@npi-ai/browser-utils@{__BROWSER_UTILS_VERSION__}/dist/index.global.js', js_path)
+
+    return js_path
 
 
 class PlaywrightContext:
