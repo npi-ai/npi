@@ -17,11 +17,11 @@ LD_FLAGS += -X 'main.GitCommit=${GIT_COMMIT}'
 LD_FLAGS += -X 'main.BuildDate=${DATE}'
 LD_FLAGS += -X 'main.Platform=${GOOS}/${GOARCH}'
 
-GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath
+GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C ${NPI_CMD_ROOT}/cli -trimpath
 DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 
 build-npi:
-	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}
+	$(GO_BUILD) -ldflags "${LD_FLAGS}"  -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}/cli
 
 docker-build:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push

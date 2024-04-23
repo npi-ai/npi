@@ -1,10 +1,12 @@
 import asyncio
-import json
 import os
+import json
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
+import uvicorn
+
 import yaml
 
 from npiai_proto import api_pb2_grpc, api_pb2
@@ -187,20 +189,29 @@ async def serve(address: str) -> None:
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.wait_for_termination()
 
+async def main():
+    config_file = os.getenv("NPI_CONFIG_FILE")
+    if config_file is None:
+        config_file = "/npiai/config/config.yaml"
+    with open(config_file, "r") as f:
+        data = yaml.safe_load(f)
+    config.CONFIG.update(data)
+    config.create_credentials()
 
-def main():
-    try:
-        config_file = os.getenv("NPI_CONFIG_FILE")
-        if config_file is None:
-            config_file = "/npi/config.yaml"
-        with open(config_file, "r") as f:
-            data = yaml.safe_load(f)
-        config.CONFIG.update(data)
-        config.create_credentials()
-        asyncio.run(serve("[::]:9140"))
-    finally:
-        asyncio.run(*_cleanup_coroutines)
+    http_config = uvicorn.Config(
+        "npi.server.auth:app",
+        host="0.0.0.0",
+        port=9141,
+        reload=True)
+    server = uvicorn.Server(http_config)
+    server_task = asyncio.create_task(server.serve())
+
+    await serve("[::]:9140")
+    await server_task
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    finally:
+        asyncio.run(*_cleanup_coroutines)

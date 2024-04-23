@@ -3,6 +3,7 @@
 .VSCodeCounter
 .vscode
 .env
+.DS_Store
 
 credentials.json
 *token.json

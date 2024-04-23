@@ -6,8 +6,6 @@ from googleapiclient.errors import HttpError
 from markdown import markdown
 from npiai_proto import api_pb2
 from simplegmail.message import Message
-from oauth2client.file import Storage
-from oauth2client.client import OAuth2Credentials
 
 from npi.config import config
 from npi.app.google import GoogleApp
@@ -33,17 +31,18 @@ def convert_credentials(google_credentials: Credentials) -> OAuth2Credentials:
 class Gmail(GoogleApp):
     gmail_client: GmailClientWrapper
 
+    SCOPE = ["https://mail.google.com/"]
+    TOKEN_FILE = "config/credentials/gm_token.json"
+
     def __init__(self, llm=None):
         super().__init__(
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
             llm=llm,
-            token_file="/".join([config.get_project_root(), "config/credentials/gm_token.json"]),
-            secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
+            token_file=Gmail.TOKEN_FILE,
+            # secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
             scopes=[
-                # 'https://www.googleapis.com/auth/gmail.modify',
-                # 'https://www.googleapis.com/auth/gmail.settings.basic'
                 "https://mail.google.com/"
             ],
         )
