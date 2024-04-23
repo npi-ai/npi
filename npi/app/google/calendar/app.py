@@ -7,6 +7,7 @@ import loguru
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from npi.config import config
 from npi.app.google import GoogleApp
 from npi.app.google.calendar.schema import *
 from npi.core import npi_tool, callback
@@ -32,14 +33,14 @@ class GoogleCalendar(GoogleApp):
             system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
                         'the best function based the tool list.',
             llm=llm,
-            token_file="credentials/gc_token.json",
-            secret_file="credentials/google.json",
+            token_file="/".join([config.get_project_root(), "config/credentials/gc_token.json"]),
+            secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
             scopes=self.__scopes,
         )
 
         self.creds = super()._get_creds()
         self.service = build(
-            self.__service_name, self.__api_version, credentials=self._get_creds()
+            self.__service_name, self.__api_version, credentials=self.creds
         )
 
     @npi_tool

@@ -13,3 +13,5 @@ credentials/
 
 **/.next
 **/node_modules
+config/**.json
+config/**.yaml

@@ -41,7 +41,8 @@ class GoogleApp(App):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self._secret_file, self._scopes
                 )
-                creds = flow.run_local_server(port=0)
+                flow
+                creds = flow.run_local_server()
             # Save the credentials for the next run
             with open(self._token_file, "w", encoding="utf-8") as token:
                 token.write(creds.to_json())

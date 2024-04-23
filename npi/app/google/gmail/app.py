@@ -1,16 +1,17 @@
-import json
 import asyncio
-import time
-import loguru
+import json
 
-from markdown import markdown
-from simplegmail.message import Message
+import loguru
 from googleapiclient.errors import HttpError
+from markdown import markdown
+from npiai_proto import api_pb2
+from simplegmail.message import Message
+
+from npi.config import config
+from npi.app.google import GoogleApp
 from npi.core.app import npi_tool, callback
 from .client import GmailClientWrapper
 from .schema import *
-from npi.app.google import GoogleApp
-from npiai_proto import api_pb2
 
 
 class Gmail(GoogleApp):
@@ -22,14 +23,15 @@ class Gmail(GoogleApp):
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
             llm=llm,
-            token_file="credentials/gm_token.json",
-            secret_file="credentials/google.json",
+            token_file="/".join([config.get_project_root(), "config/credentials/gm_token.json"]),
+            secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
             scopes=[
                 'https://www.googleapis.com/auth/gmail',
             ],
         )
         self.gmail_client = GmailClientWrapper(
             client_secret_file=self._secret_file,
+            creds_file=self._token_file,
         )
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:

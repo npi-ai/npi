@@ -1,15 +1,17 @@
 import asyncio
 import json
+import os
 import traceback
-
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
+import yaml
 
 from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
 from npi.app import google
 from npi.utils import logger
+from npi.config import config
 
 
 class Chat(api_pb2_grpc.AppServerServicer):
@@ -19,9 +21,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
         self.thread_manager = ThreadManager()
 
     async def Chat(
-        self,
-        request: api_pb2.Request,
-        _: grpc.ServicerContext,
+            self,
+            request: api_pb2.Request,
+            _: grpc.ServicerContext,
     ) -> api_pb2.Response:
         logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
@@ -51,9 +53,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return response
 
     async def GetAppSchema(
-        self,
-        request: api_pb2.AppSchemaRequest,
-        _: grpc.ServicerContext, ) -> api_pb2.AppSchemaResponse:
+            self,
+            request: api_pb2.AppSchemaRequest,
+            _: grpc.ServicerContext, ) -> api_pb2.AppSchemaResponse:
         app = None
         try:
 
@@ -188,6 +190,13 @@ async def serve(address: str) -> None:
 
 def main():
     try:
+        config_file = os.getenv("NPI_CONFIG_FILE")
+        if config_file is None:
+            config_file = "/npi/config.yaml"
+        with open(config_file, "r") as f:
+            data = yaml.safe_load(f)
+        config.CONFIG.update(data)
+        config.create_credentials()
         asyncio.run(serve("[::]:9140"))
     finally:
         asyncio.run(*_cleanup_coroutines)
