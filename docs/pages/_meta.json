@@ -1,6 +1,14 @@
 {
   "index": "Introduction",
-  "quickstart": "Quickstart",
+  "quickstart": "",
+
+  "-- Apps": {
+    "type": "separator",
+    "title": "Apps"
+  },
+
+  "api-apps": "",
+  "browser-apps": "",
 
   "contact": {
     "title": "Contact ↗",
