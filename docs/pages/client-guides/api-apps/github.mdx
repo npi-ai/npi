@@ -1,1 +1,84 @@
 # GitHub
+
+The GitHub App is crafted to refine your GitHub workflow, offering efficient management of issues and pull requests. It also enriches community engagement, allowing you to easily star or fork favored repositories.
+
+## Supported Functionality
+
+- **Repository Search**: Locate repositories on GitHub.
+- **Repository Engagement**: Star or fork repositories.
+- **Issue Management**:
+  - Fetch exisiting issues.
+  - Open or close issues.
+  - Edit details of existing issues.
+  - Comment on issues.
+- **Pull Request (PR) Management**:
+  - Fetch exisiting PRs.
+  - Create or close PRs.
+  - Update existing PRs.
+  - Comment on PRs.
+
+import { FeatureRequest } from '@components/feature-request';
+
+<FeatureRequest />
+
+## Usage
+
+The following examples show how to leverage the GitHub App to efficiently navigate and manage your repositories, issues, and pull requests:
+
+```py
+from npiai.app.github import GitHub
+
+github = GitHub(token=...)
+
+github.chat(...)
+```
+
+## Examples
+
+### Star and Fork an Repository
+
+```py
+github.chat('Star an fork the repo npi/npi.')
+```
+
+### Search for Issues
+
+```py
+github.chat('Find the issues in the repo npi/npi related to feature request.')
+```
+
+### Create an Issue with a Specific Label
+
+```py
+github.chat('Create a test issue in npi/npi with label "Test" and assign it to @idiotWu')
+```
+
+### Edit an Existing Issue
+
+```py
+github.chat('Find the issue titled "Test" in npi/npi and change the body to "Hello World".')
+```
+
+### Close Issues
+
+```py
+github.chat('Close all issues in npi/npi.')
+```
+
+### Create a Pull Request
+
+```py
+github.chat('Create a pull request in npi/npi from "npi-test" branch to "main" branch with a random title and body')
+```
+
+### Edit an Existing Pull Request
+
+```py
+github.chat('Find the PR titled "Test" in npi/npi and change the body to "Hello World".')
+```
+
+### Close Pull Requests
+
+```py
+github.chat('Close all pull requests in npi/npi.')
+```

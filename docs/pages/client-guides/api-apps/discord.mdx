@@ -1,1 +1,62 @@
 # Discord
+
+The Discord App facilitates communication with Discord channels by providing features that allow you to send or fetch messages.
+
+import { Callout } from 'nextra/components';
+
+<Callout type='info'>
+  Please note that the Discord App is designed as a supplementary tool for an
+  exisiting chatbot and does not actively listen for new messages. For effective
+  operation, the app requires explicit identification of the target `user_id`,
+  `channel_id`, and/or `message_id` within your instructions.
+</Callout>
+
+## Supported Functionality
+
+- **Direct Messaging**: Initiate a direct message channel with a selected user.
+- **Message Retrieval**: Fetch historic messages from a specified Discord channel.
+- **Message Dispatch**: Send a message to a Discord channel.
+- **Message Response**: Reply to an existing message within a Discord channel.
+- **Reply Monitoring**: Await a response to a specific message in a Discord channel.
+
+import { FeatureRequest } from '@components/feature-request';
+
+<FeatureRequest />
+
+## Usage
+
+```py
+from npiai.app.discord import Discord
+
+discord = Discord(token=...)
+
+discord.chat(...)
+```
+
+## Examples
+
+Below are a few examples demonstrating how to seamlessly communicate in Discord channels with the Discord App:
+
+### Retrieve Messages from a Channel
+
+```py
+discord.chat('Get the last 10 messages from the channel with ID {{channel_id}}')
+```
+
+### Send a Message to a Channel
+
+```py
+discord.chat('Send a greeting message to the channel with ID {{channel_id}}')
+```
+
+### Send a Direct Message to a User and Wait for Their Reply
+
+```py
+discord.chat('Send a direct message to XXX (user id: {{user_id}}) asking if they are doing well, and wait for their reply.')
+```
+
+### Reply to a Message in a Channel
+
+```py
+discord.chat('Reply to the latest message in the channel with ID {{channel_id}}. You can write anything you like.')
+```
