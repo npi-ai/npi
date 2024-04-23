@@ -1,3 +1,4 @@
+npi_root: "{the path to the root of the NPi project}"
 openai_api_key: "xxxxxx"
 google_secret_key: '{
     "web": {
