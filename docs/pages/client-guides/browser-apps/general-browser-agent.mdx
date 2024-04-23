@@ -1,0 +1,25 @@
+# General Browser Agent
+
+The General Browser Agent (GBA) is a flexible, browser-based automation tool capable of performing a wide range of tasks on various webpages.
+
+## Usage
+
+Below is a sample code snippet demonstrating how to integrate the GBA into your Python script:
+
+```py
+from npiai.browser_app.general_browser_agent import GeneralBrowserAgent
+
+gba = GeneralBrowserAgent()
+
+gba.chat(...)
+```
+
+## Example
+
+Here's an example of how to instruct the GBA to book a flight using Google Flights:
+
+```py
+gba.chat('Book a one-way flight from ATL to LAX on 4/20 using Google Flights.')
+```
+
+When executing the above command, the GBA will navigate to the Google Flights website and proceed to book the flight according to the specified parameters.

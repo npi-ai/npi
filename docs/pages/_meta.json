@@ -1,14 +1,18 @@
 {
-  "index": "Introduction",
-  "quickstart": "",
-
-  "-- Apps": {
-    "type": "separator",
-    "title": "Apps"
+  "index": {
+    "type": "page",
+    "title": "Home"
   },
 
-  "api-apps": "",
-  "browser-apps": "",
+  "client-guides": {
+    "type": "page",
+    "title": "Client Guides"
+  },
+
+  "contributor-guides": {
+    "type": "page",
+    "title": "Contributor Guides"
+  },
 
   "contact": {
     "title": "Contact ↗",
