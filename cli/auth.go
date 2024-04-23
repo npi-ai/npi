@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -51,15 +54,54 @@ func authGoogleCommand() *cobra.Command {
 				color.Red("failed to authorize Google API: %v", err)
 				os.Exit(-1)
 			}
+			if response.StatusCode() != 200 {
+				color.Red("failed to authorize Google API: %s", string(response.Body()))
+				os.Exit(-1)
+			}
 			m := map[string]string{}
 			_ = json.Unmarshal(response.Body(), &m)
+			color.Green("please finish the authorization in the browser...")
+			errChan := make(chan error)
+			go server(context.Background(), "/auth/google/callback", errChan)
 			err = browser.OpenURL(m["url"])
-			// TODO start a local server to receive the callback
-			// then forward request to the server
+			err = <-errChan
+			if err != nil {
+				color.Red("failed to authorization: %v", err)
+				os.Exit(-1)
+			}
+			close(errChan)
 		},
 	}
 	cmd.Flags().StringVar(&googleSecretFile, "secret-file", "", "the secret file for Google API")
 	return cmd
+}
+
+func server(_ context.Context, callbackURL string, ch chan error) {
+	http.HandleFunc(callbackURL, oauthCallback(callbackURL, ch))
+	if err := http.ListenAndServe(":19141", nil); err != nil {
+		color.Red("failed to start consent server: %v", err)
+	}
+}
+
+func oauthCallback(callbackURL string, ch chan error) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		queryParams := r.URL.Query()
+		resp, err := httpClient.R().SetQueryParams(map[string]string{
+			"state": queryParams.Get("state"),
+			"code":  queryParams.Get("code"),
+		}).Get(callbackURL)
+		if err != nil {
+			ch <- err
+			return
+		}
+		if resp.StatusCode() != 200 {
+			ch <- fmt.Errorf("failed to get access token: %s", string(resp.Body()))
+			return
+		}
+		color.Green("authorization success")
+		_, _ = w.Write(resp.Body())
+		ch <- nil
+	}
 }
 
 func authGitHubCommand() *cobra.Command {

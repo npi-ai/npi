@@ -30,12 +30,12 @@ STATE = {}
 async def auth_google(req: GoogleAuthRequest):
     """the core api of NPI"""
     if req.app not in __SCOPE:
-        return "Error: App not found"
+        return responses.Response("invalid app", status_code=400)
     secret_cfg = json.loads(req.secrets)
     flow = InstalledAppFlow.from_client_config(
         client_config=secret_cfg,
         scopes=__SCOPE[req.app],
-        redirect_uri="http://localhost:9141/auth/google/callback"
+        redirect_uri="http://localhost:19141/auth/google/callback",
     )
     url, state = flow.authorization_url(
         access_type='offline',
@@ -59,15 +59,13 @@ async def auth_google(state: str, code: str):
     flow = Flow.from_client_config(
         client_config=cfg["secret"],
         scopes=__SCOPE[cfg["app"]],
-        redirect_uri="http://localhost:9141/auth/google/callback",
+        redirect_uri="http://localhost:19141/auth/google/callback",
         state=state,
     )
-    # flow.redirect_uri = flask.url_for('oauth2callback', _external=True)
 
     flow.fetch_token(code=code)
     credentials = flow.credentials
     file = GoogleCalendar.TOKEN_FILE if cfg["app"] == "calendar" else Gmail.TOKEN_FILE
     with open("/".join([config.get_project_root(), file]), "w", encoding="utf-8") as token:
         token.write(credentials.to_json())
-    # return "Error: App not found"
-    return "Success, close the window."
+    return 'Success, close the window.'
