@@ -1,5 +1,6 @@
 {
-  "name": "NPi Docs",
+  "name": "@npi-ai/docs",
+  "private": "true",
   "version": "0.0.1",
   "description": "NPi Docs",
   "scripts": {
@@ -18,14 +19,14 @@
   },
   "homepage": "https://github.com/npi-ai/npi",
   "dependencies": {
-    "next": "^13.0.6",
-    "nextra": "latest",
-    "nextra-theme-docs": "latest",
+    "next": "^14.2.2",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "18.11.10",
-    "typescript": "^4.9.3"
+    "typescript": "^5.4.5"
   }
 }

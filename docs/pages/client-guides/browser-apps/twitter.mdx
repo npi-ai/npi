@@ -1,0 +1,61 @@
+# Twitter
+
+The Twitter App is designed to streamline the process of accessing and managing Twitter data. Users can interact with tweets in a variety of ways directly through the app's functions.
+
+## Supported Functionality
+
+- **Retrieving Tweets**: Access tweets from the timeline or specific users.
+- **Deleting Tweets**: Remove your previously posted tweets.
+- **Searching**: Look for specific tweets or users within the platform.
+- **Interacting with Tweets**: Star or retweet content that you find interesting.
+- **Commenting**: Post replies to tweets on your timeline or from specific users.
+
+import { FeatureRequest } from '@components/feature-request';
+
+<FeatureRequest />
+
+## Usage
+
+The Twitter App emulates the login process in a browser setting, which requires your Twitter credentials. To interact with your Twitter account securely, you must supply your username and password to initialize the app.
+
+```py
+from npiai.browser_app.twitter import Twitter
+
+twitter = Twitter(username=..., password=...)
+
+twitter.chat(...)
+```
+
+## Examples
+
+Below are a few examples demonstrating how to utilize the Twitter App's features:
+
+### Post a Tweet
+
+```py
+twitter.chat('Post a tweet about "The answer to everything."')
+```
+
+### Retrieve a Certain Amount of Tweets
+
+```py
+twitter.chat('Find the latest 10 tweets by @AtomSilverman.')
+```
+
+### Retrieve and Summarize Tweets on a Topic from a Specific User
+
+```py
+twitter.chat('Find and summarize the latest tweet by @AtomSilverman discussing AI agents.')
+```
+
+### Discover Similar Users for Networking Opportunities
+
+```py
+twitter.chat('Identify researchers similar to @DrJimFan for potential follow.')
+```
+
+### Reply to a Tweet
+
+```py
+twitter.chat('Reply to the latest tweet of @elonmusk with your opinions. You can write anything you like.')
+```

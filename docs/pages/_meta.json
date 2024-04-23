@@ -1,6 +1,18 @@
 {
-  "index": "Introduction",
-  "quickstart": "Quickstart",
+  "index": {
+    "type": "page",
+    "title": "Home"
+  },
+
+  "client-guides": {
+    "type": "page",
+    "title": "Client Guides"
+  },
+
+  "contributor-guides": {
+    "type": "page",
+    "title": "Contributor Guides"
+  },
 
   "contact": {
     "title": "Contact ↗",

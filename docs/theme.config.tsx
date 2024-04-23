@@ -1,5 +1,5 @@
-import React from 'react'
-import { DocsThemeConfig } from 'nextra-theme-docs'
+import React from 'react';
+import { DocsThemeConfig } from 'nextra-theme-docs';
 
 const config: DocsThemeConfig = {
   logo: <span>NPi AI</span>,
@@ -11,8 +11,19 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: 'https://github.com/npi-ai/npi',
   footer: {
-    text: 'NPI AI @ 2024',
+    text: `NPI AI @ ${new Date().getFullYear()}`,
   },
-}
+  editLink: {
+    text: 'Edit this page on GitHub →',
+  },
+  toc: {
+    backToTop: true,
+  },
+  useNextSeoProps() {
+    return {
+      titleTemplate: '%s – NPi',
+    };
+  },
+};
 
-export default config
+export default config;
