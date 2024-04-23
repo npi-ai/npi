@@ -1,16 +1,33 @@
-import json
 import asyncio
-import time
-import loguru
+import json
 
-from markdown import markdown
-from simplegmail.message import Message
+import loguru
 from googleapiclient.errors import HttpError
+from markdown import markdown
+from npiai_proto import api_pb2
+from simplegmail.message import Message
+from oauth2client.file import Storage
+from oauth2client.client import OAuth2Credentials
+
+from npi.config import config
+from npi.app.google import GoogleApp
 from npi.core.app import npi_tool, callback
 from .client import GmailClientWrapper
 from .schema import *
-from npi.app.google import GoogleApp
-from npiai_proto import api_pb2
+
+from google.oauth2.credentials import Credentials
+from oauth2client.client import OAuth2Credentials,GoogleCredentials
+
+
+def convert_credentials(google_credentials: Credentials) -> OAuth2Credentials:
+    return OAuth2Credentials(
+        access_token=None,
+        client_id=google_credentials._client_id,
+        client_secret=google_credentials._client_secret,
+        refresh_token=google_credentials._refresh_token,
+        token_expiry=google_credentials.expiry,
+        token_uri=google_credentials._token_uri,
+        user_agent=None)
 
 
 class Gmail(GoogleApp):
@@ -22,14 +39,17 @@ class Gmail(GoogleApp):
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
             llm=llm,
-            token_file="credentials/gm_token.json",
-            secret_file="credentials/google.json",
+            token_file="/".join([config.get_project_root(), "config/credentials/gm_token.json"]),
+            secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
             scopes=[
-                'https://www.googleapis.com/auth/gmail',
+                # 'https://www.googleapis.com/auth/gmail.modify',
+                # 'https://www.googleapis.com/auth/gmail.settings.basic'
+                "https://mail.google.com/"
             ],
         )
+
         self.gmail_client = GmailClientWrapper(
-            client_secret_file=self._secret_file,
+            _creds=convert_credentials(self._get_creds()),
         )
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:

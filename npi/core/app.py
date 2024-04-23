@@ -13,6 +13,7 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
+from npi.config import config
 from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core import callback
 from npi.core.thread import Thread, ThreadMessage
@@ -141,7 +142,7 @@ class App:
     ):
         self.name = name
         self.description = description
-        self.llm = llm or AsyncClient()
+        self.llm = llm or AsyncClient(api_key=config.get_oai_key())
         self.default_model = model or 'gpt-4-turbo-preview'
         self.tool_choice = cast(ChatCompletionToolChoiceOptionParam, tool_choice or 'auto')
         self.system_role = system_role

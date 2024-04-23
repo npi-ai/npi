@@ -26,6 +26,7 @@ markdownify = "^0.12.1"
 npiai-proto = "0.0.1.dev3"
 npiai = "0.0.2.dev2"
 discord-py = "^2.3.2"
+pyyaml = "^6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^69.2.0"

@@ -14,14 +14,14 @@ class GoogleApp(App):
     _token_file: str
 
     def __init__(
-        self,
-        name,
-        description,
-        system_role,
-        llm=None,
-        secret_file: str = None,
-        token_file: str = None,
-        scopes: List[str] = None
+            self,
+            name,
+            description,
+            system_role,
+            llm=None,
+            secret_file: str = None,
+            token_file: str = None,
+            scopes: List[str] = None
     ):
         super().__init__(name=name, description=description, system_role=system_role, llm=llm)
         self._secret_file = secret_file
@@ -41,7 +41,8 @@ class GoogleApp(App):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self._secret_file, self._scopes
                 )
-                creds = flow.run_local_server(port=0)
+                # TODO change to redirect
+                creds = flow.run_local_server()
             # Save the credentials for the next run
             with open(self._token_file, "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
