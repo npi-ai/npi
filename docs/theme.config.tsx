@@ -13,6 +13,17 @@ const config: DocsThemeConfig = {
   footer: {
     text: `NPI AI @ ${new Date().getFullYear()}`,
   },
+  editLink: {
+    text: 'Edit this page on GitHub →',
+  },
+  toc: {
+    backToTop: true,
+  },
+  useNextSeoProps() {
+    return {
+      titleTemplate: '%s – NPi',
+    };
+  },
 };
 
 export default config;
