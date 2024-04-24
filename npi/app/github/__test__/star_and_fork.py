@@ -6,7 +6,7 @@ from utils import test_init_github_cred
 
 async def main():
     github = GitHub()
-    return await github.chat('Create a test issue in idiotWu/npi-test with label "NPi" and assign it to @idiotWu')
+    return await github.chat('Star and fork npi-ai/npi')
 
 
 if __name__ == '__main__':

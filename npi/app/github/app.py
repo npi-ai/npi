@@ -104,26 +104,66 @@ class GitHub(App):
         return repo.get_pull(number)
 
     @npi_tool
-    def search(self, params: SearchParameters):
+    def star(self, params: StarParameters):
+        """Star a repository on GitHub"""
+        repo = self.github_client.get_repo(params.repo)
+        user = self.github_client.get_user()
+        user.add_to_starred(repo)
+
+        return f'Starred {params.repo} on behalf of {user.login}'
+
+    @npi_tool
+    def fork(self, params: StarParameters):
+        """Fork a repository on GitHub"""
+        repo = self.github_client.get_repo(params.repo)
+        user = self.github_client.get_user()
+        forked = user.create_fork(repo)
+
+        return f'Forked {params.repo} to {forked.full_name}'
+
+    @npi_tool
+    def search_repositories(self, params: SearchRepositoriesParameters):
+        """Search for repositories on GitHub"""
+        res = self.github_client.search_repositories(params.query)
+
+        results = []
+
+        for repo in res[:params.max_results]:
+            results.append(
+                {
+                    'name': repo.full_name,
+                    'owner': repo.owner.login,
+                    'url': repo.url,
+                    'description': repo.description,
+                    'topics': repo.topics,
+                    'created_at': repo.created_at.isoformat(),
+                    'updated_at': repo.updated_at.isoformat(),
+                }
+            )
+
+        return json.dumps(results, ensure_ascii=False)
+
+    @npi_tool
+    def search_issue_pr(self, params: SearchIssuePRParameters):
         """Search for issues or pull requests on GitHub"""
         res = self.github_client.search_issues(query=params.query, sort='created')
 
         if res.totalCount == 0:
             return 'No results found'
 
-        return json.dumps([self._issue_pr_to_json(item) for item in res])
+        return json.dumps([self._issue_pr_to_json(item) for item in res], ensure_ascii=False)
 
     @npi_tool
     def get_issue(self, params: GetIssueParameters):
         """Get an issue from the given repository"""
         issue = self._get_issue(repo_name=params.repository, number=params.number)
-        return json.dumps(self._issue_pr_to_json(issue))
+        return json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
 
     @npi_tool
     def get_pull_request(self, params: GetPullRequestParameters):
         """Get a pull request from the given repository"""
         pr = self._get_pull_request(repo_name=params.repository, number=params.number)
-        return json.dumps(self._issue_pr_to_json(pr))
+        return json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
 
     @npi_tool
     def create_issue(self, params: CreateIssueParameters):
@@ -136,7 +176,7 @@ class GitHub(App):
             assignees=_default_not_set(params.assignees),
         )
 
-        return 'Issue created:\n' + json.dumps(self._issue_pr_to_json(issue))
+        return 'Issue created:\n' + json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
 
     @npi_tool
     def create_pull_request(self, params: CreatePullRequestParameters):
@@ -156,7 +196,7 @@ class GitHub(App):
         if params.assignees:
             pr.add_to_assignees(*params.assignees)
 
-        return 'Pull Request created:\n' + json.dumps(self._issue_pr_to_json(pr))
+        return 'Pull Request created:\n' + json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
 
     @npi_tool
     def add_issue_comment(self, params: AddIssueCommentParameters):
@@ -164,7 +204,7 @@ class GitHub(App):
         issue = self._get_issue(repo_name=params.repository, number=params.number)
         comment = issue.create_comment(params.body)
 
-        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment))
+        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
 
     @npi_tool
     def add_pull_request_comment(self, params: AddPullRequestCommentParameters):
@@ -172,7 +212,7 @@ class GitHub(App):
         pr = self._get_pull_request(repo_name=params.repository, number=params.number)
         comment = pr.create_issue_comment(params.body)
 
-        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment))
+        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
 
     @npi_tool
     def edit_issue(self, params: EditIssueParameters):
@@ -187,7 +227,7 @@ class GitHub(App):
             state=_default_not_set(params.state),
         )
 
-        return 'Issue updated to:\n' + json.dumps(self._issue_pr_to_json(issue))
+        return 'Issue updated to:\n' + json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
 
     @npi_tool
     def edit_pull_request(self, params: EditPullRequestParameters):
@@ -207,4 +247,4 @@ class GitHub(App):
         if params.assignees:
             pr.add_to_assignees(params.assignees)
 
-        return 'Pull Request updated to:\n' + json.dumps(self._issue_pr_to_json(pr))
+        return 'Pull Request updated to:\n' + json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)

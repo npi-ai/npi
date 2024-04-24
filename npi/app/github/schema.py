@@ -4,7 +4,30 @@ from npi.types import Parameters
 from typing import Optional, List, Literal
 
 
-class SearchParameters(Parameters):
+class StarParameters(Parameters):
+    repo: str = Field(description='Name of the GitHub repository in format {owner}/{repo}.')
+
+
+class ForkParameters(Parameters):
+    repo: str = Field(description='Name of the GitHub repository in format {owner}/{repo}.')
+
+
+class SearchRepositoriesParameters(Parameters):
+    query: str = Field(
+        description=dedent(
+            """
+            Search query to search for GitHub repositories. Below are some query examples:
+            
+            1. Search for all repositories that contain "test" and use Python: `test language:python`
+            2. Search for repositories with more than 1000 stars: `stars:>1000`
+            """
+        )
+    )
+
+    max_results: int = Field(description='Maximum number of results to return.')
+
+
+class SearchIssuePRParameters(Parameters):
     query: str = Field(
         description=dedent(
             """
