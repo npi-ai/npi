@@ -15,7 +15,7 @@ from .client import GmailClientWrapper
 from .schema import *
 
 from google.oauth2.credentials import Credentials
-from oauth2client.client import OAuth2Credentials,GoogleCredentials
+from oauth2client.client import OAuth2Credentials, GoogleCredentials
 
 
 def convert_credentials(google_credentials: Credentials) -> OAuth2Credentials:
@@ -26,7 +26,8 @@ def convert_credentials(google_credentials: Credentials) -> OAuth2Credentials:
         refresh_token=google_credentials._refresh_token,
         token_expiry=google_credentials.expiry,
         token_uri=google_credentials._token_uri,
-        user_agent=None)
+        user_agent=None
+    )
 
 
 class Gmail(GoogleApp):
@@ -43,7 +44,7 @@ class Gmail(GoogleApp):
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
             llm=llm,
-            creds=cred['token'],
+            creds=cred.token,
             scopes=[
                 "https://mail.google.com/"
             ],
@@ -128,9 +129,11 @@ class Gmail(GoogleApp):
 
         return 'Labels removed'
 
-    @npi_tool(description='Before sending the email, you must need to call this function for waiting user approve '
-                          'sending email. If user asks to revise the email, you must call this function again after '
-                          'revising.')
+    @npi_tool(
+        description='Before sending the email, you must need to call this function for waiting user approve '
+                    'sending email. If user asks to revise the email, you must call this function again after '
+                    'revising.'
+        )
     async def confirm_email_sending(self, params: ConfirmEmailSendingParameters):
         """Confirm the email sending"""
         loguru.logger.info(f"Waiting for user approve")

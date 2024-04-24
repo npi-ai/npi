@@ -1,12 +1,13 @@
 import asyncio
 import json
-import os
 
 import discord
 
 from npi.utils import logger
 from npi.core import App, npi_tool
+from npi.config import config
 from .schema import *
+from ...error.auth import UnauthorizedError
 
 client = discord.Client(intents=discord.Intents.default())
 
@@ -30,7 +31,12 @@ class Discord(App):
     client: discord.Client
     _access_token: str
 
-    def __init__(self, access_token: str = None, llm=None):
+    def __init__(self, llm=None):
+        cred = config.get_discord_credentials()
+
+        if cred is None:
+            raise UnauthorizedError("Discord credentials are not found, please use `npi auth discord` first")
+
         super().__init__(
             name='discord',
             description='Send/Retrieve messages to/from discord channels',
@@ -39,7 +45,7 @@ class Discord(App):
         )
 
         self.client = discord.Client(intents=discord.Intents.default())
-        self._access_token = access_token or os.environ.get('DISCORD_ACCESS_TOKEN', None)
+        self._access_token = cred.access_token
 
     async def start(self):
         await super().start()
