@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/npi-ai/npi.git"
   },
-  "author": "Shu Ding <g@shud.in>",
+  "author": "NPi AI <w@npi.ai>",
   "license": "BSL-1.1",
   "bugs": {
     "url": "https://github.com/npi-ai/npi/issues"
