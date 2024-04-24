@@ -6,8 +6,8 @@ import discord
 from npi.utils import logger
 from npi.core import App, npi_tool
 from npi.config import config
+from npi.error.auth import UnauthorizedError
 from .schema import *
-from ...error.auth import UnauthorizedError
 
 client = discord.Client(intents=discord.Intents.default())
 

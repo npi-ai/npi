@@ -8,6 +8,7 @@ from npi.core import BrowserApp, npi_tool
 from npi.utils import logger
 from npi.browser_app.navigator import Navigator
 from npi.config import config
+from npi.error.auth import UnauthorizedError
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -34,8 +35,6 @@ __ROUTES__ = {
     'login': 'https://twitter.com/',
     'home': 'https://twitter.com/home'
 }
-
-from ...error.auth import UnauthorizedError
 
 
 class ImageFilterConverter(MarkdownConverter):
