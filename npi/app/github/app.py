@@ -113,13 +113,22 @@ class GitHub(App):
         return f'Starred {params.repo} on behalf of {user.login}'
 
     @npi_tool
-    def fork(self, params: StarParameters):
+    def fork(self, params: ForkParameters):
         """Fork a repository on GitHub"""
         repo = self.github_client.get_repo(params.repo)
         user = self.github_client.get_user()
         forked = user.create_fork(repo)
 
         return f'Forked {params.repo} to {forked.full_name}'
+
+    @npi_tool
+    def watch(self, params: WatchParameters):
+        """Watch a repository on GitHub"""
+        repo = self.github_client.get_repo(params.repo)
+        user = self.github_client.get_user()
+        user.add_to_watched(repo)
+
+        return f'Watched {params.repo} on behalf of {user.login}'
 
     @npi_tool
     def search_repositories(self, params: SearchRepositoriesParameters):

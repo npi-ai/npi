@@ -12,6 +12,10 @@ class ForkParameters(Parameters):
     repo: str = Field(description='Name of the GitHub repository in format {owner}/{repo}.')
 
 
+class WatchParameters(Parameters):
+    repo: str = Field(description='Name of the GitHub repository in format {owner}/{repo}.')
+
+
 class SearchRepositoriesParameters(Parameters):
     query: str = Field(
         description=dedent(
