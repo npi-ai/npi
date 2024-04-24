@@ -2,7 +2,7 @@
 name = "npi"
 version = "0.0.1"
 description = "Open Source **tool using** API platform for Agent builders"
-authors = ["Wells Wang <wells@npi.ai>"]
+authors = ["Wenfeng Wang <w@npi.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -23,8 +23,8 @@ grpcio = "^1.62.1"
 playwright = "^1.43.0"
 loguru = "^0.7.2"
 markdownify = "^0.12.1"
-npiai-proto = "0.0.1.dev3"
-npiai = "0.0.2.dev2"
+npiai-proto = "^0.0.3"
+npiai = "^0.0.3"
 discord-py = "^2.3.2"
 pyyaml = "^6.0.1"
 
