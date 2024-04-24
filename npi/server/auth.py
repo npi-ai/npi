@@ -102,3 +102,8 @@ async def auth_discord(req: DiscordAuthRequest):
 async def auth_twitter(req: TwitterAuthRequest):
     config.set_twitter_credentials(req.username, req.password)
     return responses.Response(status_code=200)
+
+
+@app.get('/ping')
+async def ping():
+    return responses.Response(status_code=200)

@@ -133,7 +133,8 @@ func authGitHubCommand() *cobra.Command {
 			color.Green("authorization success")
 		},
 	}
-	cmd.Flags().StringVar(&accessToken, "access-token", "", "the access token for GitHub")
+
+	cmd.Flags().StringVar(&accessToken, "access-token", "", "the personal access token for GitHub")
 
 	return cmd
 }

@@ -31,7 +31,8 @@ class GitHub(App):
 
         super().__init__(
             name='github',
-            description='Manage GitHub issues and pull requests using English, e.g., github("reply to the latest issue in npi/npi")',
+            description='Manage GitHub issues and pull requests using English, e.g., github("reply to the latest '
+                        'issue in npi/npi")',
             system_role='You are a GitHub Agent helping users to manage their issues and pull requests',
             llm=llm,
         )

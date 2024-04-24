@@ -29,6 +29,38 @@ func connectCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "connect",
 		Short: "connect to NPI server",
+	}
+
+	cmd.AddCommand(connectTestCommand())
+	//cmd.AddCommand(connectAuthCommand())
+
+	return cmd
+}
+
+func connectTestCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "connect test",
+		Short: "Testing if NPi Server is connected",
+		Run: func(cmd *cobra.Command, args []string) {
+			resp, err := httpClient.R().Get("/ping")
+			if err != nil {
+				color.Red("failed to connect NPi Server: %v", err)
+				os.Exit(-1)
+			}
+			if resp.StatusCode() != 200 {
+				color.Red("Connected to NPi Server, but server returned: %d", resp.StatusCode())
+				os.Exit(-1)
+			}
+			color.Green("NPi Server is operational")
+		},
+	}
+	return cmd
+}
+
+func connectAuthCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "connect auth",
+		Short: "Authorizing to access NPI server",
 		Run: func(cmd *cobra.Command, args []string) {
 			if cfg.APIKey == "" {
 				color.Red("apiKey is required")
