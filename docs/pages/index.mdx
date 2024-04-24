@@ -45,7 +45,7 @@ the name of NPi comes from **N**atural language **P**rogramming **I**nterface,th
     }
     ```
 
-### Install NPI Server via Docker
+### Install NPi Server via Docker
     please replace `{YOUR_OAI_KEY}` with your OpenAI API Key
     ```sh
     docker run -d --name npi \
@@ -55,23 +55,23 @@ the name of NPi comes from **N**atural language **P**rogramming **I**nterface,th
         npiai/npi
     ```
     run `npi connect test` to verify the installation. if `server connected` is printed, it means the installation is successful.
-    otherwise, please check the logs by running `docker logs npi` and create an issue on [NPI Repo](https://github.com/npi-ai/npi/issues/new)
+    otherwise, please check the logs by running `docker logs npi` and create an issue on [NPi Repo](https://github.com/npi-ai/npi/issues/new)
 
-### Authorize NPI to access your GitHub account
-    open [https://github.com/settings/tokens](https://github.com/settings/tokens) create a new token for NPI, and use the following command to authorize NPI to access your GitHub account.
+### Authorize NPi to access your GitHub account
+    open [https://github.com/settings/tokens](https://github.com/settings/tokens) create a new token for NPi, and use the following command to authorize NPi to access your GitHub account.
     ```sh
     npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
     ```
 
-### Star and fork the NPI Repo
-    use this command to star and fork the NPI Repo
+### Star and fork the NPi Repo
+    use this command to star and fork the NPi Repo
     ```sh
     npi app github "star and fork the repo of npi-ai/npi"
     ```
     you will enter an interactive mode to chat with GitHub.
 
 ### Clean up
-1. stop and remove the NPI container
+1. stop and remove the NPi container
     ```sh
     docker stop npi
     docker rm npi

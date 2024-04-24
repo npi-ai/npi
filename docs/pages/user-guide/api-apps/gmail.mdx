@@ -1,1 +1,63 @@
+import {Steps, Tabs} from 'nextra/components';
+
 # Gmail
+
+## Usage
+
+<Steps>
+
+### Authorization
+
+```sh
+npi auth google gmail --secret-file <path-to-secret-file>
+```
+
+### Usage
+
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app gmail "send an email to example@example.com to say hello"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from openai import OpenAI
+
+            from npi.app.google.gmail import Gmail
+
+            from npiai.core import Agent
+            from npiai.app.google import Gmail
+
+            PROMPT = """ YOUR PROMPT HERE """
+
+
+            def main():
+                agent = Agent(
+                    agent_name='<agent_name>',
+                    description='<description>',
+                    prompt=PROMPT,
+                    llm=OpenAI(),
+                )
+
+                agent.use(Gmail())
+                print('What\'s your task for me?')
+                task = input('User: ')
+                print('')
+                agent.run(task)
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Examples
+
+TODO
+
+## Supported Functions
+
+|  Function  | Description                  | parameters |
+|:----------:|------------------------------|------------|
+| send_email | Send an email to a recipient | TODO       |
+
