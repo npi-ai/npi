@@ -18,14 +18,15 @@ func appCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "app",
 		Short: "the applications NPi supported",
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
 	}
 	cmd.AddGroup()
 	cmd.AddCommand(
 		gmailCommand(),
 		googleCalenderCommand(),
+		githubCommand(),
+		discordCommand(),
+		twitterCommand(),
+		webBrowserCommand(),
 	)
 	return cmd
 }
@@ -48,6 +49,54 @@ func googleCalenderCommand() *cobra.Command {
 		Short:   "chat with Google Calendar, alias: gcal",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_GOOGLE_CALENDAR, args[0])
+		},
+	}
+	return cmd
+}
+
+func githubCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "github",
+		Aliases: []string{"gcal"},
+		Short:   "chat with Google Calendar, alias: gcal",
+		Run: func(cmd *cobra.Command, args []string) {
+			doRequest(api.AppType_GITHUB, args[0])
+		},
+	}
+	return cmd
+}
+
+func twitterCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "twitter",
+		Aliases: []string{"gcal"},
+		Short:   "chat with Google Calendar, alias: gcal",
+		Run: func(cmd *cobra.Command, args []string) {
+			doRequest(api.AppType_TWITTER, args[0])
+		},
+	}
+	return cmd
+}
+
+func discordCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "discord",
+		Aliases: []string{"gcal"},
+		Short:   "chat with Google Calendar, alias: gcal",
+		Run: func(cmd *cobra.Command, args []string) {
+			doRequest(api.AppType_DISCORD, args[0])
+		},
+	}
+	return cmd
+}
+
+func webBrowserCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "gba",
+		Aliases: []string{"gcal"},
+		Short:   "chat with General Browser Agent, alias: gcal",
+		Run: func(cmd *cobra.Command, args []string) {
+			doRequest(api.AppType_WEB_BROWSER, args[0])
 		},
 	}
 	return cmd
