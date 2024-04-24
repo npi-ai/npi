@@ -1345,29 +1345,29 @@ files = [
 
 [[package]]
 name = "npiai"
-version = "0.0.2.dev2"
+version = "0.0.3"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "npiai-0.0.2.dev2-py3-none-any.whl", hash = "sha256:822bb27f06e70ec14b7615210096d2d4a9c07a270432b77ebd41aa3274fa4d6e"},
-    {file = "npiai-0.0.2.dev2.tar.gz", hash = "sha256:6efa8b12c129a39f58dc3d084bb1308ae7e5176bfb966e1b9ef64320fdd27873"},
+    {file = "npiai-0.0.3-py3-none-any.whl", hash = "sha256:b886c800fd4a5b6d91d45f59fcdc96899b5afdabc598c3de2eaea547a6cce153"},
+    {file = "npiai-0.0.3.tar.gz", hash = "sha256:7151fa598cfc4942bf8c8615060cec51ceefcfbd48661f333b5e9ad49b74a8ca"},
 ]
 
 [package.dependencies]
-npiai-proto = ">=0.0.1.dev1,<0.0.2"
+npiai-proto = ">=0.0.3,<0.0.4"
 openai = ">=1.23.2,<2.0.0"
 termcolor = ">=2.4.0,<3.0.0"
 
 [[package]]
 name = "npiai-proto"
-version = "0.0.1.dev3"
+version = "0.0.3"
 description = "The NPI.AI Proto"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "npiai_proto-0.0.1.dev3-py3-none-any.whl", hash = "sha256:ce8fab6a478f275605546aef6cd428f0b0a3a39e61596bebafed15fcc0bd709b"},
-    {file = "npiai_proto-0.0.1.dev3.tar.gz", hash = "sha256:bd72b61ba872820b1c9285bfde4004093331356ab775b3cb20b882d6fb814419"},
+    {file = "npiai_proto-0.0.3-py3-none-any.whl", hash = "sha256:8c0ba12b50845130497da0e201bf3ed8d72f2c6ecc2586b2e46597764ac99968"},
+    {file = "npiai_proto-0.0.3.tar.gz", hash = "sha256:b6aa2d22f71ef96300de138ca7bb683e1bf596dc4c315306782e778dfbe81b2e"},
 ]
 
 [package.dependencies]
@@ -2232,4 +2232,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.10"
-content-hash = "31f06cfdcca9956d2be0b907a0ae50f9085724a78dcaacb3467a69c91b5abf00"
+content-hash = "af6261ccb4691e994a952c6dd596faeac15378e994b209e97933f56e6e43a97a"
