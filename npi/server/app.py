@@ -7,13 +7,11 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 import uvicorn
 
-import yaml
-
 from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
-from npi.app import google
+from npi.app import google, discord, github
+from npi.browser_app import twitter, general_browser_agent as browser
 from npi.utils import logger
-from npi.config import config
 from npi.error.auth import UnauthorizedError
 
 
@@ -154,6 +152,14 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 app = google.Gmail()
             elif thread.app_type == api_pb2.GOOGLE_CALENDAR:
                 app = google.GoogleCalendar()
+            elif thread.app_type == api_pb2.TWITTER:
+                app = twitter.Twitter()
+            elif thread.app_type == api_pb2.DISCORD:
+                app = discord.Discord()
+            elif thread.app_type == api_pb2.GITHUB:
+                app = github.GitHub()
+            elif thread.app_type == api_pb2.WEB_BROWSER:
+                app = browser.GeneralBrowserAgent()
             else:
                 raise Exception("unsupported application")
             await app.start()

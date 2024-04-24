@@ -19,6 +19,8 @@ func authCommand() *cobra.Command {
 	}
 	cmd.AddCommand(authGoogleCommand())
 	cmd.AddCommand(authGitHubCommand())
+	cmd.AddCommand(authDiscordCommand())
+	cmd.AddCommand(authTwitterCommand())
 	return cmd
 }
 
@@ -105,7 +107,7 @@ func oauthCallback(callbackURL string, ch chan error) func(w http.ResponseWriter
 }
 
 var (
-	githubAccessToken string
+	accessToken string
 )
 
 func authGitHubCommand() *cobra.Command {
@@ -113,12 +115,12 @@ func authGitHubCommand() *cobra.Command {
 		Use:   "auth github",
 		Short: "authorize GitHub",
 		Run: func(cmd *cobra.Command, args []string) {
-			if githubAccessToken == "" {
+			if accessToken == "" {
 				_ = cmd.Help()
 				return
 			}
 			response, err := httpClient.R().SetBody(map[string]string{
-				"access_token": githubAccessToken,
+				"access_token": accessToken,
 			}).Post("/auth/github")
 			if err != nil {
 				color.Red("failed to authorize GitHub: %v", err)
@@ -131,7 +133,70 @@ func authGitHubCommand() *cobra.Command {
 			color.Green("authorization success")
 		},
 	}
-	cmd.Flags().StringVar(&githubAccessToken, "access-token", "", "the access token for GitHub")
+	cmd.Flags().StringVar(&accessToken, "access-token", "", "the access token for GitHub")
+
+	return cmd
+}
+
+func authDiscordCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "auth discord",
+		Short: "authorize Discord",
+		Run: func(cmd *cobra.Command, args []string) {
+			if accessToken == "" {
+				_ = cmd.Help()
+				return
+			}
+			response, err := httpClient.R().SetBody(map[string]string{
+				"access_token": accessToken,
+			}).Post("/auth/discord")
+			if err != nil {
+				color.Red("failed to authorize GitHub: %v", err)
+				os.Exit(-1)
+			}
+			if response.StatusCode() != 200 {
+				color.Red("failed to authorize GitHub: %s", string(response.Body()))
+				os.Exit(-1)
+			}
+			color.Green("authorization success")
+		},
+	}
+	cmd.Flags().StringVar(&accessToken, "access-token", "", "the access token for Discord")
+
+	return cmd
+}
+
+var (
+	twitterUsername = ""
+	twitterPassword = ""
+)
+
+func authTwitterCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "auth twitter",
+		Short: "authorize Twitter",
+		Run: func(cmd *cobra.Command, args []string) {
+			if accessToken == "" {
+				_ = cmd.Help()
+				return
+			}
+			response, err := httpClient.R().SetBody(map[string]string{
+				"username": twitterUsername,
+				"password": twitterPassword,
+			}).Post("/auth/github")
+			if err != nil {
+				color.Red("failed to authorize GitHub: %v", err)
+				os.Exit(-1)
+			}
+			if response.StatusCode() != 200 {
+				color.Red("failed to authorize GitHub: %s", string(response.Body()))
+				os.Exit(-1)
+			}
+			color.Green("authorization success")
+		},
+	}
+	cmd.Flags().StringVar(&twitterUsername, "username", "", "the username of your Twitter account")
+	cmd.Flags().StringVar(&twitterPassword, "password", "", "the password of your Twitter account")
 
 	return cmd
 }
