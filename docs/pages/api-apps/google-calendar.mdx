@@ -1,14 +1,18 @@
-import {Steps, Tabs} from 'nextra/components';
+import { Steps } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
 
 # Google Calender
 
-## Usage
+The Google Calendar App enables you to retrieve or create events on Google Calendar.
+
+## Setup
 
 <Steps>
 
     ### Authorization
 
-    ```sh
+    ```
     npi auth google calendar --secret-file <path-to-secret-file>
     ```
 
@@ -17,40 +21,76 @@ import {Steps, Tabs} from 'nextra/components';
     <Tabs items={["CLI", "Python"]}>
         <Tabs.Tab title="CLI">
             ```sh
-            npi app gcal "is example@example.com free on next monday at 3pm?"
+            npi app gcal "Is example@example.com free next Monday at 3pm?"
             ```
         </Tabs.Tab>
         <Tabs.Tab title="Python">
             ```python
             from npiai.app.google import Calendar
             calendar = Calendar()
-            calendar.chat("is example@example.com free on next monday at 3pm?")
+            calendar.chat("Is example@example.com free next Monday at 3pm?")
             ```
         </Tabs.Tab>
     </Tabs>
 
 </Steps>
 
-## Examples
+## Supported Features
 
-### Check availability
+### Event Retrieval
 
-```python
-calendar.chat("is example@example.com free on next monday at 3pm?")
-```
+- **Description**: Fetch events from a specific calendar.
+- **In-Context Parameters**[^1]:
+  - Calendar ID, which is usually the email of the user. The app will prompt you for it if omitted.
+  - (_Optional_) Time frame specification for event searches.
 
-### Create an event
-```python
-calendar.chat("create an event to invite a@a.com, b@b.com to discuss about project on next monday at 3pm?")
-```
+<h4 className='examples'>Examples</h4>
 
-## Supported Functions
+1.  Check Availability
 
-|  Function  | Description                  | parameters |
-|:----------:|------------------------------|------------|
-| get_today | get current date | null       |
-|get_timezone| get user current timezone|null|
-|get_user_email|ask human to provide user email address|null|
-|retrieve_events|get the events of someone's calendar|TODO|
-|create_event|create an event for someone|TODO|
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            # Assume "example@example.com" is the calendar ID to check
+            npi app gcal "Is example@example.com free next Monday at 3pm?"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            # Assume "example@example.com" is the calendar ID to check
+            calendar.chat("Is example@example.com free next Monday at 3pm?")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
+### Event Creation
+
+- **Description**: Add a new event to your primary calendar.
+- **In-Context Parameters**:
+  - Details of the event.
+  - Specific timing for the event.
+  - (_Optional, Inferred_) Event title.
+
+<h4 className='examples'>Examples</h4>
+
+1.  Scheduling a Meeting
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gcal "Schedule a meeting to invite a@a.com, b@b.com to discuss the project next Monday at 3 PM."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            calendar.chat("Schedule a meeting to invite a@a.com, b@b.com to discuss the project next Monday at 3 PM.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+<FeatureRequest />
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.

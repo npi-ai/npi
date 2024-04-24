@@ -1,8 +1,10 @@
+import { Steps, Callout } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
 # General Browser Agent
 
 The General Browser Agent (GBA) is a flexible, browser-based automation tool capable of performing a wide range of tasks on various webpages.
-
-import { Callout } from 'nextra/components';
 
 <Callout type='info'>
   The GBA is designed for general navigation purposes. You may want a
@@ -11,22 +13,36 @@ import { Callout } from 'nextra/components';
 
 ## Usage
 
-Below is a sample code snippet demonstrating how to integrate the GBA into your Python script:
-
-```py
-from npiai.browser_app.general_browser_agent import GeneralBrowserAgent
-
-gba = GeneralBrowserAgent()
-
-gba.chat(...)
-```
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app gba "Order a Big Mac from McDonald's near 10011."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.browser_app.general_browser_agent import GeneralBrowserAgent
+            gba = GeneralBrowserAgent()
+            gba.chat("Order a Big Mac from McDonald's near 10011.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
 ## Example
 
 Here's an example of how to instruct the GBA to book a flight using Google Flights:
 
-```py
-gba.chat('Book a one-way flight from ATL to LAX on 4/20 using Google Flights.')
-```
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gba "Book a one-way flight from ATL to LAX on 4/20 using Google Flights."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gba.chat("Book a one-way flight from ATL to LAX on 4/20 using Google Flights.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
 When executing the above command, the GBA will navigate to the Google Flights website and proceed to book the flight according to the specified parameters.

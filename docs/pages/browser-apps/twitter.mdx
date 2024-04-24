@@ -1,61 +1,206 @@
+import { Steps, Callout } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
 # Twitter
 
 The Twitter App is designed to streamline the process of accessing and managing Twitter data. Users can interact with tweets in a variety of ways directly through the app's functions.
 
-## Supported Functionality
+## Setup
 
-- **Retrieving Tweets**: Access tweets from the timeline or specific users.
-- **Deleting Tweets**: Remove your previously posted tweets.
-- **Searching**: Look for specific tweets or users within the platform.
-- **Interacting with Tweets**: Star or retweet content that you find interesting.
-- **Commenting**: Post replies to tweets on your timeline or from specific users.
+<Steps>
 
-import { FeatureRequest } from '@components/feature-request';
+    ### Authorization
 
-<FeatureRequest />
+    <Callout type='info'>
+      Note: The Twitter Integration mimics browser-based login flow, requiring your Twitter credentials for secure interaction. Please initialize the app by providing your username and password.
+    </Callout>
 
-## Usage
+    ```
+    npi auth twitter --username <twitter-username> --password <twitter-password>
+    ```
 
-The Twitter App emulates the login process in a browser setting, which requires your Twitter credentials. To interact with your Twitter account securely, you must supply your username and password to initialize the app.
+    ### Usage
 
-```py
-from npiai.browser_app.twitter import Twitter
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app twitter "Find and summarize the latest tweet by @AtomSilverman discussing AI agents."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.app.twitter import twitter
+            twitter = twitter()
+            twitter.chat('Find and summarize the latest tweet by @AtomSilverman discussing AI agents.')
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
-twitter = Twitter(username=..., password=...)
+</Steps>
 
-twitter.chat(...)
-```
+## Supported Features
 
-## Examples
+### Posting Tweets
 
-Below are a few examples demonstrating how to utilize the Twitter App's features:
+- **Description**: post a tweet.
+- **In-Context Parameters**[^1]:
+  - Content of the tweet.
 
-### Post a Tweet
+<h4 className='examples'>Examples</h4>
 
-```py
-twitter.chat('Post a tweet about "The answer to everything."')
-```
+1. Publishing a New Tweet
 
-### Retrieve a Certain Amount of Tweets
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Post a tweet about 'The answer to everything.'"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Post a tweet about 'The answer to everything.'")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
-```py
-twitter.chat('Find the latest 10 tweets by @AtomSilverman.')
-```
+### Retrieving Tweets
 
-### Retrieve and Summarize Tweets on a Topic from a Specific User
+- **Description**: Fetch tweets from your timeline or specific accounts.
+- **In-Context Parameters**[^1]:
+  - A brief description of the desired tweets.
+
+<h4 className='examples'>Examples</h4>
+
+1. Retrieve a Certain Amount of Tweets
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Find the latest 10 tweets by @AtomSilverman."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Find the latest 10 tweets by @AtomSilverman.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Summarize Specific Tweets
 
 ```py
 twitter.chat('Find and summarize the latest tweet by @AtomSilverman discussing AI agents.')
 ```
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Find and summarize the latest tweet by @AtomSilverman discussing AI agents."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Find and summarize the latest tweet by @AtomSilverman discussing AI agents.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
-### Discover Similar Users for Networking Opportunities
+### Deleting Tweets
 
-```py
-twitter.chat('Identify researchers similar to @DrJimFan for potential follow.')
-```
+- **Description**: Erase your previously posted tweets.
+- **In-Context Parameters**[^1]:
+  - Description of the tweet to delete.
 
-### Reply to a Tweet
+<h4 className='examples'>Examples</h4>
 
-```py
-twitter.chat('Reply to the latest tweet of @elonmusk with your opinions. You can write anything you like.')
-```
+1. Delete a Specific Tweet
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Delete my last tweet."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Delete my last tweet.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Searching Twitter
+
+- **Description**: Look for specific tweets or users within the platform.
+- **In-Context Parameters**[^1]:
+  - A brief description of the desired tweets or users.
+
+<h4 className='examples'>Examples</h4>
+
+1. Discover Similar Users for Networking Opportunities
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Identify researchers similar to @DrJimFan for potential follow."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Identify researchers similar to @DrJimFan for potential follow.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Engaging with Tweets
+
+- **Description**: Like or retweet content that you find interesting.
+- **In-Context Parameters**[^1]:
+  - A brief description of the desired tweets.
+
+<h4 className='examples'>Examples</h4>
+
+1. Sharing a Tweet
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Support @npi-ai's latest tweet about their new project."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Support @npi-ai's latest tweet about their new project.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Commenting
+
+- **Description**: Respond to tweets publicly.
+- **In-Context Parameters**[^1]:
+  - A brief description of the desired tweets.
+  - Comment content.
+
+<h4 className='examples'>Examples</h4>
+
+1. Reply to a Tweet
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twitter "Respond to @elonmusk's latest tweet with a thoughtful comment."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twitter.chat("Respond to @elonmusk's latest tweet with a thoughtful comment.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+<FeatureRequest />
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.
