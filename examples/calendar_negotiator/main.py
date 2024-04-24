@@ -4,7 +4,7 @@ from openai import OpenAI
 
 from npi.app.google.gmail import Gmail
 
-from npiai.core import App, Agent
+from npiai.core import Agent
 from npiai.app.google import Gmail, Calendar
 from npiai.app.human_feedback import ConsoleFeedback
 

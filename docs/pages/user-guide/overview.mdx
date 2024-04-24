@@ -6,22 +6,66 @@ import { Todo } from '@components/todo';
 
 In this section, you will learn the core concepts of NPi and how to use it in your project.
 
+## Why NPi
+
 ## Concepts
-
-### APP
-
-Each APP is an Agent can interact with a specific software via its API or UI.
-
-
-### API-based APP
-
-### UI-based APP
 
 ### Agent
 
+An Agent is a program that follows human instructions to get task done by using various tools. In NPi, an Agent points
+to two types of concepts: `App Agent` and `User Agent`.
+
+An App Agent is provisioned Agent of NPi, users can use it out of the box, typically, an App Agent is seen as a **Tool**.
+
+User Agent is a custom Agent that users use NPi SDK to create and can use various tools to perform specific tasks.
+
+```python filename="examples/calendar_negotiator"
+from openai import OpenAI
+
+from npiai.core import Agent
+from npiai.app.google import Gmail, Calendar
+from npiai.app.human_feedback import ConsoleFeedback
+
+PROMPT = """ YOUR PROMPT HERE """
+
+def main():
+    negotiator = Agent(
+        agent_name='<agent name>',
+        description='<agent description>',
+        prompt=PROMPT,
+        llm=OpenAI(),
+    )
+
+    negotiator.use(Calendar(), Gmail(), ConsoleFeedback())
+    print('Negotiator: What\'s your task for me?')
+    task = input('User: ')
+    print('')
+    negotiator.run(task)
+```
+
+### APP
+
+Each APP is an Agent can interact with a specific software via natural human language.
+
+#### API APP
+
+The Agent uses the official API(typically OpenAPI or SDK) to interact with the specific software, such as: Google Calendar.
+
+#### Browse APP
+
+The Agent uses the browser to interact with the specific software, such as: Twitter. Currently, the Browser APP leverage
+GPT-4V to understand Web UI and take actions.
+
+
 ## CLI
 
+NPi provides a CLI tool to users with convenience. You can use CLI easily to test and debug the functionality of NPi.
+
+You can see the CLI Reference [here](cli).
+
 ## SDK
+
+NPi provides a Python SDK to users to create custom Agents and use various tools to perform specific tasks.
 
 ## Architecture
 

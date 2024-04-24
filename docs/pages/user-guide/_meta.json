@@ -1,6 +1,7 @@
 {
   "overview": "Overview",
-  "cli": "CLI",
   "api-apps": "",
-  "browser-apps": ""
+  "browser-apps": "",
+  "cli": "CLI Reference",
+  "python": "Python SDK Reference"
 }
