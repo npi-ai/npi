@@ -186,7 +186,8 @@ async def serve(address: str) -> None:
     api_pb2_grpc.add_AppServerServicer_to_server(Chat(), server)
     server.add_insecure_port(address)
     await server.start()
-    logger.info(f"Server serving at {address}")
+
+    # logger.info(f"Server serving at {address}")
 
     async def server_graceful_shutdown():
         logger.info("Starting graceful shutdown...")
