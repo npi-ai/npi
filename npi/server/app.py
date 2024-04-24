@@ -21,10 +21,28 @@ class Chat(api_pb2_grpc.AppServerServicer):
     def __init__(self):
         self.thread_manager = ThreadManager()
 
+    @staticmethod
+    def get_app(app_type: api_pb2.AppType):
+        match app_type:
+            case api_pb2.GOOGLE_GMAIL:
+                return google.Gmail()
+            case api_pb2.GOOGLE_CALENDAR:
+                return google.GoogleCalendar()
+            case api_pb2.TWITTER:
+                return twitter.Twitter()
+            case api_pb2.DISCORD:
+                return discord.Discord()
+            case api_pb2.GITHUB:
+                return github.GitHub()
+            case api_pb2.WEB_BROWSER:
+                return browser.GeneralBrowserAgent()
+            case _:
+                raise Exception("unsupported application")
+
     async def Chat(
-            self,
-            request: api_pb2.Request,
-            _: grpc.ServicerContext,
+        self,
+        request: api_pb2.Request,
+        _: grpc.ServicerContext,
     ) -> api_pb2.Response:
         logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
@@ -54,16 +72,12 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return response
 
     async def GetAppSchema(
-            self,
-            request: api_pb2.AppSchemaRequest,
-            _: grpc.ServicerContext, ) -> api_pb2.AppSchemaResponse:
-        app = None
+        self,
+        request: api_pb2.AppSchemaRequest,
+        _: grpc.ServicerContext,
+    ) -> api_pb2.AppSchemaResponse:
         try:
-
-            if request.type == api_pb2.GOOGLE_CALENDAR:
-                app = google.GoogleCalendar()
-            elif request.type == api_pb2.GOOGLE_GMAIL:
-                app = google.Gmail()
+            app = self.get_app(request.type)
         except Exception as e:
             logger.error(''.join(traceback.format_exception(e)))
             raise e
@@ -144,24 +158,10 @@ class Chat(api_pb2_grpc.AppServerServicer):
             return
         cb.callback(msg=req.action_result_request.action_result)
 
-    @staticmethod
-    async def run(thread: Thread):
+    async def run(self, thread: Thread):
         app = None
         try:
-            if thread.app_type == api_pb2.GOOGLE_GMAIL:
-                app = google.Gmail()
-            elif thread.app_type == api_pb2.GOOGLE_CALENDAR:
-                app = google.GoogleCalendar()
-            elif thread.app_type == api_pb2.TWITTER:
-                app = twitter.Twitter()
-            elif thread.app_type == api_pb2.DISCORD:
-                app = discord.Discord()
-            elif thread.app_type == api_pb2.GITHUB:
-                app = github.GitHub()
-            elif thread.app_type == api_pb2.WEB_BROWSER:
-                app = browser.GeneralBrowserAgent()
-            else:
-                raise Exception("unsupported application")
+            app = self.get_app(thread.app_type)
             await app.start()
             result = await app.chat(thread.instruction, thread)
             thread.finish(result)
@@ -204,7 +204,8 @@ async def start():
         "npi.server.auth:app",
         host="0.0.0.0",
         port=9141,
-        reload=True)
+        reload=True
+    )
     server = uvicorn.Server(http_config)
     server_task = asyncio.create_task(server.serve())
 
