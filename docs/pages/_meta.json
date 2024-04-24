@@ -1,8 +1,11 @@
 {
   "index": "Quick Start",
-  "user-guide": {
-    "title":"User Guide"
-  },
+  "overview": "Overview",
+  "api-apps": "",
+  "browser-apps": "",
+  "cli": "CLI Reference",
+  "python": "Python SDK Reference",
+
   "contact": {
     "title": "Contact ↗",
     "type": "page",
