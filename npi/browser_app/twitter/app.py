@@ -7,6 +7,7 @@ from markdownify import MarkdownConverter
 from npi.core import BrowserApp, npi_tool
 from npi.utils import logger
 from npi.browser_app.navigator import Navigator
+from npi.config import config
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -33,6 +34,8 @@ __ROUTES__ = {
     'login': 'https://twitter.com/',
     'home': 'https://twitter.com/home'
 }
+
+from ...error.auth import UnauthorizedError
 
 
 class ImageFilterConverter(MarkdownConverter):
@@ -84,11 +87,15 @@ def html_to_md(html: str, **options) -> str:
 
 
 class Twitter(BrowserApp):
-    # TODO: configurable credentials
-    secret_file: str = './credentials/twitter.json'
+    creds: config.TwitterCredentials
     state_file: str = './credentials/twitter_state.json'
 
     def __init__(self, llm=None, headless: bool = True):
+        creds = config.get_twitter_credentials()
+
+        if creds is None:
+            raise UnauthorizedError("Twitter credentials are not found, please use `npi auth twitter` first")
+
         super().__init__(
             name='twitter',
             description='retrieve and manage tweets',
@@ -96,6 +103,8 @@ class Twitter(BrowserApp):
             llm=llm,
             headless=headless,
         )
+
+        self.creds = creds
 
         self.register(Navigator(playwright=self.playwright))
 
@@ -119,12 +128,11 @@ class Twitter(BrowserApp):
                 # cookies expired, continue login process
                 logger.debug('Twitter cookies expired. Continue login process.')
 
-        credentials = json.load(open(self.secret_file))
         await self.playwright.page.goto(__ROUTES__['login'])
         await self.playwright.page.get_by_test_id('loginButton').click()
-        await self.playwright.page.get_by_label('Phone, email, or username').fill(credentials['username'])
+        await self.playwright.page.get_by_label('Phone, email, or username').fill(self.creds.username)
         await self.playwright.page.get_by_role('button', name='Next').click()
-        await self.playwright.page.get_by_label('Password', exact=True).fill(credentials['password'])
+        await self.playwright.page.get_by_label('Password', exact=True).fill(self.creds.password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
         await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
 

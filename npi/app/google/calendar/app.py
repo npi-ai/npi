@@ -30,14 +30,16 @@ class GoogleCalendar(GoogleApp):
     def __init__(self, llm=None):
         creds = config.get_google_calendar_credentials()
         if creds is None:
-            raise UnauthorizedError("Google Calendar credentials not found, please use `npi auth google calendar` first")
+            raise UnauthorizedError(
+                "Google Calendar credentials not found, please use `npi auth google calendar` first"
+                )
         super().__init__(
             name='google_calendar',
             description='a function that can invoke natural language(English only) instruction to interact with '
                         'Google Calendar, such as create the event, retrieve the events',
             system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
                         'the best function based the tool list.',
-            creds=creds['token'],
+            creds=creds.token,
             llm=llm,
             scopes=self.SCOPE,
         )

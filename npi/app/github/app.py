@@ -1,12 +1,12 @@
 import json
-import os
 from github import Github as PyGithub, Auth, IssueComment, PullRequestComment, Issue, PullRequest
 from github.GithubObject import NotSet
-from openai import OpenAI
 from typing import Union, TypeVar
 
 from npi.core import App, npi_tool
+from npi.config import config
 from .schema import *
+from ...error.auth import UnauthorizedError
 
 _T = TypeVar('_T')
 
@@ -19,22 +19,20 @@ def _default_not_set(value: _T) -> Union[_T, NotSet]:
 class GitHub(App):
     github_client: PyGithub
 
-    def __init__(self, access_token: str = None, llm=None):
-        """
-        GitHub App
+    def __init__(self, llm=None):
+        cred = config.get_github_credentials()
 
-        Args:
-            access_token: GitHub access token
-            llm: llm instance for this app, default is OpenAI
-        """
+        if cred is None:
+            raise UnauthorizedError("GitHub credentials are not found, please use `npi auth github` first")
+
         super().__init__(
             name='github',
             description='Manage GitHub issues and pull requests using English, e.g., github("reply to the latest issue in npi/npi")',
             system_role='You are a GitHub Agent helping users to manage their issues and pull requests',
-            llm=llm or OpenAI(),
+            llm=llm,
         )
 
-        self.github_client = PyGithub(auth=Auth.Token(access_token or os.environ.get('GITHUB_ACCESS_TOKEN', None)))
+        self.github_client = PyGithub(auth=Auth.Token(cred.access_token))
 
     @staticmethod
     def _comment_to_json(comment: Union[IssueComment, PullRequestComment]):

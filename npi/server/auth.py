@@ -23,6 +23,19 @@ class GoogleAuthRequest(BaseModel):
     app: str
 
 
+class GithubAuthRequest(BaseModel):
+    access_token: str
+
+
+class DiscordAuthRequest(BaseModel):
+    access_token: str
+
+
+class TwitterAuthRequest(BaseModel):
+    username: str
+    password: str
+
+
 STATE = {}
 
 
@@ -71,3 +84,21 @@ async def auth_google(state: str, code: str):
     else:
         config.set_gmail_credentials(cfg["secret"], credentials)
     return 'Success, close the window.'
+
+
+@app.post('/auth/github')
+async def auth_github(req: GithubAuthRequest):
+    config.set_github_credentials(req.access_token)
+    return responses.Response(status_code=200)
+
+
+@app.post('/auth/discord')
+async def auth_discord(req: DiscordAuthRequest):
+    config.set_discord_credentials(req.access_token)
+    return responses.Response(status_code=200)
+
+
+@app.post('/auth/twitter')
+async def auth_twitter(req: TwitterAuthRequest):
+    config.set_twitter_credentials(req.username, req.password)
+    return responses.Response(status_code=200)
