@@ -1,18 +1,22 @@
-import {Steps, Tabs} from 'nextra/components';
+import { Steps } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
 
 # Gmail
 
-## Usage
+The Gmail App allows you to streamline your email management tasks.
+
+## Setup
 
 <Steps>
 
-### Authorization
+    ### Authorization
 
-```sh
-npi auth google gmail --secret-file <path-to-secret-file>
-```
+    ```
+    npi auth google gmail --secret-file <path-to-secret-file>
+    ```
 
-### Usage
+    ### Usage
 
     <Tabs items={["CLI", "Python"]}>
         <Tabs.Tab title="CLI">
@@ -31,13 +35,184 @@ npi auth google gmail --secret-file <path-to-secret-file>
 
 </Steps>
 
-## Examples
+## Supported Features
 
-TODO
+### Sending Emails
 
-## Supported Functions
+- **Description**: Send an email to a recipient
+- **In-Context Parameters**[^1]:
+  - Recipient's email address
+  - (_Optional, Inferred_) Email's subject
+  - (_Optional, Inferred_) Email's body
+  - (_Optional_) CC list
+  - (_Optional_) BCC list
 
-|  Function  | Description                  | parameters |
-|:----------:|------------------------------|------------|
-| send_email | Send an email to a recipient | TODO       |
+<h4 className='examples'>Examples</h4>
 
+1. Send an Availability Inquiry Email
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send an email to a@a.com asking if they are available this Friday"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Send an email to a@a.com asking if they are available this Friday")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Send an Email with CC
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send a greeting email to a@a.com and CC b@b.com"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Send a greeting email to a@a.com and CC b@b.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+3. Send an Email and Await a Reply
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send an email to a@a.com about an upcoming AI meetup and wait for their response. Possible meeting dates: Monday, Tuesday, Wednesday."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat(
+                """
+                Send an email to a@a.com about an upcoming AI meetup and wait for their response.
+                Possible meeting dates: Monday, Tuesday, Wednesday
+                """
+            )
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Fetch Emails
+
+- **Description**: Search for and retrieve emails matching certain criteria.
+- **In-Context Parameters**:
+  - (_Optional, Inferred_) Search query
+  - (_Optional_) Maximum number of messages to return
+
+<h4 className='examples'>Examples</h4>
+
+1. Fetch Latest Unread Emails
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Get the lastest unread emails in the inbox."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Get the lastest unread emails in the inbox")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Retrieve Emails from a Specific Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Get all emails from a@a.com within the last 10 days."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Get all emails from a@a.com within the last 10 days")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Reply to Emails
+
+- **Description**: Respond to an existing email conversation.
+- **In-Context Parameters**:
+  - Target email to reply to (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Reply to the Most Recent Email from a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Reply to the newest email from a@a.com with your thoughts."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Reply to the newest email from a@a.com with your thoughts")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+
+### Add Labels
+
+- **Description**: Assign labels to emails. The labels will be created if they do not exist.
+- **In-Context Parameters**:
+  - Label name(s).
+  - Target emails receiving the label (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Add a Label to Emails From a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Add label 'TEST' to the latest email from a@a.com."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Add label 'TEST' to the latest email from a@a.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Remove Labels
+
+- **Description**: Detach labels from selected emails.
+- **In-Context Parameters**:
+  - Label name(s).
+  - Target emails for label removal (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Remove a Label From Emails Sent From a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Remove label 'TEST' from the latest email from a@a.com."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Remove label 'TEST' from the latest email from a@a.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+<FeatureRequest />
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.

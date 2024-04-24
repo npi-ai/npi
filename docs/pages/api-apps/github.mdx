@@ -1,84 +1,245 @@
+import { Steps, Callout } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
 # GitHub
 
 The GitHub App is crafted to refine your GitHub workflow, offering efficient management of issues and pull requests. It also enriches community engagement, allowing you to easily star or fork favored repositories.
 
-## Supported Functionality
+## Setup
 
-- **Repository Search**: Locate repositories on GitHub.
-- **Repository Engagement**: Star or fork repositories.
-- **Issue Management**:
-  - Fetch exisiting issues.
-  - Open or close issues.
-  - Edit details of existing issues.
-  - Comment on issues.
-- **Pull Request (PR) Management**:
-  - Fetch exisiting PRs.
-  - Create or close PRs.
-  - Update existing PRs.
-  - Comment on PRs.
+<Steps>
 
-import { FeatureRequest } from '@components/feature-request';
+    ### Authorization
+
+    ```
+    npi auth github --access-token <github-access-token>
+    ```
+
+    ### Usage
+
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app github "Star and fork the repo npi-ai/npi."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.app.github import GitHub
+            github = GitHub()
+            github.chat('Star and fork the repo npi-ai/npi.')
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Supported Features
+
+### Repository Search
+
+- **Description**: Find repositories on GitHub.
+- **In-Context Parameters**[^1]:
+  - Keywords or a short description of the desired repositories.
+  - (_Optional_) Maximum number of results to return.
+
+<h4 className='examples'>Examples</h4>
+
+1. Discover Top Python Repositories
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Search for the top 10 python repos with over 1000 stars."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Search for the top 10 python repos with over 1000 stars.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Repository Engagement
+
+- **Description**: Actively engage with repositories by starring or forking.
+- **In-Context Parameters**:
+  - Name of the repository in format `{owner}/{repo}`.
+
+<h4 className='examples'>Examples</h4>
+
+1. Star and Fork an Repository
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Star and fork the repo npi-ai/npi."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Star and fork the repo npi-ai/npi.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Issue Management
+
+- **Description**: Efficiently manage GitHub issues, from fetching to creating, editing, commenting on, and closing issues.
+- **In-Context Parameters**:
+  - Name of the repository in format `{owner}/{repo}`.
+  - Keywords or a short description of the desired issues.
+
+<h4 className='examples'>Examples</h4>
+
+1. Locate Relevant Issues
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Find the issues in the repo npi-ai/npi related to feature request."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Find the issues in the repo npi-ai/npi related to feature request.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Create an Issue with a Label
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Create a test issue in npi-ai/npi with label 'Test' and assign it to @idiotWu."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Create a test issue in npi-ai/npi with label 'Test' and assign it to @idiotWu.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+3. Modify an Issue Content
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Find the issue titled 'Test' in npi-ai/npi and change the description to 'Hello World'."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Find the issue titled 'Test' in npi-ai/npi and change the description to 'Hello World'.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+4. Comment on an Issue
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Find the issue titled 'Test' in npi-ai/npi and add a comment 'Hello World'."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Find the issue titled 'Test' in npi-ai/npi and add a comment 'Hello World'.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+5. Close Issues
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Close all issues in npi-ai/npi."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Close all issues in npi-ai/npi.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Pull Request Management
+
+- **Description**: Handle pull requests with options to fetch, create, close, update, or comment on them.
+- **In-Context Parameters**:
+  - Name of the repository in format `{owner}/{repo}`.
+  - Keywords or a short description of the desired pull requests.
+
+<h4 className='examples'>Examples</h4>
+
+1. Create a Pull Request
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Open a pull request in npi-ai/npi from 'npi-test' branch to 'main' branch with the title 'New Feature' and a detailed body."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Open a pull request in npi-ai/npi from 'npi-test' branch to 'main' branch with the title 'New Feature' and a detailed body.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Edit an Existing Pull Request
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Edit the PR titled 'Update' in npi-ai/npi and revise the description to 'Updated Readme'."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Edit the PR titled 'Update' in npi-ai/npi and revise the description to 'Updated Readme'.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+3. Comment on a Pull Request
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Comment 'Looks good to me' on the PR titled 'Feature Addition' in npi-ai/npi."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Comment 'Looks good to me' on the PR titled 'Feature Addition' in npi-ai/npi.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+4. Close Pull Requests
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app github "Close all pull requests in npi-ai/npi."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            github.chat("Close all pull requests in npi-ai/npi.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
 
 <FeatureRequest />
 
-## Usage
+---
+<b><small>Footnotes</small></b>
 
-The following examples show how to leverage the GitHub App to efficiently navigate and manage your repositories, issues, and pull requests:
-
-```py
-from npiai.app.github import GitHub
-
-github = GitHub(token=...)
-
-github.chat(...)
-```
-
-## Examples
-
-### Star and Fork an Repository
-
-```py
-github.chat('Star and fork the repo npi/npi.')
-```
-
-### Search for Issues
-
-```py
-github.chat('Find the issues in the repo npi/npi related to feature request.')
-```
-
-### Create an Issue with a Specific Label
-
-```py
-github.chat('Create a test issue in npi/npi with label "Test" and assign it to @idiotWu')
-```
-
-### Edit an Existing Issue
-
-```py
-github.chat('Find the issue titled "Test" in npi/npi and change the body to "Hello World".')
-```
-
-### Close Issues
-
-```py
-github.chat('Close all issues in npi/npi.')
-```
-
-### Create a Pull Request
-
-```py
-github.chat('Create a pull request in npi/npi from "npi-test" branch to "main" branch with a random title and body')
-```
-
-### Edit an Existing Pull Request
-
-```py
-github.chat('Find the PR titled "Test" in npi/npi and change the body to "Hello World".')
-```
-
-### Close Pull Requests
-
-```py
-github.chat('Close all pull requests in npi/npi.')
-```
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.

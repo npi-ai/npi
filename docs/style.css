@@ -1,3 +1,14 @@
 ul ul {
   margin-top: 0 !important;
 }
+
+code {
+  white-space: pre-wrap !important;
+}
+
+.examples {
+  font-weight: 600;
+  letter-spacing: -.015em;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
