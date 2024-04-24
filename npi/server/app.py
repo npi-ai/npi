@@ -14,6 +14,7 @@ from npi.core.thread import ThreadManager, Thread
 from npi.app import google
 from npi.utils import logger
 from npi.config import config
+from npi.error.auth import UnauthorizedError
 
 
 class Chat(api_pb2_grpc.AppServerServicer):
@@ -158,10 +159,12 @@ class Chat(api_pb2_grpc.AppServerServicer):
             await app.start()
             result = await app.chat(thread.instruction, thread)
             thread.finish(result)
+        except UnauthorizedError as e:
+            thread.failed(str(e))
         except Exception as e:
             err_msg = ''.join(traceback.format_exception(e))
             logger.error(err_msg)
-            thread.failed(err_msg)
+            thread.failed(str(e))
             # raise e
         finally:
             if app is not None:
@@ -189,15 +192,8 @@ async def serve(address: str) -> None:
     _cleanup_coroutines.append(server_graceful_shutdown())
     await server.wait_for_termination()
 
-async def main():
-    config_file = os.getenv("NPI_CONFIG_FILE")
-    if config_file is None:
-        config_file = "/npiai/config/config.yaml"
-    with open(config_file, "r") as f:
-        data = yaml.safe_load(f)
-    config.CONFIG.update(data)
-    config.create_credentials()
 
+async def start():
     http_config = uvicorn.Config(
         "npi.server.auth:app",
         host="0.0.0.0",
@@ -210,8 +206,12 @@ async def main():
     await server_task
 
 
-if __name__ == "__main__":
+def main():
     try:
-        asyncio.run(main())
+        asyncio.run(start())
     finally:
         asyncio.run(*_cleanup_coroutines)
+
+
+if __name__ == "__main__":
+    main()

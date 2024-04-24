@@ -7,6 +7,7 @@ import loguru
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from npi.error.auth import UnauthorizedError
 from npi.config import config
 from npi.app.google import GoogleApp
 from npi.app.google.calendar.schema import *
@@ -22,21 +23,22 @@ class GoogleCalendar(GoogleApp):
     """the function wrapper of Google Calendar App"""
 
     SCOPE = ["https://www.googleapis.com/auth/calendar"]
-    TOKEN_FILE = "config/credentials/gc_token.json"
 
     __service_name = "calendar"
     __api_version = "v3"
 
     def __init__(self, llm=None):
+        creds = config.get_google_calendar_credentials()
+        if creds is None:
+            raise UnauthorizedError("Google Calendar credentials not found, please use `npi auth google calendar` first")
         super().__init__(
             name='google_calendar',
             description='a function that can invoke natural language(English only) instruction to interact with '
                         'Google Calendar, such as create the event, retrieve the events',
             system_role='You are an assistant who are interacting with Google Calendar API. your job is the selecting '
                         'the best function based the tool list.',
+            creds=creds['token'],
             llm=llm,
-            token_file=GoogleCalendar.TOKEN_FILE,
-            # secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
             scopes=self.SCOPE,
         )
 

@@ -11,7 +11,27 @@ def get_oai_key():
     return CONFIG.get('openai_api_key', os.environ.get('OPENAI_API_KEY', ''))
 
 
-def create_credentials():
-    cred_file = "/".join([get_project_root(), "config/credentials"])
-    if not os.path.exists(cred_file):
-        os.makedirs(cred_file)
+def get_gmail_credentials():
+    if 'gmail_credentials' in CONFIG:
+        return CONFIG['gmail_credentials']
+    return None
+
+
+def set_gmail_credentials(secret, token):
+    CONFIG['gmail_credentials'] = {
+        'secret': secret,
+        'token': token
+    }
+
+
+def get_google_calendar_credentials():
+    if 'google_calendar_credentials' in CONFIG:
+        return CONFIG['google_calendar_credentials']
+    return None
+
+
+def set_google_calendar_credentials(secret, token):
+    CONFIG['google_calendar_credentials'] = {
+        'secret': secret,
+        'token': token
+    }

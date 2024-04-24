@@ -65,7 +65,9 @@ async def auth_google(state: str, code: str):
 
     flow.fetch_token(code=code)
     credentials = flow.credentials
-    file = GoogleCalendar.TOKEN_FILE if cfg["app"] == "calendar" else Gmail.TOKEN_FILE
-    with open("/".join([config.get_project_root(), file]), "w", encoding="utf-8") as token:
-        token.write(credentials.to_json())
+
+    if cfg["app"] == "calendar":
+        config.set_google_calendar_credentials(cfg["secret"], credentials)
+    else:
+        config.set_gmail_credentials(cfg["secret"], credentials)
     return 'Success, close the window.'

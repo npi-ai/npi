@@ -81,7 +81,7 @@ func doRequest(app api.AppType, instruction string) {
 			color.Green("Answer: %s", resp.GetChatResponse().GetMessage())
 			return
 		case api.ResponseCode_FAILED:
-			color.Green("Failed: %s", resp.GetChatResponse().GetMessage())
+			color.Red("Failed: %s", resp.GetChatResponse().GetMessage())
 			return
 		case api.ResponseCode_MESSAGE:
 			if resp.GetChatResponse().GetMessage() != "" {

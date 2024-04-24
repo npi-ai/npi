@@ -8,6 +8,7 @@ from npiai_proto import api_pb2
 from simplegmail.message import Message
 
 from npi.config import config
+from npi.error.auth import UnauthorizedError
 from npi.app.google import GoogleApp
 from npi.core.app import npi_tool, callback
 from .client import GmailClientWrapper
@@ -32,16 +33,17 @@ class Gmail(GoogleApp):
     gmail_client: GmailClientWrapper
 
     SCOPE = ["https://mail.google.com/"]
-    TOKEN_FILE = "config/credentials/gm_token.json"
 
     def __init__(self, llm=None):
+        cred = config.get_gmail_credentials()
+        if cred is None:
+            raise UnauthorizedError("Gmail credentials not found, please use `npi auth google gmail` first")
         super().__init__(
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_role='You are a Gmail Agent helping users to manage their emails',
             llm=llm,
-            token_file=Gmail.TOKEN_FILE,
-            # secret_file="/".join([config.get_project_root(), "config/credentials/google.json"]),
+            creds=cred['token'],
             scopes=[
                 "https://mail.google.com/"
             ],
