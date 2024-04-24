@@ -3,6 +3,8 @@
 NPI(pronunciation: N-π) is a platform providing Natural language Programming Interface to existing software.
 We bring out-of-box **Tool use** APIs to Agent for enhancing its capability of using tools.
 
+**Currently, NPi is unstable and API may change in the future release, so we recommend you using the command line tool to experience NPI.**
+
 ## Quickstart
 
 ### Installation
