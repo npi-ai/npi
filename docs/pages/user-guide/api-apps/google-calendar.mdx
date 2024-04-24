@@ -1,1 +1,56 @@
-# Google Calendar
+import {Steps, Tabs} from 'nextra/components';
+
+# Google Calender
+
+## Usage
+
+<Steps>
+
+    ### Authorization
+
+    ```sh
+    npi auth google calendar --secret-file <path-to-secret-file>
+    ```
+
+    ### Usage
+
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app gcal "is example@example.com free on next monday at 3pm?"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.app.google import Calendar
+            calendar = Calendar()
+            calendar.chat("is example@example.com free on next monday at 3pm?")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Examples
+
+### Check availability
+
+```python
+calendar.chat("is example@example.com free on next monday at 3pm?")
+```
+
+### Create an event
+```python
+calendar.chat("create an event to invite a@a.com, b@b.com to discuss about project on next monday at 3pm?")
+```
+
+## Supported Functions
+
+|  Function  | Description                  | parameters |
+|:----------:|------------------------------|------------|
+| get_today | get current date | null       |
+|get_timezone| get user current timezone|null|
+|get_user_email|ask human to provide user email address|null|
+|retrieve_events|get the events of someone's calendar|TODO|
+|create_event|create an event for someone|TODO|
+
