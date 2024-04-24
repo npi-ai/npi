@@ -54,20 +54,21 @@ class ImageFilterConverter(MarkdownConverter):
         if not parent:
             return super().process_text(el)
 
+        count = text or '0'
         # annotate footer icons
         match parent.attrs.get('data-testid'):
             case 'reply':
-                return f' Replies: {text or '0'} '
+                return f' Replies: {count} '
             case 'retweet':
-                return f' Retweets: {text or '0'} '
+                return f' Retweets: {count} '
             case 'like':
-                return f' Likes: {text or '0'} '
+                return f' Likes: {count} '
             case _:
                 return super().process_text(el)
 
     def convert_a(self, el, text, convert_as_inline):
         if re.search(r'analytics', el.attrs.get('href', '')):
-            return f' Views: {el.text or '0'}'
+            return f' Views: {el.text or "0"}'
         return super().convert_a(el, text, convert_as_inline)
 
     def convert_img(self, el, text, convert_as_inline):

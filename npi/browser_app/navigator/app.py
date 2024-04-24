@@ -277,7 +277,7 @@ class Navigator(BrowserApp):
         elem = await self.get_element_by_marker_id(action['id']) if 'id' in action else None
         elem_json = await self.element_to_json(elem) if elem else None
 
-        logger.info(f'[{self.name}]: {action['type']} - {action['description']}')
+        logger.info(f'[{self.name}]: {action["type"]} - {action["description"]}')
 
         match action['type']:
             case 'click':
