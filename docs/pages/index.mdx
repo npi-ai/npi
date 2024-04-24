@@ -3,21 +3,91 @@ title: NPi AI
 description: Welcome to NPi AI
 ---
 
-## What is NPi AI?
+import { Cards, Steps, Tabs } from 'nextra/components';
 
-NPI is an open-source platform that **_Tool use_** APIs to enhance the ability of AI Agent to operate and utilize a wide range of software.
+## What is NPi?
 
-(**Our content is rolling out in the next week. Stay back latter!**)
+NPi is an open-source platform that **_Tool use_** APIs to enhance the ability of AI Agent to operate and utilize a wide range of software.
+
+the name of NPi comes from **N**atural language **P**rogramming **I**nterface,the pronunciation of it is **N π**.
 
 ## Quick Start
 
-import { Cards } from 'nextra/components';
+<Steps>
+
+### Install
+
+    <Tabs items={['arm64','amd64']}>
+        <Tabs.Tab >
+            ```sh arm64
+            wget https://s.npi.ai/cli/v0.0.1/arm64/npi
+            chmod +x npi
+            sudo mv npi /usr/local/bin
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab >
+            ```sh amd64
+            wget https://s.npi.ai/cli/v0.0.1/amd64/npi
+            chmod +x npi
+            sudo mv npi /usr/local/bin
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+    run `npi version` to verify the installation. if you see the output like below, then you are ready to go.
+
+    ```json
+    {
+        "BuildDate": "2024-04-23_02:23:50-0700",
+        "GitCommit": "934739f",
+        "Platform": "darwin/arm64",
+        "Version": "v0.0.0"
+    }
+    ```
+
+### Install NPI Server via Docker
+    please replace `{YOUR_OAI_KEY}` with your OpenAI API Key
+    ```sh
+    docker run -d --name npi \
+        -p 9140:9140 \
+        -p 9141:9141 \
+        -e OPENAI_API_KEY={YOUR_OAI_KEY} \
+        npiai/npi
+    ```
+    run `npi connect test` to verify the installation. if `server connected` is printed, it means the installation is successful.
+    otherwise, please check the logs by running `docker logs npi` and create an issue on [NPI Repo](https://github.com/npi-ai/npi/issues/new)
+
+### Authorize NPI to access your GitHub account
+    open [https://github.com/settings/tokens](https://github.com/settings/tokens) create a new token for NPI, and use the following command to authorize NPI to access your GitHub account.
+    ```sh
+    npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
+    ```
+
+### Star and fork the NPI Repo
+    use this command to star and fork the NPI Repo
+    ```sh
+    npi app github "star and fork the repo of npi-ai/npi"
+    ```
+    you will enter an interactive mode to chat with GitHub.
+
+### Clean up
+1. stop and remove the NPI container
+    ```sh
+    docker stop npi
+    docker rm npi
+    ```
+2. remove your GitHub access token [https://github.com/settings/tokens](https://github.com/settings/tokens).
+
+
+</Steps>
+
+## What's next?
 
 <Cards num={2}>
-  <Cards.Card arrow title='Client User Guides' href='/client-guides/start' />
+  <Cards.Card arrow title='User Guide' href='/user-guides/start' />
   <Cards.Card
     arrow
-    title='NPi App Contributor Guides'
+    title='Contributor Guides'
     href='/contributor-guides/start'
   />
 </Cards>

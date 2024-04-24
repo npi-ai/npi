@@ -104,11 +104,34 @@ func oauthCallback(callbackURL string, ch chan error) func(w http.ResponseWriter
 	}
 }
 
+var (
+	githubAccessToken string
+)
+
 func authGitHubCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth github",
 		Short: "authorize GitHub",
+		Run: func(cmd *cobra.Command, args []string) {
+			if githubAccessToken == "" {
+				_ = cmd.Help()
+				return
+			}
+			response, err := httpClient.R().SetBody(map[string]string{
+				"access_token": githubAccessToken,
+			}).Post("/auth/github")
+			if err != nil {
+				color.Red("failed to authorize GitHub: %v", err)
+				os.Exit(-1)
+			}
+			if response.StatusCode() != 200 {
+				color.Red("failed to authorize GitHub: %s", string(response.Body()))
+				os.Exit(-1)
+			}
+			color.Green("authorization success")
+		},
 	}
+	cmd.Flags().StringVar(&githubAccessToken, "access-token", "", "the access token for GitHub")
 
 	return cmd
 }

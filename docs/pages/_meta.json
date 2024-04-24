@@ -1,19 +1,8 @@
 {
-  "index": {
-    "type": "page",
-    "title": "Home"
+  "index": "Quick Start",
+  "user-guide": {
+    "title":"User Guide"
   },
-
-  "client-guides": {
-    "type": "page",
-    "title": "Client Guides"
-  },
-
-  "contributor-guides": {
-    "type": "page",
-    "title": "Contributor Guides"
-  },
-
   "contact": {
     "title": "Contact ↗",
     "type": "page",
