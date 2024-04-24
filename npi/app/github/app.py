@@ -1,5 +1,9 @@
 import json
-from github import Github as PyGithub, Auth, IssueComment, PullRequestComment, Issue, PullRequest
+from github import Github as PyGithub, Auth
+from github.IssueComment import IssueComment
+from github.Issue import Issue
+from github.PullRequestComment import PullRequestComment
+from github.PullRequest import PullRequest
 from github.GithubObject import NotSet
 from typing import Union, TypeVar
 
@@ -11,7 +15,7 @@ from ...error.auth import UnauthorizedError
 _T = TypeVar('_T')
 
 
-def _default_not_set(value: _T) -> Union[_T, NotSet]:
+def _default_not_set(value: _T) -> _T | 'NotSet':
     return value if value is not None else NotSet
 
 
