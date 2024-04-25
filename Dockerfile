@@ -10,6 +10,7 @@ RUN apt install curl vim wget pipx -y
 RUN pipx install poetry
 ENV PATH="/root/.local/bin:${PATH}"
 RUN poetry install
+RUN poetry run playwright install chromium
 
 ENV NPI_CONFIG_FILE="/npiai/config/config.yaml"
 
