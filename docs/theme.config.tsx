@@ -11,7 +11,7 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: 'https://github.com/npi-ai/npi',
   footer: {
-    text: `NPI AI @ ${new Date().getFullYear()}`,
+    text: `NPi AI @ ${new Date().getFullYear()}`,
   },
   editLink: {
     text: 'Edit this page on GitHub →',
