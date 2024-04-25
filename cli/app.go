@@ -70,7 +70,7 @@ func twitterCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "twitter",
 		Aliases: []string{"gcal"},
-		Short:   "chat with Google Calendar, alias: gcal",
+		Short:   "chat with Twitter",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_TWITTER, args[0])
 		},
@@ -82,7 +82,7 @@ func discordCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "discord",
 		Aliases: []string{"gcal"},
-		Short:   "chat with Google Calendar, alias: gcal",
+		Short:   "chat with Discord",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_DISCORD, args[0])
 		},
@@ -92,9 +92,8 @@ func discordCommand() *cobra.Command {
 
 func webBrowserCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "gba",
-		Aliases: []string{"gcal"},
-		Short:   "chat with General Browser Agent, alias: gcal",
+		Use:   "browser",
+		Short: "chat with Web Browser",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_WEB_BROWSER, args[0])
 		},

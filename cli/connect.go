@@ -18,10 +18,16 @@ type CMDConfig struct {
 }
 
 func (c *CMDConfig) GetGRPCEndpoint() string {
+	if c.gRPCPort == 0 {
+		c.gRPCPort = 9140
+	}
 	return fmt.Sprintf("%s:%d", c.NPIServer, c.gRPCPort)
 }
 
 func (c *CMDConfig) GetHTTPEndpoint() string {
+	if c.httpPort == 0 {
+		c.httpPort = 9141
+	}
 	return fmt.Sprintf("%s:%d", c.NPIServer, c.httpPort)
 }
 
@@ -39,7 +45,7 @@ func connectCommand() *cobra.Command {
 
 func connectTestCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "connect test",
+		Use:   "test",
 		Short: "Testing if NPi Server is connected",
 		Run: func(cmd *cobra.Command, args []string) {
 			resp, err := httpClient.R().Get("/ping")

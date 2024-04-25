@@ -112,7 +112,7 @@ var (
 
 func authGitHubCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "auth github",
+		Use:   "github",
 		Short: "authorize GitHub",
 		Run: func(cmd *cobra.Command, args []string) {
 			if accessToken == "" {
@@ -141,7 +141,7 @@ func authGitHubCommand() *cobra.Command {
 
 func authDiscordCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "auth discord",
+		Use:   "discord",
 		Short: "authorize Discord",
 		Run: func(cmd *cobra.Command, args []string) {
 			if accessToken == "" {
@@ -174,17 +174,18 @@ var (
 
 func authTwitterCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "auth twitter",
+		Use:   "twitter",
 		Short: "authorize Twitter",
 		Run: func(cmd *cobra.Command, args []string) {
-			if accessToken == "" {
+			if twitterUsername == "" || twitterPassword == "" {
+				color.Yellow("username and password are required")
 				_ = cmd.Help()
 				return
 			}
 			response, err := httpClient.R().SetBody(map[string]string{
 				"username": twitterUsername,
 				"password": twitterPassword,
-			}).Post("/auth/github")
+			}).Post("/auth/twitter")
 			if err != nil {
 				color.Red("failed to authorize GitHub: %v", err)
 				os.Exit(-1)
@@ -196,8 +197,8 @@ func authTwitterCommand() *cobra.Command {
 			color.Green("authorization success")
 		},
 	}
-	cmd.Flags().StringVar(&twitterUsername, "username", "", "the username of your Twitter account")
-	cmd.Flags().StringVar(&twitterPassword, "password", "", "the password of your Twitter account")
+	cmd.Flags().StringVar(&twitterUsername, "username", "", "the username of your Twitter/X account")
+	cmd.Flags().StringVar(&twitterPassword, "password", "", "the password of your Twitter/X account")
 
 	return cmd
 }
