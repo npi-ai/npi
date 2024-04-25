@@ -4,7 +4,7 @@ import { Todo } from '@components/todo';
 
 # Overview
 
-In this section, you will learn the core concepts of NPi and how to use it in your project.
+In this section, we explore the foundational principles of NPi and demonstrate how to integrate it into your projects.
 
 ## Why NPi
 
@@ -12,12 +12,11 @@ In this section, you will learn the core concepts of NPi and how to use it in yo
 
 ### Agent
 
-An Agent is a program that follows human instructions to get task done by using various tools. In NPi, an Agent points
-to two types of concepts: `App Agent` and `User Agent`.
+Within NPi, an Agent refers to a programmed entity designed to fulfill tasks based on human directives by utilizing a range of tools. Specifically, there are two categories of Agents:
 
-An App Agent is provisioned Agent of NPi, users can use it out of the box, typically, an App Agent is seen as a **Tool**.
+- **App Agent**: This is a ready-to-use, pre-configured Agent within NPi, which is typically regarded as a **Tool**.
 
-User Agent is a custom Agent that users use NPi SDK to create and can use various tools to perform specific tasks.
+- **User Agent**: A customizable Agent, created with the NPi SDK, capable of harnessing various tools to execute bespoke tasks.
 
 ```python filename="examples/calendar_negotiator"
 from openai import OpenAI
@@ -45,23 +44,23 @@ def main():
 
 ### APP
 
-Each APP is an Agent can interact with a specific software via natural human language.
+An APP represents an NPi Agent with the capability to interface with a particular application through intuitive human language.
+
 
 #### API APP
 
-The Agent uses the official API(typically OpenAPI or SDK) to interact with the specific software, such as: Google Calendar.
+The API Apps utilize established APIs (usually OpenAPI or SDKs) to facilitate Agent interactions with software like Google Calendar.
+
 
 #### Browse APP
 
-The Agent uses the browser to interact with the specific software, such as: Twitter. Currently, the Browser APP leverage
-GPT-4V to understand Web UI and take actions.
-
+The Browser Apps utilize a web browser to connect with applications (e.g., [Twitter](https://x.com)), leveraging tools like GPT-4V to understand and interact with web interfaces.
 
 ## CLI
 
-NPi provides a CLI tool to users with convenience. You can use CLI easily to test and debug the functionality of NPi.
+NPi offers a user-friendly CLI tool for simplified testing and trouble-shooting of Agents in a command-line environment.
 
-You can see the CLI Reference [here](cli).
+Refer to the CLI documentation [here](cli).
 
 ## SDK
 
