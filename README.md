@@ -8,6 +8,8 @@ NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"
 **_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools
 and applications.
 
+[📢 Join our community on Discord](https://discord.gg/MQTuXtbj)
+
 ## Quickstart
 
 ### Installation
