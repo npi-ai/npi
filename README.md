@@ -1,80 +1,99 @@
 # NPI
 
-NPI(pronunciation: N-π) is a platform providing Natural language Programming Interface to existing software.
-We bring out-of-box **Tool use** APIs to Agent for enhancing its capability of using tools.
+> [!WARNING]
+> NPi is currently under active development and the APIs are subject to change in the future release. It is recommended
+> to use the command line tool to try it out.
 
-**Currently, NPi is unstable and API may change in the future release, so we recommend you using the command line tool to experience NPI.**
+NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"**, is an open-source platform providing
+**_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools
+and applications.
 
 ## Quickstart
 
 ### Installation
 
-#### Command line tool
+#### Command Line Tool
+
 Download the binary from the following links.
+
 ```sh
 # For amr64
-wget https://s.npi.ai/cli/v0.0.1/arm64/npi
+curl -O https://s.npi.ai/cli/v0.0.1/arm64/npi
 # For amd64
-wget https://s.npi.ai/cli/v0.0.1/amd64/npi
+curl -O https://s.npi.ai/cli/v0.0.1/amd64/npi
 ```
-then move it to `/usr/local/bin` or any other directory in your PATH
+
+Then move it to `/usr/local/bin` or any other directory in your `PATH`:
+
 ```sh
 chmod +x npi
 sudo mv npi /usr/local/bin
 ```
 
-#### Server 
+Verify the installation by running `npi version`. If you see the output similar to the following, you are all set:
 
-please replace `{YOUR_OAI_KEY}` with your OpenAI API Key
+```json
+{
+  "BuildDate": "2024-04-23_02:23:50-0700",
+  "GitCommit": "934739f",
+  "Platform": "darwin/arm64",
+  "Version": "v0.0.0"
+}
+```
+
+#### Setting Up NPi Server with Docker
+
+Replace `{YOUR_OAI_KEY}` with your actual OpenAI API Key, then execute:
+
 ```sh
 docker run -d --name npi \
--p 9140:9140 \
--p 9141:9141 \
--e OPENAI_API_KEY={YOUR_OAI_KEY} \
-npiai/npi
+    -p 9140:9140 \
+    -p 9141:9141 \
+    -e OPENAI_API_KEY={YOUR_OAI_KEY} \
+    npiai/npi
 ```
-run `npi connect test` to verify the installation. if `server connected` is printed, it means the installation is successful.
-otherwise, please check the logs by running `docker logs npi` and create an issue [new issue](https://github.com/npi-ai/npi/issues/new)
 
-### Chat with GitHub
+Confirm server connectivity by running `npi connect test`. If you receive a `server connected` message, the setup is
+successful. Otherwise, consult the logs with `docker logs npi` and report issues
+to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
-#### Authorize your GitHub account
+### Try the GitHub App
 
-open [https://github.com/settings/tokens](https://github.com/settings/tokens) create a new token for NPi, and use the
-following command to authorize NPi to access your GitHub account.
+#### Authorize NPi to access your GitHub account
+
+Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, and authorize NPi's access to
+your GitHub account with:
 
 ```sh
 npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 ```
 
-### Star and fork NPi Repo
+#### Support the NPi Repository
 
-use this command to star and fork the NPi Repo
+Easily star and fork the NPi Repository using:
 
 ```sh
-npi app github "star and fork the repo of npi-ai/npi"
+npi app github "Star, fork, and leave a supportive message in issue #27 of npi-ai/npi"
 ```
 
-you will enter an interactive mode to chat with GitHub.
+#### Clean up
 
-### Clean up
-
-1. stop and remove the NPi container
-```sh
-docker stop npi
-docker rm npi
-```
-
-2. remove your GitHub access token [https://github.com/settings/tokens](https://github.com/settings/tokens).
+1. Stop and remove the NPi container:
+    ```sh
+    docker stop npi
+    docker rm npi
+    ```
+2. Revoke your GitHub access token by revisiting: [GitHub Tokens Page](https://github.com/settings/tokens).
 
 ## Python SDK
+
 [NPI Python SDK](https://github.com/npi-ai/client-python)
 
-## Examples
+## Multi-app Agent Examples
 
 1. [Calendar Negotiator](examples/calendar_negotiator/main.py)
-2. [Twitter Bot](examples/twitter_bot/main.py)
+2. [Twitter Crawler](examples/twitter_crawler/main.py)
 
 ## License
 
-BSL v1.1, see [LICENSE](LICENSE).
+[BSL v1.1](LICENSE).
