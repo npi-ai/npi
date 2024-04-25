@@ -18,13 +18,17 @@ LD_FLAGS += -X 'main.BuildDate=${DATE}'
 LD_FLAGS += -X 'main.Platform=${GOOS}/${GOARCH}'
 
 GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C ${NPI_CMD_ROOT}/cli -trimpath
-DOCKER_PLATFORM ?= linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 
 build-npi:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}"  -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}/cli
 
 docker-build:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
+
+# only run this on macOS!
+docker-build-mac:
+	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi-mac:${IMAGE_TAG} . --push
 
 docker-build-local:
 	docker build -t npiai/npi:${IMAGE_TAG} .
