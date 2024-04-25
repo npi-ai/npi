@@ -13,6 +13,9 @@ const config: DocsThemeConfig = {
   footer: {
     text: `NPi AI @ ${new Date().getFullYear()}`,
   },
+  sidebar: {
+    toggleButton: true
+  },
   editLink: {
     text: 'Edit this page on GitHub →',
   },
