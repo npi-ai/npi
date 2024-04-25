@@ -11,7 +11,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-resty/resty/v2"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -92,6 +91,7 @@ func checkConfig() {
 				color.Red("failed to create config home: %v ", err)
 				os.Exit(-1)
 			}
+			return
 		} else {
 			color.Red("failed to get config home: %v ", err)
 			os.Exit(-1)
@@ -104,20 +104,20 @@ func checkConfig() {
 }
 
 func readConfig() {
-	f, err := os.Open(filepath.Join(configHome, configFileName))
-	if err != nil {
-		color.Red("the config file not found, please use 'npi connect' to connect to server")
-		os.Exit(-1)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&cfg)
-	if err != nil {
-		color.Red("failed to read config file: %v ", err)
-		os.Exit(-1)
-	}
+	//f, err := os.Open(filepath.Join(configHome, configFileName))
+	//if err != nil {
+	//	color.Red("the config file not found, please use 'npi connect' to connect to server")
+	//	os.Exit(-1)
+	//}
+	//defer func() {
+	//	_ = f.Close()
+	//}()
+	//decoder := yaml.NewDecoder(f)
+	//err = decoder.Decode(&cfg)
+	//if err != nil {
+	//	color.Red("failed to read config file: %v ", err)
+	//	os.Exit(-1)
+	//}
 	httpClient = resty.New().SetBaseURL("http://" + cfg.GetHTTPEndpoint())
 	httpClient.SetHeader("Authorization", cfg.APIKey)
 }
