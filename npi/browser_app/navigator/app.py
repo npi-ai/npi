@@ -77,7 +77,7 @@ You must exactly follow the following response format and avoid adding any expla
   "thoughts": string,
   "action": {
       "description": string,
-      "type": 'fill' | 'click' | 'enter' | 'select' | 'scroll' | 'back-to-top' | | 'confirmation' | 'human-intervention' | 'done',
+      "type": 'fill' | 'click' | 'enter' | 'select' | 'scroll' | 'back-to-top' | 'confirmation' | 'human-intervention' | 'done',
       "value"?: string, // input value for 'type' or 'select' actions, if applicable
       "id"?: string, // element ID, unnecessary for the 'scroll' action
     }
@@ -108,7 +108,18 @@ Newly Added Elements' ID: ["0", "1", "2", ...]
 
 class Action(TypedDict):
     description: str
-    type: Literal["type", "click", "enter", "select", "scroll", "back-to-top", "confirmation", "not-found", "done"]
+    type: Literal[
+        "type",
+        "click",
+        "enter",
+        "select",
+        "scroll",
+        "back-to-top",
+        "confirmation",
+        "human-intervention",
+        "not-found",
+        "done",
+    ]
     value: NotRequired[str]
     id: NotRequired[str]
     element: NotRequired[dict]  # element json used for recording
@@ -261,6 +272,21 @@ class Navigator(BrowserApp):
 
         return response_message.content
 
+    @staticmethod
+    async def _human_feedback(thread: Thread, message: str) -> str:
+        cb = callback.Callable(
+            action=api_pb2.ActionResponse(
+                type=api_pb2.ActionType.HUMAN_FEEDBACK,
+                human_feedback=api_pb2.HumanFeedbackAction(
+                    type=api_pb2.HumanFeedbackActionType.INPUT,
+                    notice=message,
+                )
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await thread.send_msg(cb=cb)
+        return await cb.wait()
+
     async def _run_action(self, thread: Thread, action: Action) -> Tuple[Union[str, None], dict]:
         """
         Run the given action
@@ -296,7 +322,9 @@ class Navigator(BrowserApp):
                 result = await self.scroll()
             case 'back-to-top':
                 result = await self.back_to_top()
-            case 'confirmation' | 'human-intervention' | 'done':
+            case 'confirmation' | 'human-intervention':
+                result = await self._human_feedback(thread, action['description'])
+            case 'done':
                 result = None
             case _:
                 raise Exception(f'{self.name}: Unknown action: {action}')
