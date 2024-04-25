@@ -32,4 +32,4 @@ class GeneralBrowserAgent(BrowserApp):
     @npi_tool
     async def get_text(self):
         """Get the text content of the current page"""
-        return await self.playwright.page.evaluate('() => return document.body.textContent')
+        return await self.playwright.page.evaluate('() => document.body.textContent')
