@@ -26,5 +26,8 @@ build-npi:
 docker-build:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
 
+docker-build-local:
+	docker build -t npiai/npi:${IMAGE_TAG} .
+
 clean:
 	rm -rf bin
