@@ -6,6 +6,7 @@ from typing import Union, List, Literal, Tuple
 from typing_extensions import NotRequired, TypedDict
 
 from npi.core import BrowserApp, PlaywrightContext
+from npi.core.callback import callback
 from npi.core.thread import Thread, ThreadMessage
 from npi.utils import logger
 from npiai_proto import api_pb2
@@ -221,7 +222,7 @@ class Navigator(BrowserApp):
                 # try again if the response can't be parsed correctly
                 continue
 
-            result, elem_json = await self._run_action(response['action'])
+            result, elem_json = await self._run_action(thread, response['action'])
 
             if not result:
                 # requires further intervention if the action is not executable
@@ -260,7 +261,7 @@ class Navigator(BrowserApp):
 
         return response_message.content
 
-    async def _run_action(self, action: Action) -> Tuple[Union[str, None], dict]:
+    async def _run_action(self, thread: Thread, action: Action) -> Tuple[Union[str, None], dict]:
         """
         Run the given action
 
@@ -277,7 +278,10 @@ class Navigator(BrowserApp):
         elem = await self.get_element_by_marker_id(action['id']) if 'id' in action else None
         elem_json = await self.element_to_json(elem) if elem else None
 
-        logger.info(f'[{self.name}]: {action["type"]} - {action["description"]}')
+        call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
+
+        logger.info(call_msg)
+        await thread.send_msg(callback.Callable(call_msg))
 
         match action['type']:
             case 'click':
