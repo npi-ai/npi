@@ -12,6 +12,9 @@ def _prepare_browser_utils():
     cache_dir = pathlib.Path(__file__).parent / '../../.cache'
     js_path = cache_dir / f'browser-utils@{__BROWSER_UTILS_VERSION__}.js'
 
+    if js_path.exists():
+        return js_path
+
     os.makedirs(cache_dir, exist_ok=True)
 
     urlretrieve(f'https://unpkg.com/@npi-ai/browser-utils@{__BROWSER_UTILS_VERSION__}/dist/index.global.js', js_path)
