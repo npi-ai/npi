@@ -59,7 +59,7 @@ Confirm server connectivity by running `npi connect test`. If you receive a `ser
 
 ### Authorize NPi to access your GitHub account
 
-Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, and authorize NPi's access to your GitHub account with:
+Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, and authorize NPi's access to your GitHub account with the following command. You may need to grant the `repo` scope so that NPi can access repositories on behalf of you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
 
 ```sh
 npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
