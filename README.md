@@ -37,23 +37,33 @@ Verify the installation by running `npi version`. If you see the output similar 
   "BuildDate": "2024-04-23_02:23:50-0700",
   "GitCommit": "934739f",
   "Platform": "darwin/arm64",
-  "Version": "v0.0.0"
+  "Version": "v0.0.1"
 }
 ```
 
 #### Setting Up NPi Server with Docker
 
-Replace `{YOUR_OAI_KEY}` with your actual OpenAI API Key, then execute:
+Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
 
 ```sh
 docker run -d --name npi \
     -p 9140:9140 \
     -p 9141:9141 \
-    -e OPENAI_API_KEY={YOUR_OAI_KEY} \
-    npiai/npi
+    -e OPENAI_API_KEY=YOUR_OAI_KEY \
+    npiai/npi:v0.0.1
 ```
 
-Confirm server connectivity by running `npi connect test`. If you receive a `server connected` message, the setup is
+if you run on macOS, please use:
+
+```sh
+docker run -d --name npi \
+   -p 9140:9140 \
+   -p 9141:9141 \
+   -e OPENAI_API_KEY=YOUR_OAI_KEY \
+   npiai/npi-mac:v0.0.1
+```
+
+Confirm server connectivity by running `npi connect test`. If you receive a `NPi Server is operational!` message, the setup is
 successful. Otherwise, consult the logs with `docker logs npi` and report issues
 to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
@@ -61,8 +71,10 @@ to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
 #### Authorize NPi to access your GitHub account
 
-Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, and authorize NPi's access to
-your GitHub account with:
+Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, you at least need to gather the `repo` scope: 
+![img.png](assets/github-token-grant-repo.png)
+
+and authorize NPi's access to your GitHub account with:
 
 ```sh
 npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
