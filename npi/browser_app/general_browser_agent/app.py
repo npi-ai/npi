@@ -28,3 +28,8 @@ class GeneralBrowserAgent(BrowserApp):
         # self.page.wait_for_url(params.url)
 
         return f'Opened {await self.get_page_url()}, page title: {await self.get_page_title()}'
+
+    @npi_tool
+    async def get_text(self):
+        """Get the text content of the current page"""
+        return await self.playwright.page.evaluate('() => return document.body.textContent')
