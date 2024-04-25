@@ -137,6 +137,8 @@ class Twitter(BrowserApp):
         await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
 
         # save state
+        save_dir = os.path.dirname(self.state_file)
+        os.makedirs(save_dir, exist_ok=True)
         await self.playwright.context.storage_state(path=self.state_file)
 
     @npi_tool
