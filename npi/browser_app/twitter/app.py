@@ -121,7 +121,7 @@ class Twitter(BrowserApp):
             await self.playwright.page.goto(__ROUTES__['home'])
             try:
                 # validate cookies
-                await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
+                await self.playwright.page.wait_for_url(__ROUTES__['home'])
                 logger.debug('Twitter cookies restored.')
                 return
             except TimeoutError:
@@ -134,7 +134,7 @@ class Twitter(BrowserApp):
         await self.playwright.page.get_by_role('button', name='Next').click()
         await self.playwright.page.get_by_label('Password', exact=True).fill(self.creds.password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
-        await self.playwright.page.wait_for_url(__ROUTES__['home'], timeout=10_000)
+        await self.playwright.page.wait_for_url(__ROUTES__['home'])
 
         # save state
         save_dir = os.path.dirname(self.state_file)

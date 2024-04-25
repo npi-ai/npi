@@ -47,7 +47,7 @@ class PlaywrightContext:
             locale='en-US',
             **self.playwright.devices['Desktop Chrome'],
         )
-        self.context.set_default_timeout(3000)
+        # self.context.set_default_timeout(3000)
         await self.context.add_init_script(path=_prepare_browser_utils())
         await self.context.add_init_script(script="""window.npi = new window.BrowserUtils()""")
 
