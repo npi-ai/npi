@@ -66,7 +66,7 @@ func checkUpdate() error {
 	latest := CMDLatestVersion{}
 	_ = json.Unmarshal(response.Body(), &latest)
 	if strings.Compare(Version, latest.Version) < 0 {
-		color.Green("new version detected: %s, current version: %s. Download url: %s/%s", latest.Version, Version, latest.URL, Platform)
+		color.Green("new version detected: %s, current version: %s. Please follow https://docs.npi.ai/cli for updating.", latest.Version, Version)
 		// TODO download the latest version
 	} else {
 		_, _ = f.Seek(0, 0)

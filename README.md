@@ -19,10 +19,18 @@ and applications.
 Download the binary from the following links.
 
 ```sh
-# For amr64
-curl -O https://s.npi.ai/cli/v0.0.1/arm64/npi
-# For amd64
-curl -O https://s.npi.ai/cli/v0.0.1/amd64/npi
+# For darwin/arm64
+curl -O https://s.npi.ai/cli/latest/darwin/arm64/npi
+
+# For darwin/amd64
+curl -O https://s.npi.ai/cli/latest/darwin/amd64/npi
+
+# For linux/arm64
+curl -O https://s.npi.ai/cli/latest/linux/arm64/npi
+
+# For linux/amd64
+curl -O https://s.npi.ai/cli/latest/linux/amd64/npi
+
 ```
 
 Then move it to `/usr/local/bin` or any other directory in your `PATH`:

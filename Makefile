@@ -23,6 +23,10 @@ DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 build-npi:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}"  -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}/cli
 
+release-npi-cli:
+	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/cli/npi ${NPI_CMD_ROOT}/cli
+	zip -j ${CMD_OUTPUT_DIR}/npi-${VERSION}-${GOOS}-${GOARCH}.zip ${CMD_OUTPUT_DIR}/npi
+
 docker-build:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
 
