@@ -1,4 +1,4 @@
-from openai import AsyncOpenAI
+from markdownify import markdownify
 
 from npi.core import BrowserApp, npi_tool
 from npi.browser_app.navigator import Navigator
@@ -31,5 +31,6 @@ class GeneralBrowserAgent(BrowserApp):
 
     @npi_tool
     async def get_text(self):
-        """Get the text content of the current page"""
-        return await self.playwright.page.evaluate('() => document.body.textContent')
+        """Get the text content (as markdown) of the current page"""
+        html = await self.playwright.page.evaluate('() => document.body.innerHTML')
+        return markdownify(html)
