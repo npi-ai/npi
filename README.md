@@ -63,7 +63,8 @@ docker run -d --name npi \
    npiai/npi-mac:v0.0.1
 ```
 
-Confirm server connectivity by running `npi connect test`. If you receive a `NPi Server is operational!` message, the setup is
+Confirm server connectivity by running `npi connect test`. If you receive a `NPi Server is operational!` message, the
+setup is
 successful. Otherwise, consult the logs with `docker logs npi` and report issues
 to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
@@ -71,10 +72,10 @@ to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
 #### Authorize NPi to access your GitHub account
 
-Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, you at least need to gather the `repo` scope: 
-![img.png](assets/github-token-grant-repo.png)
-
-and authorize NPi's access to your GitHub account with:
+Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, and authorize NPi's access to
+your GitHub account with the following command. You may need to grant the `repo` scope so that NPi can access
+repositories on behalf of
+you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
 
 ```sh
 npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
