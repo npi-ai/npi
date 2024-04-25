@@ -2,6 +2,7 @@ import json
 import re
 from textwrap import dedent
 from typing import Union, List, Literal, Tuple
+from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -328,6 +329,10 @@ class Navigator(BrowserApp):
         if elem:
             await elem.dispose()
 
-        await self.wait_for_stable()
+        try:
+            await self.wait_for_stable()
+        except Error:
+            # FIXME: if the action triggers a navigator, we will receive an error showing "Page.evaluate: Execution context was destroyed, most likely because of a navigation"
+            await self.playwright.page.wait_for_timeout(3000)
 
         return result, elem_json
