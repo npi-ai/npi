@@ -53,6 +53,10 @@ Verify the installation by running `npi version`. If you see the output similar 
 
 #### Setting Up NPi Server
 
+> [!TIP]
+> Don't have installed Docker? Follow the official [Docker Installation Guide](https://docs.docker.com/get-docker/) to install Docker on your system.
+
+
 Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
 
 ```sh
@@ -116,6 +120,12 @@ npi app github "Star, fork, and leave a supportive message in issue #27 of npi-a
 
 1. [Calendar Negotiator](examples/calendar_negotiator/main.py)
 2. [Twitter Crawler](examples/twitter_crawler/main.py)
+
+More: https://docs.npi.ai/examples
+
+## Roadmap
+
+https://docs.npi.ai/roadmap
 
 ## License
 
