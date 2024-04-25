@@ -1,6 +1,7 @@
 import asyncio
 
 from npi.app.discord import Discord
+from utils import test_init_discord_cred
 
 
 async def main():
@@ -13,4 +14,5 @@ async def main():
 
 
 if __name__ == '__main__':
+    test_init_discord_cred()
     asyncio.run(main())
