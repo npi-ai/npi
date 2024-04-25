@@ -47,7 +47,7 @@ Below is the instructions for you to outline the next actions of current stage:
 - Go through the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
 - Pay attention to the newly added elements (e.g., dropdown list) since they may related to the next action.
 - Analyze the previous actions and their intention. Particularly, focus on the last action, which may be more related to what you should do now as the next step.
-- Think if you need to close the dialogs before interacting with the elements below it. This is necessary when the dialog overlaps with other elements. 
+- Think if you need to close the dialogs before interacting with the elements below it. This is necessary when the dialog overlaps with other elements.
 - Think if it is necessary to scroll the page down to see more contents. Scrolling could be useful when you find that the required element is beyond current viewport.
 - When working on an input of a combobox or a datepicker, it may be useful to perform a click action first.
 - If the target element is overlapped by some dialogs, it may be useful to close these dialogs first.
@@ -141,9 +141,6 @@ def _parse_response(response: str) -> Union[Response, None]:
 
 
 class Navigator(BrowserApp):
-    _selector: str
-    _current_task: Union[str, None] = None
-
     def __init__(
         self,
         playwright: PlaywrightContext,
@@ -159,7 +156,6 @@ class Navigator(BrowserApp):
         )
 
         self.playwright = playwright
-        self._previous_actions = []
 
     async def generate_user_prompt(self, task: str, history: List[Response]):
         await self.clear_bboxes()
