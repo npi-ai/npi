@@ -35,7 +35,7 @@ def main():
     )
 
     negotiator.use(Twitter(), Discord(), ConsoleFeedback())
-    print('Negotiator: What\'s your task for me?')
+    print('Twitter Crawler: What\'s your task for me?')
     task = input('User: ')
     print('')
     negotiator.run(task)
