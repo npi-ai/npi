@@ -1,8 +1,9 @@
 import YouTube from 'react-youtube';
+import cn from "./style.module.css";
 
 export function YouTubeComponent({videoId}: { videoId: string }) {
     const opts = {
-        height: '360',
+        height: 'auto',
         width: '640',
         playerVars: {
             // https://developers.google.com/youtube/player_parameters
@@ -10,7 +11,7 @@ export function YouTubeComponent({videoId}: { videoId: string }) {
         },
     };
     return (
-        <YouTube videoId={videoId} opts={opts} />
+        <YouTube className={cn.video} videoId={videoId} opts={opts} />
     );
 }
 
