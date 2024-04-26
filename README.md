@@ -54,7 +54,7 @@ Verify the installation by running `npi version`. If you see the output similar 
 #### Setting Up NPi Server
 
 > [!TIP]
-> Don't have installed Docker? Follow the official [Docker Installation Guide](https://docs.docker.com/get-docker/) to install Docker on your system.
+> If Docker is not yet installed on your system, refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) for setup instructions.
 
 
 Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
@@ -66,7 +66,7 @@ docker run -d --name npi --pull always \
     -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi
 ```
 
-if you run on macOS, please use:
+For macOS users, use this command instead:
 
 ```sh
 docker run -d --name npi --pull always \
@@ -85,12 +85,12 @@ to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 #### Authorize NPi to access your GitHub account
 
 Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, you may need to grant the `repo` scope so that NPi can access
-repositories on behalf of
-you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
+repositories on behalf of you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
 
 ![img.png](docs/assets/github-token-grant-repo.png)
 
-and authorize NPi's access to your GitHub account with the following command.
+Then, authorize NPi's access to your GitHub account with the following command:
+
 ```sh
 npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 ```
