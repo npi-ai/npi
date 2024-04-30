@@ -43,10 +43,10 @@ class BrowserApp(App):
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
 
-    async def start(self):
+    async def start(self, thread: Thread = None):
         """Start the Browser App"""
         if not self._started:
-            await super().start()
+            await super().start(thread)
             await self.playwright.start()
 
     async def dispose(self):

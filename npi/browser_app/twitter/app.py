@@ -45,6 +45,8 @@ __ROUTES__ = {
     'home': 'https://twitter.com/home'
 }
 
+from ...core.thread import Thread
+
 
 class ImageFilterConverter(MarkdownConverter):
     def process_text(self, el):
@@ -117,9 +119,9 @@ class Twitter(BrowserApp):
 
         self.register(Navigator(playwright=self.playwright))
 
-    async def start(self):
+    async def start(self, thread: Thread = None):
         if not self._started:
-            await super().start()
+            await super().start(thread)
             await self._login()
 
     async def _login(self):

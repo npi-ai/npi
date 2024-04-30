@@ -8,6 +8,7 @@ from npi.core import App, npi_tool
 from npi.config import config
 from npi.error.auth import UnauthorizedError
 from .schema import *
+from ...core.thread import Thread
 
 client = discord.Client(intents=discord.Intents.default())
 
@@ -47,8 +48,8 @@ class Discord(App):
         self.client = discord.Client(intents=discord.Intents.default())
         self._access_token = cred.access_token
 
-    async def start(self):
-        await super().start()
+    async def start(self, thread: Thread = None):
+        await super().start(thread)
         await self.client.login(self._access_token)
 
     async def dispose(self):

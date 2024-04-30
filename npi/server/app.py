@@ -161,7 +161,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
         app = None
         try:
             app = self.get_app(thread.app_type)
-            await app.start()
+            await app.start(thread)
             result = await app.chat(thread.instruction, thread)
             thread.finish(result)
         except UnauthorizedError as e:
