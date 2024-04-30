@@ -7,8 +7,8 @@ from npi.utils import logger
 from npi.core import App, npi_tool
 from npi.config import config
 from npi.error.auth import UnauthorizedError
+from npi.core.thread import Thread
 from .schema import *
-from ...core.thread import Thread
 
 client = discord.Client(intents=discord.Intents.default())
 
