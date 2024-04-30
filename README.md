@@ -10,6 +10,8 @@ and applications.
 
 [📢 Join our community on Discord](https://discord.gg/MQTuXtbj)
 
+[👀 NPi Show cases](https://npi.ai/docs/examples)
+
 ## Quickstart
 
 ### Installation
