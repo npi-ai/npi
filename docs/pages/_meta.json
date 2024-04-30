@@ -8,10 +8,9 @@
   "cli": "CLI Reference",
   "python": "Python SDK Reference",
   "blog": {
-    "title": "Blog ↗",
+    "title": "Blog",
     "type": "page",
-    "href": "https://blog.npi.ai",
-    "newWindow": true
+    "href": "https://www.npi.ai/blog"
   },
   "contact": {
     "title": "Contact ↗",
