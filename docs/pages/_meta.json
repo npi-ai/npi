@@ -7,7 +7,12 @@
   "browser-apps": "",
   "cli": "CLI Reference",
   "python": "Python SDK Reference",
-  "blog": "Blog",
+  "blog": {
+    "title": "Blog ↗",
+    "type": "page",
+    "href": "https://blog.npi.ai",
+    "newWindow": true
+  },
   "contact": {
     "title": "Contact ↗",
     "type": "page",
