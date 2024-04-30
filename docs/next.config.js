@@ -4,4 +4,6 @@ const withNextra = require('nextra')({
   defaultShowCopyCode: true,
 });
 
-module.exports = withNextra();
+module.exports = withNextra({
+  basePath: '/docs'
+});
