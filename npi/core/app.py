@@ -150,7 +150,7 @@ class App:
         self.fn_map = {}
         _register_tools(self)
 
-    async def start(self):
+    async def start(self, thread: Thread = None):
         """Start the app"""
         self._started = True
 

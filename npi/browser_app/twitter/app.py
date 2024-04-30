@@ -1,6 +1,8 @@
 import json
 import os
 import re
+
+from npiai_proto import api_pb2
 from playwright.async_api import TimeoutError
 from markdownify import MarkdownConverter
 
@@ -9,6 +11,8 @@ from npi.utils import logger
 from npi.browser_app.navigator import Navigator
 from npi.config import config
 from npi.error.auth import UnauthorizedError
+from npi.core.callback import callback
+from npi.core.thread import Thread
 from .schema import *
 
 __SYSTEM_PROMPT__ = """
@@ -117,12 +121,12 @@ class Twitter(BrowserApp):
 
         self.register(Navigator(playwright=self.playwright))
 
-    async def start(self):
+    async def start(self, thread: Thread = None):
         if not self._started:
-            await super().start()
-            await self._login()
+            await super().start(thread)
+            await self._login(thread)
 
-    async def _login(self):
+    async def _login(self, thread: Thread):
         if os.path.exists(self.state_file):
             with open(self.state_file, 'r') as f:
                 state = json.load(f)
@@ -141,6 +145,19 @@ class Twitter(BrowserApp):
         await self.playwright.page.get_by_test_id('loginButton').click()
         await self.playwright.page.get_by_label('Phone, email, or username').fill(self.creds.username)
         await self.playwright.page.get_by_role('button', name='Next').click()
+
+        # check if username(not email) is required
+        await self.playwright.page.wait_for_timeout(1000)
+        username_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
+        if await username_input.count() != 0:
+            username = await self._request_username(thread)
+            await username_input.fill(username)
+            await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
+
+            await self.playwright.page.wait_for_timeout(1000)
+            if await username_input.count() != 0:
+                raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
+
         await self.playwright.page.get_by_label('Password', exact=True).fill(self.creds.password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
         await self.playwright.page.wait_for_url(__ROUTES__['home'])
@@ -149,6 +166,26 @@ class Twitter(BrowserApp):
         save_dir = os.path.dirname(self.state_file)
         os.makedirs(save_dir, exist_ok=True)
         await self.playwright.context.storage_state(path=self.state_file)
+
+        await thread.send_msg(callback.Callable('Logged in to Twitter'))
+
+    @staticmethod
+    async def _request_username(thread: Thread) -> str:
+        if thread is None:
+            raise Exception('`thread` must be provided to request username')
+
+        cb = callback.Callable(
+            action=api_pb2.ActionResponse(
+                type=api_pb2.ActionType.HUMAN_FEEDBACK,
+                human_feedback=api_pb2.HumanFeedbackAction(
+                    type=api_pb2.HumanFeedbackActionType.INPUT,
+                    notice='Please enter your username (not email) to continue the login process.',
+                )
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await thread.send_msg(cb=cb)
+        return await cb.wait()
 
     @npi_tool
     async def get_current_page(self):
