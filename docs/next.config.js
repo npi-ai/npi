@@ -1,5 +1,3 @@
-const isProd = process.env.NODE_ENV === 'production';
-
 const withNextra = require('nextra')({
   theme: 'nextra-theme-docs',
   themeConfig: './theme.config.tsx',
@@ -7,5 +5,15 @@ const withNextra = require('nextra')({
 });
 
 module.exports = withNextra({
-  basePath: isProd ? '/docs' : '',
+  basePath: '/docs',
+  async redirects() {
+    return [
+      {
+        source: '/:match((?!docs).*)',
+        destination: '/docs/:match*',
+        permanent: true,
+        basePath: false
+      }
+    ]
+  }
 });
