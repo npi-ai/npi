@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "npiai-proto"
+version = "v0.0.4.dev1"
+description = "The NPI.AI Proto"
+license = "Apache-2.0"
+authors = ["Wells Wang <wells@npi.ai>"]
+readme = "README.md"
+homepage = "https://github.com/npi-ai/proto/python"
+repository = "https://github.com/npi-ai/proto/python"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+grpcio = "^1.62.1"
+grpcio-tools = "^1.62.2"
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^69.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
