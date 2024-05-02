@@ -154,33 +154,29 @@ func doRequest(app api.AppType, instruction string) {
 			}
 		case api.ResponseCode_ACTION_REQUIRED:
 			ar := resp.GetActionResponse()
+
+			arr := &api.ActionResultRequest{
+				ActionId: ar.GetActionId(),
+			}
 			switch ar.GetType() {
-			case api.ActionType_HUMAN_FEEDBACK:
-				fb := ar.GetHumanFeedback()
-				arr := &api.ActionResultRequest{
-					ActionId: ar.GetActionId(),
-				}
-				switch fb.GetType() {
-				case api.HumanFeedbackActionType_INPUT:
-					reader := bufio.NewReader(os.Stdin)
-					fmt.Printf("Action Required: %s\n", fb.GetNotice())
-					arr.ActionResult, _ = reader.ReadString('\n')
-				}
-				resp, err = cli.Chat(context.Background(), &api.Request{
-					Code:      api.RequestCode_ACTION_RESULT,
-					RequestId: uuid.New().String(),
-					ThreadId:  resp.ThreadId,
-					Request: &api.Request_ActionResultRequest{
-						ActionResultRequest: arr,
-					},
-				})
+			case api.ActionType_INFORMATION:
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Printf("Action Required: %s\n", ar.Message)
+				arr.ActionResult, _ = reader.ReadString('\n')
 				if err != nil {
 					handleError(app, err)
 				}
-			case api.ActionType_SAFEGUARD:
+			case api.ActionType_CONFIRMATION:
 				println("Action SAFEGUARD")
 			}
-			// skip
+			resp, err = cli.Chat(context.Background(), &api.Request{
+				Code:      api.RequestCode_ACTION_RESULT,
+				RequestId: uuid.New().String(),
+				ThreadId:  resp.ThreadId,
+				Request: &api.Request_ActionResultRequest{
+					ActionResultRequest: arr,
+				},
+			})
 		}
 	}
 
