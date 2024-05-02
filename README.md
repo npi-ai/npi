@@ -12,7 +12,7 @@ NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agent
 
 [📚 NPi Documentation](https://www.npi.ai/docs?utm_source=github&utm_campaign=readme): How to use NPi?
 
-[📢 Join our community on Discord](https://discord.gg/MQTuXtbj): Let's build NPi together 👻 !
+[📢 Join our community on Discord](https://discord.gg/wdskUcKc): Let's build NPi together 👻 !
 
 ## Quickstart
 
