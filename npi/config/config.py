@@ -27,6 +27,11 @@ class DiscordCredentials:
 
 
 @dataclass(frozen=True)
+class SlackCredentials:
+    access_token: str
+
+
+@dataclass(frozen=True)
 class TwitterCredentials:
     username: str
     password: str
@@ -70,6 +75,14 @@ def get_discord_credentials() -> DiscordCredentials | None:
 
 def set_discord_credentials(access_token: str):
     CONFIG['discord_credentials'] = DiscordCredentials(access_token=access_token)
+
+
+def get_slack_credentials() -> SlackCredentials | None:
+    return CONFIG.get('slack_credentials', None)
+
+
+def set_slack_credentials(access_token: str):
+    CONFIG['slack_credentials'] = SlackCredentials(access_token=access_token)
 
 
 def get_twitter_credentials() -> TwitterCredentials | None:

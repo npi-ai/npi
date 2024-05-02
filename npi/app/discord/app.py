@@ -10,8 +10,6 @@ from npi.error.auth import UnauthorizedError
 from npi.core.thread import Thread
 from .schema import *
 
-client = discord.Client(intents=discord.Intents.default())
-
 __PROMPT__ = """
 You are a Discord Agent helping user send/retrieve messages to/from discord channels. 
 

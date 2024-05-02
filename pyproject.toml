@@ -27,6 +27,7 @@ npiai-proto = "^0.0.3"
 npiai = "^0.0.3"
 discord-py = "^2.3.2"
 pyyaml = "^6.0.1"
+slack-sdk = "^3.27.1"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^69.2.0"
