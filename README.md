@@ -4,13 +4,15 @@
 > NPi is currently under active development and the APIs are subject to change in the future release. It is recommended
 > to use the command line tool to try it out.
 
-NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"**, is an open-source platform providing
-**_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools
-and applications.
+NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to take action in virtual world!
 
-[📢 Join our community on Discord](https://discord.gg/MQTuXtbj)
+[👀 NPi Example](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme): Strong recommendation for taking a look!
 
-[👀 NPi Show cases](https://npi.ai/docs/examples)
+[🔥 Introducing NPi](https://www.npi.ai/blog/introducing-npi?utm_source=github&utm_campaign=readme): Why we build NPi?
+
+[📚 NPi Documentation](https://www.npi.ai/docs?utm_source=github&utm_campaign=readme): How to use NPi?
+
+[📢 Join our community on Discord](https://discord.gg/MQTuXtbj): Play together 👻 ~
 
 ## Quickstart
 
@@ -123,12 +125,12 @@ npi app github "Star, fork, and leave a supportive message in issue #27 of npi-a
 1. [Calendar Negotiator](examples/calendar_negotiator/main.py)
 2. [Twitter Crawler](examples/twitter_crawler/main.py)
 
-More: https://docs.npi.ai/examples
+More: [https://www.npi.ai/docs/examples](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme)
 
 ## Roadmap
 
-https://docs.npi.ai/roadmap
+[https://www.npi.ai/docs/roadmap](https://www.npi.ai/docs/roadmap?utm_source=github&utm_campaign=readme)
 
 ## License
 
-[BSL v1.1](LICENSE).
+[BSL v1.1](LICENSE)
