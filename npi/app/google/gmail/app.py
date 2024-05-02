@@ -203,9 +203,9 @@ class Gmail(GoogleApp):
             ),
         )
         cb.action.action_id = cb.id()
-        await params.get_thread().send_msg(cb=cb)
+        await params.get_thread().send_msg(cb=cb)  # TODO(wenfeng) how to save state and then recover?
         loguru.logger.info(f"Waiting for user approving...")
-        response = await cb.wait()
+        response = await cb.wait()  # TODO(wenfeng) return hangup and recovery later
         if not response.is_approved():
             if response.has_message():
                 return f"sending denied, reason: {response}, then please try again,"
