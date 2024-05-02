@@ -29,7 +29,7 @@ However, the navigator is unable to retrieve the content of the tweets. If the t
 Task: reply to the latest tweet of @Dolphin_Wood
 
 Steps:
-1. navigator({ "task": "Go to the profile page of @Dolphin_Wood" })
+1. goto_profile({ "username": "Dolphin_Wood" })
 2. get_tweets({ "max_results": 1 })
 3. open_tweet({ "url": "{{tweet_url}}" })
 4. navigator({ "task": "Reply to current tweet with {{reply_content}}. Ask for user confirmation before posting." })
@@ -37,7 +37,7 @@ Steps:
 Task: get the last 10 tweets by @Dolphin_Wood
 
 Steps:
-1. navigator({ "task": "Go to the profile page of @Dolphin_Wood" })
+1. goto_profile({ "username": "Dolphin_Wood" })
 2. get_tweets({ "max_results": 10 })
 3. Repeat the following steps until 10 tweets are found. Remember that you should exclude the pinned tweet.
   3.1. load_more_tweets()
@@ -186,6 +186,47 @@ class Twitter(BrowserApp):
         cb.action.action_id = cb.id()
         await thread.send_msg(cb=cb)
         return await cb.wait()
+
+    @npi_tool
+    async def search(self, params: SearchParameters):
+        """Search Twitter for tweets or users matching the given query."""
+        await self.playwright.page.goto('https://twitter.com/explore')
+        search_input = self.playwright.page.get_by_test_id('SearchBox_Search_Input')
+        await search_input.fill(params.query)
+        await search_input.press('Enter')
+
+        if params.sort_by == 'latest':
+            await self.playwright.page.wait_for_timeout(1000)
+            await self.playwright.page.get_by_role("tab", name="Latest").click()
+
+        return f'The search result page is opened. Please use other tools to retrieve the results. Current page: {await self.get_page_title()}'
+
+    @npi_tool
+    async def goto_profile(self, params: GotoProfileParameters):
+        """Goto Twitter user's profile page."""
+        username = params.username.replace('@', '')
+        await self.playwright.page.goto(f'https://twitter.com/{username}')
+
+        return f'The profile page for user {params.username} is opened. Current page: {await self.get_page_title()}'
+
+    @npi_tool
+    async def goto_notifications(self):
+        """Goto Twitter user's notifications page."""
+        await self.playwright.page.goto('https://twitter.com/notifications/mentions')
+
+        return f'The notifications page is opened. Current page: {await self.get_page_title()}'
+
+    @npi_tool
+    async def reply(self, params: ReplyParameters):
+        """Open the given tweet and reply to it."""
+        await self.playwright.page.goto(params.url)
+        reply_input = self.playwright.page.get_by_test_id('tweetTextarea_0')
+        await reply_input.click()
+        await self.playwright.page.wait_for_timeout(300)
+        await reply_input.fill(params.content)
+        await self.playwright.page.get_by_test_id('tweetButtonInline').click()
+
+        return f'Replied to tweet {params.url} with content: {params.content}'
 
     @npi_tool
     async def get_current_page(self):
