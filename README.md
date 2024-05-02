@@ -6,7 +6,7 @@
 
 NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to take action in virtual world!
 
-[👀 NPi Example](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme): [Highly recommended to check this first] See what you can build with NPi.
+[👀 NPi Example](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme): **Highly recommended to check this first** See what you can build with NPi.
 
 [🔥 Introducing NPi](https://www.npi.ai/blog/introducing-npi?utm_source=github&utm_campaign=readme): Why we build NPi?
 
