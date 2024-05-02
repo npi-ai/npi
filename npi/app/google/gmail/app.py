@@ -129,32 +129,6 @@ class Gmail(GoogleApp):
 
         return 'Labels removed'
 
-    @npi_tool(
-        description='Before sending the email, you must need to call this function for waiting user approve '
-                    'sending email. If user asks to revise the email, you must call this function again after '
-                    'revising.'
-        )
-    async def confirm_email_sending(self, params: ConfirmEmailSendingParameters):
-        """Confirm the email sending"""
-        loguru.logger.info(f"Waiting for user approve")
-        cb = callback.Callable(
-            action=api_pb2.ActionResponse(
-                type=api_pb2.ActionType.HUMAN_FEEDBACK,
-                human_feedback=api_pb2.HumanFeedbackAction(
-                    type=api_pb2.HumanFeedbackActionType.INPUT,
-                    notice=f"following is the email content will be sent, please confirm:\n{params.body}",
-                )
-            ),
-        )
-        cb.action.action_id = cb.id()
-        await params.get_thread().send_msg(cb=cb)
-        loguru.logger.info(f"Waiting for user input")
-        response = await cb.wait()
-        if response == 'yes':
-            return "OK, please send"
-        else:
-            return f"please based this response to revise the email content: {response}"
-
     @npi_tool
     def create_draft(self, params: CreateDraftParameter):
         """Create an email draft"""
@@ -219,9 +193,27 @@ class Gmail(GoogleApp):
         return json.dumps([self._message_to_string(m) for m in msgs])
 
     @npi_tool
-    def send_email(self, params: SendEmailParameters):
+    async def send_email(self, params: SendEmailParameters):
         """Send an email"""
-        msg = self.gmail_client.send_message(
+        cb = callback.Callable(
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.CONFIRMATION,
+                # TODO(wenfeng) use structured message
+                message=f"following is the email content will be sent to {params.to}, please confirm:\n{params.message}",
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await params.get_thread().send_msg(cb=cb)
+        loguru.logger.info(f"Waiting for user approving...")
+        response = await cb.wait()
+        if not response.is_approved():
+            if response.has_message():
+                return f"sending denied, reason: {response}, then please try again,"
+            else:
+                # TODO(wenfeng) use structured response to exist?
+                return f"sending denied, reason: user denied, please exit processing"
+
+        _ = self.gmail_client.send_message(
             sender='',
             to=params.to,
             cc=params.cc,
@@ -231,7 +223,7 @@ class Gmail(GoogleApp):
             msg_html=markdown(params.message),
         )
 
-        return 'The following message is sent:\n' + self._message_to_string(msg)
+        return 'Sending Success\n'  # + self._message_to_string(msg)
 
     @npi_tool
     async def wait_for_reply(self, params: WaitForReplyParameters):

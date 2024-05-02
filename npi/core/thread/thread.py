@@ -79,28 +79,20 @@ class ThreadMessage:
 
 class Thread:
     """the abstraction of chat context """
-    agent_id: str
-    id: str
-    history: List[ThreadMessage | str]
-    born_at: datetime.date
-    q: asyncio.Queue[callback.Callable]
-    instruction: str
-    app_type: api_pb2.AppType
-    cb_dict: dict[str, callback.Callable] = {}
-
-    __is_finished = False
-    __result: str = ''
-    __is_failed = False
-    __failed_msg: str = ''
 
     def __init__(self, instruction: str, app_type: api_pb2.AppType) -> None:
         self.agent_id = 'default'
         self.id = str(uuid.uuid4())
         self.born_at = datetime.datetime.now()
-        self.history = []
+        self.history: List[ThreadMessage | str] = []
         self.q = asyncio.Queue()
         self.instruction = instruction
         self.app_type = app_type
+        self.cb_dict: dict[str, callback.Callable] = {}
+        self.__is_finished = False
+        self.__result: str = ''
+        self.__is_failed = False
+        self.__failed_msg: str = ''
 
     async def send_msg(self, cb: callback.Callable) -> None:
         """send a message to the thread"""
@@ -142,7 +134,7 @@ class Thread:
     def get_failed_msg(self) -> str:
         return self.__failed_msg
 
-    def ask(self, msg: str) -> str:
+    def retrieve(self, msg: str) -> str:
         """retrieve the message from the thread"""
         return msg
 

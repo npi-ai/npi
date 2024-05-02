@@ -4,16 +4,21 @@ import uuid
 from npiai_proto import api_pb2
 
 
+class ActionResult:
+
+    def __init__(self, result: api_pb2.ActionResultRequest):
+        self.result = result
+
+    def is_approved(self):
+        pass
+
+    def has_message(self):
+        pass
+
+
 class Callable:
-    msg: str
-    called: bool
-    action: api_pb2.ActionResponse
 
-    __id: str
-    __type: api_pb2.ResponseCode = api_pb2.ResponseCode.MESSAGE
-    __future: asyncio.Future
-
-    def __init__(self, msg: str = None, action: api_pb2.ActionResponse = None):
+    def __init__(self, msg: str = None, action: api_pb2.ActionRequiredResponse = None):
         self.msg = msg
         self.called = False
         self.action = action
@@ -38,8 +43,9 @@ class Callable:
     def message(self) -> str:
         return self.msg
 
-    def callback(self, msg: str):
-        self.__future.set_result(msg)
+    def callback(self, result: api_pb2.ActionResultRequest):
+        self.__future.set_result(result)
 
-    async def wait(self) -> str:
-        return await self.__future
+    async def wait(self) -> ActionResult:
+        req = await self.__future
+        return ActionResult(req)

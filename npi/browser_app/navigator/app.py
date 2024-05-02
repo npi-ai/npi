@@ -272,12 +272,9 @@ class Navigator(BrowserApp):
     @staticmethod
     async def _human_feedback(thread: Thread, message: str) -> str:
         cb = callback.Callable(
-            action=api_pb2.ActionResponse(
-                type=api_pb2.ActionType.HUMAN_FEEDBACK,
-                human_feedback=api_pb2.HumanFeedbackAction(
-                    type=api_pb2.HumanFeedbackActionType.INPUT,
-                    notice=message,
-                )
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.INFORMATION,
+                message=message,
             ),
         )
         cb.action.action_id = cb.id()

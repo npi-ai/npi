@@ -5,7 +5,6 @@ from npiai_proto import api_pb2
 
 class ThreadManager:
     """the manager of the thread"""
-    threads: dict
 
     def __init__(self):
         self.threads = {}

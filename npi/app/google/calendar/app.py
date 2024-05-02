@@ -68,12 +68,9 @@ class GoogleCalendar(GoogleApp):
         """Get the user's email address"""
 
         cb = callback.Callable(
-            action=api_pb2.ActionResponse(
-                type=api_pb2.ActionType.HUMAN_FEEDBACK,
-                human_feedback=api_pb2.HumanFeedbackAction(
-                    type=api_pb2.HumanFeedbackActionType.INPUT,
-                    notice=params.message,
-                )
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.INFORMATION,  # TODO(wenfeng) Add type of Form
+                message=params.message,
             ),
         )
         cb.action.action_id = cb.id()
