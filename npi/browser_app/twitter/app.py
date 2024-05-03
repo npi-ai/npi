@@ -175,12 +175,9 @@ class Twitter(BrowserApp):
             raise Exception('`thread` must be provided to request username')
 
         cb = callback.Callable(
-            action=api_pb2.ActionResponse(
-                type=api_pb2.ActionType.HUMAN_FEEDBACK,
-                human_feedback=api_pb2.HumanFeedbackAction(
-                    type=api_pb2.HumanFeedbackActionType.INPUT,
-                    notice='Please enter your username (not email) to continue the login process.',
-                )
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.INFORMATION,  # TODO(wenfeng) Add type of Form
+                message='Please enter your username (not email) to continue the login process.',
             ),
         )
         cb.action.action_id = cb.id()

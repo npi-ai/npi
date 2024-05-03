@@ -50,9 +50,8 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 thread = self.thread_manager.new_thread(request.chat_request)
                 response.thread_id = thread.id
                 response.code = api_pb2.ResponseCode.SUCCESS
-                # await self.run(thread)
                 # create background task
-                asyncio.create_task(self.run(thread))
+                await asyncio.create_task(self.run(thread))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -155,7 +154,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
             resp.code = api_pb2.ResponseCode.FAILED
             resp.chat_response.message = "callback not found"
             return
-        cb.callback(msg=req.action_result_request.action_result)
+        cb.callback(result=req.action_result_request)
 
     async def run(self, thread: Thread):
         app = None
