@@ -8,7 +8,7 @@ const config: DocsThemeConfig = {
     link: 'https://github.com/npi-ai/npi',
   },
   chat: {
-    link: 'https://discord.gg/4tyWuHpu',
+    link: 'https://discord.gg/VvSnx7z26c',
   },
   docsRepositoryBase: 'https://github.com/npi-ai/npi',
   footer: {
