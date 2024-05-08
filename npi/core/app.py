@@ -336,13 +336,13 @@ class App:
 
     async def _watch_tool(self, fn: Callable[[], Awaitable[str]], interval: int) -> str:
         init_val = await fn()
-        logger.debug(f'[{self.name}]: watching: initial value {init_val}')
+        logger.debug(f'[{self.name}]: watching: initial value: {init_val}')
 
         while True:
             await asyncio.sleep(interval)
             val = await fn()
             if val != init_val:
-                logger.debug(f'[{self.name}]: watching: changes detected {val}')
+                logger.debug(f'[{self.name}]: watching: changes detected: {val}')
                 return json.dumps(
                     {
                         "previous": init_val,
