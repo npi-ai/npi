@@ -315,9 +315,9 @@ class App:
                     else:
                         return await fn_reg.fn()
 
-                if args.get('npi_watch', False):
+                if args.get('npi_watch', 0) > 0:
                     logger.debug(f'[{self.name}]: watching function `{fn_name}`, interval: {args["npi_watch"]}s')
-                    res = await self._watch_tool(_exec_tool)
+                    res = await self._watch_tool(_exec_tool, args['npi_watch'])
                 else:
                     res = await _exec_tool()
 
@@ -334,11 +334,12 @@ class App:
 
         return response_message.content
 
-    async def _watch_tool(self, fn: Callable[[], Awaitable[str]]) -> str:
+    async def _watch_tool(self, fn: Callable[[], Awaitable[str]], interval: int) -> str:
         init_val = await fn()
         logger.debug(f'[{self.name}]: watching: initial value {init_val}')
 
         while True:
+            await asyncio.sleep(interval)
             val = await fn()
             if val != init_val:
                 logger.debug(f'[{self.name}]: watching: changes detected {val}')
@@ -348,5 +349,3 @@ class App:
                         "current": val,
                     }, ensure_ascii=False
                 )
-
-            await asyncio.sleep(3)
