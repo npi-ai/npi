@@ -21,7 +21,7 @@ class ActionResultCode(Enum):
 
 
 class HITLRequest:
-    def __init__(self, code: ActionRequestCode, app_name: str, message: str):
+    def __init__(self, code: ActionRequestCode, message: str, app_name: str = 'Unknown'):
         self.code = code
         self.app_name = app_name
         self.message = message
@@ -96,7 +96,7 @@ class ConsoleHITLHandler(HITLHandler):
                 if human_response is not None:
                     resp.message = human_response
                 return resp
-        return ACTION_APPROVED
+        return ACTION_DENIED
 
     def type(self) -> api_pb2.ActionType:
         return api_pb2.ActionType.CONSOLE

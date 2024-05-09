@@ -95,8 +95,20 @@ class App:
         self.hitl_handler = handler
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
-        self.hitl_handler.handle(hitl.convert_to_hitl_request(resp.action_response))
-        return api_pb2.Request()  # bypass
+        human_resp = self.hitl_handler.handle(hitl.convert_to_hitl_request(resp.action_response))
+        if human_resp is hitl.ACTION_APPROVED:
+            result = "approved"
+        else:
+            result = "denied"
+        return api_pb2.Request(
+            code=api_pb2.RequestCode.ACTION_RESULT,
+            request_id=str(uuid.uuid4()),
+            thread_id=resp.thread_id,
+            action_result_request=api_pb2.ActionResultRequest(
+                action_id=resp.action_response.action_id,
+                action_result=result,
+            )
+        )
 
 
 class Agent:
