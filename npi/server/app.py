@@ -50,8 +50,8 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 thread = self.thread_manager.new_thread(request.chat_request)
                 response.thread_id = thread.id
                 response.code = api_pb2.ResponseCode.SUCCESS
-                # create background task
-                await asyncio.create_task(self.run(thread))
+                # ignore task result
+                _ = asyncio.create_task(self.run(thread))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)

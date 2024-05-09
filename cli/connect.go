@@ -29,6 +29,9 @@ func (c *CMDConfig) GetHTTPEndpoint() string {
 	if c.httpPort == 0 {
 		c.httpPort = 9141
 	}
+	if c.NPIServer == "" {
+		c.NPIServer = "127.0.0.1"
+	}
 	return fmt.Sprintf("%s:%d", c.NPIServer, c.httpPort)
 }
 

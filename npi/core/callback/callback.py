@@ -10,7 +10,7 @@ class ActionResult:
         self.result = result
 
     def is_approved(self):
-        pass
+        return self.result.action_result == "approved"
 
     def has_message(self):
         pass
@@ -24,6 +24,8 @@ class Callable:
         self.action = action
         if action:
             self.__type = api_pb2.ResponseCode.ACTION_REQUIRED
+        else:
+            self.__type = api_pb2.ResponseCode.MESSAGE
         self.__id = str(uuid.uuid4())
         self.__future = asyncio.get_event_loop().create_future()
 

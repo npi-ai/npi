@@ -119,5 +119,6 @@ func readConfig() {
 	//	os.Exit(-1)
 	//}
 	httpClient = resty.New().SetBaseURL("http://" + cfg.GetHTTPEndpoint())
+	httpClient.SetTimeout(5 * time.Second)
 	httpClient.SetHeader("Authorization", cfg.APIKey)
 }
