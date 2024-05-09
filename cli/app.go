@@ -124,6 +124,7 @@ func doRequest(app api.AppType, instruction string) {
 		handleError(app, err)
 	}
 	for {
+		var req *api.Request
 		switch resp.GetCode() {
 		case api.ResponseCode_FINISHED:
 			color.Green("Answer: %s", resp.GetChatResponse().GetMessage())
@@ -138,7 +139,7 @@ func doRequest(app api.AppType, instruction string) {
 			fallthrough
 		case api.ResponseCode_SUCCESS:
 			rid := uuid.New().String()
-			resp, err = cli.Chat(context.Background(), &api.Request{
+			req = &api.Request{
 				Code:      api.RequestCode_FETCH,
 				RequestId: rid,
 				ThreadId:  resp.ThreadId,
@@ -148,35 +149,47 @@ func doRequest(app api.AppType, instruction string) {
 						Instruction: instruction,
 					},
 				},
-			})
-			if err != nil {
-				handleError(app, err)
 			}
 		case api.ResponseCode_ACTION_REQUIRED:
 			ar := resp.GetActionResponse()
-
 			arr := &api.ActionResultRequest{
 				ActionId: ar.GetActionId(),
 			}
 			switch ar.GetType() {
 			case api.ActionType_INFORMATION:
+				fmt.Printf("Action Required: Need more information.\n\n")
+				fmt.Printf("Request for: %s\n", ar.Message)
+
 				reader := bufio.NewReader(os.Stdin)
-				fmt.Printf("Action Required: %s\n", ar.Message)
 				arr.ActionResult, _ = reader.ReadString('\n')
 				if err != nil {
 					handleError(app, err)
 				}
 			case api.ActionType_CONFIRMATION:
-				println("Action SAFEGUARD")
+				fmt.Printf("Action Required: Human Approve Action.\n\n")
+				fmt.Printf("Request for: %s\n\n", ar.Message)
+				fmt.Printf("Do you approve this action? [y/n]: ")
+
+				reader := bufio.NewReader(os.Stdin)
+				result, _ := reader.ReadString('\n')
+				if result == "y\n" {
+					arr.ActionResult = "approved"
+				} else {
+					arr.ActionResult = "denied"
+				}
+				req = &api.Request{
+					Code:      api.RequestCode_ACTION_RESULT,
+					RequestId: uuid.New().String(),
+					ThreadId:  resp.ThreadId,
+					Request: &api.Request_ActionResultRequest{
+						ActionResultRequest: arr,
+					},
+				}
 			}
-			resp, err = cli.Chat(context.Background(), &api.Request{
-				Code:      api.RequestCode_ACTION_RESULT,
-				RequestId: uuid.New().String(),
-				ThreadId:  resp.ThreadId,
-				Request: &api.Request_ActionResultRequest{
-					ActionResultRequest: arr,
-				},
-			})
+		}
+		resp, err = cli.Chat(context.Background(), req)
+		if err != nil {
+			handleError(app, err)
 		}
 	}
 
