@@ -1,9 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from npi.core.thread import Thread, ThreadMessage
 
 
 class Parameters(BaseModel):
     """Base parameter model for tool definitions"""
+
+    npi_watch: int = Field(
+        default=0,
+        description="""
+        Interval (in seconds) for detecting changes in the return value of this tool.
+        If set to 0, the tool will not detect changes and will immediately returns.
+        If set to a positive integer, the tool will not return anything until a change in the return value is detected.
+        This is useful when you need to listen to the changes. For example, if you want to check new
+        emails in the inbox, you may call `get_emails({ "query": "is:unread", "npi_watch": 3 })`
+        and it will call the tool every 3 seconds and if a new email arrives, it will return the following diff:
+        { "previous": Email[], "current": Email[] }
+        """
+    )
 
     _thread: Thread
     _message: ThreadMessage

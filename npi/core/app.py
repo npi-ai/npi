@@ -1,8 +1,9 @@
 """The basic interface for NPi Apps"""
+import asyncio
 import json
 import inspect
 import functools
-from typing import Dict, List, Optional, Union, Type, cast
+from typing import Dict, List, Optional, Union, Type, cast, Callable, Any, Awaitable
 
 from pydantic import Field
 from openai import AsyncClient
@@ -302,16 +303,23 @@ class App:
                 await thread.send_msg(callback.Callable(call_msg))
                 logger.info(call_msg)
 
-                if fn_reg.Params is not None:
-                    res = await fn_reg.fn(
-                        params=fn_reg.Params(
-                            _thread=thread,
-                            _message=message,
-                            **args,
+                async def _exec_tool():
+                    if fn_reg.Params is not None:
+                        return await fn_reg.fn(
+                            params=fn_reg.Params(
+                                _thread=thread,
+                                _message=message,
+                                **args,
+                            )
                         )
-                    )
+                    else:
+                        return await fn_reg.fn()
+
+                if args.get('npi_watch', 0) > 0:
+                    logger.debug(f'[{self.name}]: watching function `{fn_name}`, interval: {args["npi_watch"]}s')
+                    res = await self._watch_tool(_exec_tool, args['npi_watch'])
                 else:
-                    res = await fn_reg.fn()
+                    res = await _exec_tool()
 
                 logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
@@ -325,3 +333,19 @@ class App:
                 )
 
         return response_message.content
+
+    async def _watch_tool(self, fn: Callable[[], Awaitable[str]], interval: int) -> str:
+        init_val = await fn()
+        logger.debug(f'[{self.name}]: watching: initial value: {init_val}')
+
+        while True:
+            await asyncio.sleep(interval)
+            val = await fn()
+            if val != init_val:
+                logger.debug(f'[{self.name}]: watching: changes detected: {val}')
+                return json.dumps(
+                    {
+                        "previous": init_val,
+                        "current": val,
+                    }, ensure_ascii=False
+                )

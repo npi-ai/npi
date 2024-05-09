@@ -3,7 +3,7 @@ import re
 import asyncio
 from npi.types.parameters import Parameters
 
-ToolFunction = Callable[[Parameters], str | None | Awaitable[str | None]]
+ToolFunction = Callable[[Parameters], str | Awaitable[str]]
 
 
 class FunctionRegistration:

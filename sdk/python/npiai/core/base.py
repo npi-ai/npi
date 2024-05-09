@@ -1,4 +1,5 @@
 import json
+import threading
 import traceback
 from typing import Union, List
 import grpc
@@ -38,45 +39,53 @@ class App:
 
     def schema(self):
         try:
-            resp = self.stub.GetAppSchema(api_pb2.AppSchemaRequest(
-                type=self.__app_type
-            ))
+            resp = self.stub.GetAppSchema(
+                api_pb2.AppSchemaRequest(
+                    type=self.__app_type
+                )
+            )
         except Exception as e:
             logger.error(e)
             return None
         return json.loads(resp.schema)
 
     def chat(self, msg: str) -> str:
-        resp = self.stub.Chat(api_pb2.Request(
-            code=api_pb2.RequestCode.CHAT,
-            chat_request=api_pb2.ChatRequest(
-                type=self.__app_type,
-                instruction=msg
+        resp = self.stub.Chat(
+            api_pb2.Request(
+                code=api_pb2.RequestCode.CHAT,
+                chat_request=api_pb2.ChatRequest(
+                    type=self.__app_type,
+                    instruction=msg
+                )
             )
-        ))
+        )
         while True:
             match resp.code:
                 case api_pb2.ResponseCode.FINISHED:
                     return resp.chat_response.message
                 case api_pb2.ResponseCode.MESSAGE:
                     logger.info(f'[{self.__app_name}]: Received message: {resp.chat_response.message}')
-                    resp = self.stub.Chat(api_pb2.Request(
-                        code=api_pb2.RequestCode.FETCH,
-                        request_id=str(uuid.uuid4()),
-                        thread_id=resp.thread_id,
-                        chat_request=api_pb2.ChatRequest(
-                            type=self.__app_type,
+                    resp = self.stub.Chat(
+                        api_pb2.Request(
+                            code=api_pb2.RequestCode.FETCH,
+                            request_id=str(uuid.uuid4()),
+                            thread_id=resp.thread_id,
+                            chat_request=api_pb2.ChatRequest(
+                                type=self.__app_type,
+                            )
                         )
-                    ))
+                    )
                 case api_pb2.ResponseCode.SUCCESS:
-                    resp = self.stub.Chat(api_pb2.Request(
-                        code=api_pb2.RequestCode.FETCH,
-                        request_id=str(uuid.uuid4()),
-                        thread_id=resp.thread_id,
-                        chat_request=api_pb2.ChatRequest(
-                            type=self.__app_type,
+                    resp = self.stub.Chat(
+                        api_pb2.Request(
+                            code=api_pb2.RequestCode.FETCH,
+                            request_id=str(uuid.uuid4()),
+                            thread_id=resp.thread_id,
+                            chat_request=api_pb2.ChatRequest(
+                                type=self.__app_type,
+                            )
                         )
-                    ))
+                    )
                 case api_pb2.ResponseCode.ACTION_REQUIRED:
                     resp = self.stub.Chat(self.__call_human(resp))
                 case _:
@@ -99,24 +108,26 @@ class Agent:
     tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
     fn_map: dict = {}
 
-    def __init__(self,
-                 agent_name: str,
-                 description: str,
-                 prompt: str,
-                 endpoint: str = None,
-                 llm: OpenAI = None):
+    def __init__(
+        self,
+        agent_name: str,
+        description: str,
+        prompt: str,
+        endpoint: str = None,
+        llm: OpenAI = None
+    ):
         self.__agent_name = agent_name
         self.__description = description
         self.__prompt = prompt
         self.__npi_endpoint = endpoint
         self.__llm = llm
 
-    def use(self, *tools: Union['App']):
+    def use(self, *tools: App):
         for app in tools:
             app_name = app.tool_name()
             self.fn_map[app_name] = app
 
-    def group(self, *tools: Union['Agent']):
+    def group(self, *tools: 'Agent'):
         for app in tools:
             app_name = app.__as_app().tool_name()
             self.fn_map[app_name] = app
@@ -171,6 +182,25 @@ class Agent:
                         "content": res,
                     }
                 )
+
+    def when(self, task: str):
+        running = True
+        msg = f'When {task}'
+
+        def _poll():
+            nonlocal running
+            while running:
+                self.run(msg)
+
+        def _stop():
+            nonlocal running
+            running = False
+
+        thread = threading.Thread(target=_poll)
+        # thread.daemon = True
+        thread.start()
+
+        return _stop
 
     def __call(self, fn_name: str, args: dict) -> str:
         call_msg = f'[{self.__agent_name}]: Calling {fn_name}({args})'
