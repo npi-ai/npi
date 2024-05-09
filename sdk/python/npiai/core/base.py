@@ -197,7 +197,7 @@ class Agent:
             running = False
 
         thread = threading.Thread(target=_poll)
-        thread.daemon = True
+        # thread.daemon = True
         thread.start()
 
         return _stop
