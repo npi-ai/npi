@@ -95,7 +95,12 @@ class App:
         self.hitl_handler = handler
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
-        human_resp = self.hitl_handler.handle(hitl.convert_to_hitl_request(resp.action_response))
+        human_resp = self.hitl_handler.handle(
+            hitl.convert_to_hitl_request(
+                req=resp.action_response,
+                app_name=self.__app_name
+            )
+        )
         if human_resp is hitl.ACTION_APPROVED:
             result = "approved"
         else:

@@ -47,29 +47,37 @@ class HITLHandler(ABC):
         pass
 
 
-def convert_to_hitl_request(req: api_pb2.ActionRequiredResponse) -> HITLRequest:
+def convert_to_hitl_request(req: api_pb2.ActionRequiredResponse, app_name: str = None) -> HITLRequest:
     match req.type:
         case api_pb2.ActionType.INFORMATION:
             return HITLRequest(
                 code=ActionRequestCode.INFORMATION,
-                message=req.message
+                message=req.message,
+                app_name=app_name,
             )
         case api_pb2.ActionType.CONFIRMATION:
             return HITLRequest(
                 code=ActionRequestCode.CONFIRMATION,
-                message=req.message
+                message=req.message,
+                app_name=app_name,
             )
         case api_pb2.ActionType.SINGLE_SELECTION:
             return HITLRequest(
                 code=ActionRequestCode.SINGLE_SELECTION,
-                message=req.message
+                message=req.message,
+                app_name=app_name,
             )
         case api_pb2.ActionType.MULTIPLE_SELECTION:
             return HITLRequest(
                 code=ActionRequestCode.MULTIPLE_SELECTION,
-                message=req.message
+                message=req.message,
+                app_name=app_name,
             )
-    return HITLRequest(code=ActionRequestCode.UNKNOWN_ACTION, message="invalid action request")
+    return HITLRequest(
+        code=ActionRequestCode.UNKNOWN_ACTION,
+        message="invalid action request",
+        app_name=app_name,
+    )
 
 
 class ConsoleHITLHandler(HITLHandler):
@@ -91,8 +99,12 @@ class ConsoleHITLHandler(HITLHandler):
                     resp = ACTION_APPROVED
                 else:
                     resp = ACTION_DENIED
-                human_response = input(colored(f'[{req.app_name}]: Do you want give a message back? (typing Enter to '
-                                               f'skip) > ', 'magenta'))
+                human_response = input(
+                    colored(
+                        f'[{req.app_name}]: Do you want give a message back? (typing Enter to '
+                        f'skip) > ', 'magenta'
+                        )
+                    )
                 if human_response is not None:
                     resp.message = human_response
                 return resp
