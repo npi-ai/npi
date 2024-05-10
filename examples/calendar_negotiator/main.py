@@ -3,6 +3,7 @@
 from openai import OpenAI
 
 from npiai.core import Agent
+from npiai.core.hitl import ConsoleHITLHandler
 from npiai.app.google import Gmail, Calendar
 from npiai.app.human_feedback import ConsoleFeedback
 
@@ -53,9 +54,11 @@ def main():
         description='Schedule meetings with others using gmail and google calendar',
         prompt=PROMPT,
         llm=OpenAI(),
+        hitl_handler=ConsoleHITLHandler(),
     )
 
     negotiator.use(Calendar(), Gmail(), ConsoleFeedback())
+
     print('Negotiator: What\'s your task for me?')
     task = input('User: ')
     print('')

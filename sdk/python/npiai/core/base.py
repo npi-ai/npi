@@ -23,8 +23,15 @@ class App:
     __app_type: api_pb2.AppType
     __npi_endpoint: str
     stub: api_pb2_grpc.AppServerStub
+    hitl_handler: hitl.HITLHandler = None
 
-    def __init__(self, app_name: str, app_type: api_pb2.AppType, endpoint: str = "localhost:9140"):
+    def __init__(
+        self,
+        app_name: str,
+        app_type: api_pb2.AppType,
+        endpoint: str = "localhost:9140",
+        hitl_handler: hitl.HITLHandler = None,
+    ):
         self.__app_name = app_name
         if endpoint is None:
             endpoint = "localhost:9140"
@@ -32,7 +39,7 @@ class App:
         self.__app_type = app_type
         channel = grpc.insecure_channel(self.__npi_endpoint)
         self.stub = api_pb2_grpc.AppServerStub(channel)
-        self.hitl_handler = None
+        self.hitl_handler = hitl_handler
 
     def tool_name(self):
         return self.__app_name
@@ -95,7 +102,12 @@ class App:
         self.hitl_handler = handler
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
-        human_resp = self.hitl_handler.handle(hitl.convert_to_hitl_request(resp.action_response))
+        human_resp = self.hitl_handler.handle(
+            hitl.convert_to_hitl_request(
+                req=resp.action_response,
+                app_name=self.__app_name
+            )
+        )
         if human_resp is hitl.ACTION_APPROVED:
             result = "approved"
         else:
@@ -119,6 +131,7 @@ class Agent:
     __llm: OpenAI
     tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
     fn_map: dict = {}
+    hitl_handler: hitl.HITLHandler = None
 
     def __init__(
         self,
@@ -126,23 +139,31 @@ class Agent:
         description: str,
         prompt: str,
         endpoint: str = None,
-        llm: OpenAI = None
+        llm: OpenAI = None,
+        hitl_handler: hitl.HITLHandler = None,
     ):
         self.__agent_name = agent_name
         self.__description = description
         self.__prompt = prompt
         self.__npi_endpoint = endpoint
         self.__llm = llm
+        self.hitl_handler = hitl_handler
 
-    def use(self, *tools: App):
-        for app in tools:
+    def use(self, *apps: App):
+        for app in apps:
+            # inherit HITL handler
+            if app.hitl_handler is None:
+                app.hitl_handler = self.hitl_handler
             app_name = app.tool_name()
             self.fn_map[app_name] = app
 
-    def group(self, *tools: 'Agent'):
-        for app in tools:
-            app_name = app.__as_app().tool_name()
-            self.fn_map[app_name] = app
+    def group(self, *agents: 'Agent'):
+        for agent in agents:
+            app_name = agent.__as_app().tool_name()
+            self.fn_map[app_name] = agent
+
+    def hitl(self, handler: hitl.HITLHandler):
+        self.hitl_handler = handler
 
     def run(self, msg: str) -> str:
 

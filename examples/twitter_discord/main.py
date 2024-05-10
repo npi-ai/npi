@@ -1,6 +1,7 @@
 from openai import OpenAI
 
 from npiai.core import Agent
+from npiai.core.hitl import ConsoleHITLHandler
 from npiai.app.discord import Discord
 from npiai.browser_app.twitter import Twitter
 from npiai.app.human_feedback import ConsoleFeedback
@@ -32,9 +33,11 @@ def main():
         description='Retrieve data from Twitter and send messages to Discord',
         prompt=PROMPT,
         llm=OpenAI(),
+        hitl_handler=ConsoleHITLHandler(),
     )
 
     negotiator.use(Twitter(), Discord(), ConsoleFeedback())
+
     print('Twitter Crawler: What\'s your task for me?')
     task = input('User: ')
     print('')
