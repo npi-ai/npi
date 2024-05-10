@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "npiai-proto"
-version = "v0.0.4.dev1"
+version = "v0.0.5"
 description = "The NPI.AI Proto"
 license = "Apache-2.0"
 authors = ["Wells Wang <wells@npi.ai>"]
 readme = "README.md"
 homepage = "https://github.com/npi-ai/proto/python"
 repository = "https://github.com/npi-ai/proto/python"
+#in-project = true
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -8,7 +8,7 @@ import uvicorn
 
 from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
-from npi.app import google, discord, github
+from npi.app import google, discord, github, twilio
 from npi.browser_app import twitter, general_browser_agent as browser
 from npi.utils import logger
 from npi.error.auth import UnauthorizedError
@@ -35,6 +35,8 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 return github.GitHub()
             case api_pb2.WEB_BROWSER:
                 return browser.GeneralBrowserAgent()
+            case api_pb2.TWILIO:
+                return twilio.Twilio()
             case _:
                 raise Exception("unsupported application")
 
