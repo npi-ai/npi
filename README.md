@@ -123,7 +123,8 @@ npi app github "Star, fork, and leave a supportive message in issue #27 of npi-a
 ## Multi-app Agent Examples
 
 1. [Calendar Negotiator](examples/calendar_negotiator/main.py)
-2. [Twitter Crawler](examples/twitter_crawler/main.py)
+2. [Twitter Discord](examples/twitter_discord/main.py)
+3. [GitHub Notifier](examples/github_notifier/main.py)
 
 More: [https://www.npi.ai/docs/examples](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme)
 
