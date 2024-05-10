@@ -24,6 +24,7 @@ class AppType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DISCORD: _ClassVar[AppType]
     TWITTER: _ClassVar[AppType]
     WEB_BROWSER: _ClassVar[AppType]
+    TWILIO: _ClassVar[AppType]
 
 class ResponseCode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
@@ -53,6 +54,7 @@ SLACK: AppType
 DISCORD: AppType
 TWITTER: AppType
 WEB_BROWSER: AppType
+TWILIO: AppType
 RESPONSE_UNKNOWN: ResponseCode
 SUCCESS: ResponseCode
 FAILED: ResponseCode

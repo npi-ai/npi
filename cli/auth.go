@@ -21,6 +21,7 @@ func authCommand() *cobra.Command {
 	cmd.AddCommand(authGitHubCommand())
 	cmd.AddCommand(authDiscordCommand())
 	cmd.AddCommand(authTwitterCommand())
+	cmd.AddCommand(authTwilioCommand())
 	return cmd
 }
 
@@ -199,6 +200,45 @@ func authTwitterCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&twitterUsername, "username", "", "the username of your Twitter/X account")
 	cmd.Flags().StringVar(&twitterPassword, "password", "", "the password of your Twitter/X account")
+
+	return cmd
+}
+
+var (
+	twilioAccount = ""
+	twilioToken   = ""
+	twilioFrom    = ""
+)
+
+func authTwilioCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "twilio",
+		Short: "authorize Twilio",
+		Run: func(cmd *cobra.Command, args []string) {
+			if twilioAccount == "" || twilioToken == "" || twilioFrom == "" {
+				color.Yellow("account/token/from required")
+				_ = cmd.Help()
+				return
+			}
+			response, err := httpClient.R().SetBody(map[string]string{
+				"from_phone_number": twilioFrom,
+				"account_sid":       twilioAccount,
+				"auth_token":        twilioToken,
+			}).Post("/auth/twilio")
+			if err != nil {
+				color.Red("failed to authorize Twilio: %v", err)
+				os.Exit(-1)
+			}
+			if response.StatusCode() != 200 {
+				color.Red("failed to authorize Twilio: %s", string(response.Body()))
+				os.Exit(-1)
+			}
+			color.Green("authorization success")
+		},
+	}
+	cmd.Flags().StringVar(&twilioAccount, "account", "", "The Twilio Account ID")
+	cmd.Flags().StringVar(&twilioToken, "token", "", "The Twilio Auth Token")
+	cmd.Flags().StringVar(&twilioFrom, "from", "", "Twilio phone number to send from")
 
 	return cmd
 }

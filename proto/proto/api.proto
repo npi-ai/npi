@@ -38,6 +38,7 @@ enum AppType {
   DISCORD = 5;
   TWITTER = 6;
   WEB_BROWSER = 7;
+  TWILIO = 8;
 }
 
 message AppSchemaRequest {

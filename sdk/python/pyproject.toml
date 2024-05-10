@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "npiai"
-version = "0.0.4.dev2"
+version = "0.0.5"
 description = ""
 authors = ["wenfeng <w@npi.ai>"]
 readme = "README.md"
@@ -8,9 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 openai = "^1.23.2"
-npiai-proto = "^v0.0.4.dev1"
+npiai-proto = {path = "../../proto/python"}
 termcolor = "^2.4.0"
 loguru = "^0.7.2"
+twilio = "^9.0.5"
 
 
 [build-system]

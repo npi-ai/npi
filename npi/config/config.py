@@ -37,6 +37,13 @@ class TwitterCredentials:
     password: str
 
 
+@dataclass(frozen=True)
+class TwilioCredentials:
+    from_phone_number: str
+    account_sid: str
+    auth_token: str
+
+
 def get_project_root() -> str:
     return CONFIG.get('npi_root', None) or os.environ.get('NPI_ROOT', None) or '/npiai'
 
@@ -65,6 +72,10 @@ def get_github_credentials() -> GithubCredentials | None:
     return CONFIG.get('github_credentials', None)
 
 
+def get_twilio_credentials() -> TwilioCredentials | None:
+    return CONFIG.get('twilio_credentials', None)
+
+
 def set_github_credentials(access_token: str):
     CONFIG['github_credentials'] = GithubCredentials(access_token=access_token)
 
@@ -91,3 +102,8 @@ def get_twitter_credentials() -> TwitterCredentials | None:
 
 def set_twitter_credentials(username: str, password: str):
     CONFIG['twitter_credentials'] = TwitterCredentials(username=username, password=password)
+
+
+def set_twilio_credentials(account_sid: str, auth_token: str, from_phone_number: str):
+    CONFIG['twilio_credentials'] = TwilioCredentials(from_phone_number=from_phone_number,
+                                                     account_sid=account_sid, auth_token=auth_token)

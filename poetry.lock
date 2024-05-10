@@ -97,6 +97,20 @@ yarl = ">=1.0,<2.0"
 speedups = ["Brotli", "aiodns", "brotlicffi"]
 
 [[package]]
+name = "aiohttp-retry"
+version = "2.8.3"
+description = "Simple retry client for aiohttp"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "aiohttp_retry-2.8.3-py3-none-any.whl", hash = "sha256:3aeeead8f6afe48272db93ced9440cf4eda8b6fd7ee2abb25357b7eb28525b45"},
+    {file = "aiohttp_retry-2.8.3.tar.gz", hash = "sha256:9a8e637e31682ad36e1ff9f8bcba912fcfc7d7041722bc901a4b948da4d71ea9"},
+]
+
+[package.dependencies]
+aiohttp = "*"
+
+[[package]]
 name = "aiosignal"
 version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
@@ -1337,7 +1351,7 @@ files = [
 
 [[package]]
 name = "npiai"
-version = "0.0.4.dev2"
+version = "0.0.5"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -1346,7 +1360,7 @@ develop = true
 
 [package.dependencies]
 loguru = "^0.7.2"
-npiai-proto = "^v0.0.4.dev1"
+npiai-proto = {path = "../../proto/python"}
 openai = "^1.23.2"
 termcolor = "^2.4.0"
 
@@ -1356,18 +1370,20 @@ url = "sdk/python"
 
 [[package]]
 name = "npiai-proto"
-version = "0.0.4.dev1"
+version = "v0.0.5"
 description = "The NPI.AI Proto"
 optional = false
-python-versions = "<4.0,>=3.10"
-files = [
-    {file = "npiai_proto-0.0.4.dev1-py3-none-any.whl", hash = "sha256:75007344242dd5c33c5a5247e7ac31d59e277b8e963843d79ec73ccbe3651cd6"},
-    {file = "npiai_proto-0.0.4.dev1.tar.gz", hash = "sha256:873986d670dffa4a9131130484b7e4aca00fda08b20124b46e8b64f67ad49684"},
-]
+python-versions = "^3.10"
+files = []
+develop = true
 
 [package.dependencies]
-grpcio = ">=1.62.1,<2.0.0"
-grpcio-tools = ">=1.62.2,<2.0.0"
+grpcio = "^1.62.1"
+grpcio-tools = "^1.62.2"
+
+[package.source]
+type = "directory"
+url = "proto/python"
 
 [[package]]
 name = "oauth2client"
@@ -1405,13 +1421,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.27.0"
+version = "1.28.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.27.0-py3-none-any.whl", hash = "sha256:1183346fae6e63cb3a9134e397c0067690dc9d94ceb36eb0eb2c1bb9a1542aca"},
-    {file = "openai-1.27.0.tar.gz", hash = "sha256:498adc80ba81a95324afdfd11a71fa43a37e1d94a5ca5f4542e52fe9568d995b"},
+    {file = "openai-1.28.0-py3-none-any.whl", hash = "sha256:94b5a99f5121e1747dda1bb8fff31820d5ab4b49056a9cf2e3605f5c90011955"},
+    {file = "openai-1.28.0.tar.gz", hash = "sha256:ac43b8b48aec70de4b76cfc96ae906bf8d5814427475b9dabb662f84f655f0e1"},
 ]
 
 [package.dependencies]
@@ -1985,6 +2001,23 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "twilio"
+version = "9.0.5"
+description = "Twilio API client and TwiML generator"
+optional = false
+python-versions = ">=3.7.0"
+files = [
+    {file = "twilio-9.0.5-py2.py3-none-any.whl", hash = "sha256:5e09e910b9368f50f23cb3c3dd5ba77164d80a81e9d97db955cbac322deb2a4e"},
+    {file = "twilio-9.0.5.tar.gz", hash = "sha256:e9b5727943584d25d618fe502f0100fc5283215f31c863f80b5c64581b4702b0"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.8.4"
+aiohttp-retry = ">=2.8.3"
+PyJWT = ">=2.0.0,<3.0.0"
+requests = ">=2.0.0"
+
+[[package]]
 name = "typing-extensions"
 version = "4.11.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -2241,4 +2274,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.10"
-content-hash = "cfe47231e673e8fb1e41f89dee64f6c0be1c53eebe26ccd7472f27c6aa86195a"
+content-hash = "e574336c007e27c90a80b1e34f4daf31c040cf0bda2f3350a55bcb1984acf749"

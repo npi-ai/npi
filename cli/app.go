@@ -27,6 +27,7 @@ func appCommand() *cobra.Command {
 		discordCommand(),
 		twitterCommand(),
 		webBrowserCommand(),
+		twilioCommand(),
 	)
 	return cmd
 }
@@ -96,6 +97,17 @@ func webBrowserCommand() *cobra.Command {
 		Short: "chat with Web Browser",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_WEB_BROWSER, args[0])
+		},
+	}
+	return cmd
+}
+
+func twilioCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "twilio",
+		Short: "chat with Twilio, support SMS and WhatsApp",
+		Run: func(cmd *cobra.Command, args []string) {
+			doRequest(api.AppType_TWILIO, args[0])
 		},
 	}
 	return cmd

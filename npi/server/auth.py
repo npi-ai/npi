@@ -36,6 +36,12 @@ class TwitterAuthRequest(BaseModel):
     password: str
 
 
+class TwilioAuthRequest(BaseModel):
+    from_phone_number: str
+    account_sid: str
+    auth_token: str
+
+
 STATE = {}
 
 
@@ -101,6 +107,13 @@ async def auth_discord(req: DiscordAuthRequest):
 @app.post('/auth/twitter')
 async def auth_twitter(req: TwitterAuthRequest):
     config.set_twitter_credentials(req.username, req.password)
+    return responses.Response(status_code=200)
+
+
+@app.post('/auth/twilio')
+async def auth_twilio(req: TwilioAuthRequest):
+    config.set_twilio_credentials(account_sid=req.account_sid, auth_token=req.auth_token,
+                                  from_phone_number=req.from_phone_number)
     return responses.Response(status_code=200)
 
 
