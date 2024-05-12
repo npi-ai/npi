@@ -160,7 +160,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
             request: Empty,
             _: grpc.ServicerContext,
     ) -> Empty:
-        pass
+        return Empty()
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
