@@ -108,7 +108,7 @@ func oauthCallback(ch chan error) func(w http.ResponseWriter, r *http.Request) {
 			"state": queryParams.Get("state"),
 			"code":  queryParams.Get("code"),
 		}
-		_, err := cli.GoogleAuthCallback(context.Background(), &api.AuthorizeRequest{
+		_, err := cli.GoogleAuthCallback(getMetadata(context.Background()), &api.AuthorizeRequest{
 			Credentials: m,
 		})
 		if err != nil {
@@ -249,7 +249,7 @@ func doAuthRequest(app api.AppType, params map[string]string) (*api.AuthorizeRes
 	conn := getGRPCConn()
 	defer conn.Close()
 	cli := api.NewAppServerClient(conn)
-	return cli.Authorize(context.Background(), &api.AuthorizeRequest{
+	return cli.Authorize(getMetadata(context.Background()), &api.AuthorizeRequest{
 		Type:        app,
 		Credentials: params,
 	})

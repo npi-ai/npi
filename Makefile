@@ -28,8 +28,7 @@ release-npi-cli:
 	zip -j ${CMD_OUTPUT_DIR}/npi-${VERSION}-${GOOS}-${GOARCH}.zip ${CMD_OUTPUT_DIR}/npi
 
 docker-build:
-	docker buildx build --platform ${DOCKER_PLATFORM} \
-    		-t npiai/npi:${IMAGE_TAG} . --push
+	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
 
 docker-build-base:
 	docker buildx build --platform linux/arm/v8,linux/amd64 \

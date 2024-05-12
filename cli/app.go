@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"log"
 	"os"
@@ -117,14 +118,20 @@ func twilioCommand() *cobra.Command {
 
 func doRequest(app api.AppType, instruction string) {
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if cfg.Insecure {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")))
+	}
+
 	conn, err := grpc.Dial(cfg.GetGRPCEndpoint(), opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	defer conn.Close()
 	cli := api.NewAppServerClient(conn)
-	resp, err := cli.Chat(context.Background(), &api.Request{
+	resp, err := cli.Chat(getMetadata(context.Background()), &api.Request{
 		Code:      api.RequestCode_CHAT,
 		RequestId: uuid.New().String(),
 		Request: &api.Request_ChatRequest{
@@ -201,7 +208,7 @@ func doRequest(app api.AppType, instruction string) {
 				}
 			}
 		}
-		resp, err = cli.Chat(context.Background(), req)
+		resp, err = cli.Chat(getMetadata(context.Background()), req)
 		if err != nil {
 			handleError(app, err)
 		}
