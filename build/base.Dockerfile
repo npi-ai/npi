@@ -1,5 +1,5 @@
-FROM --platform=$BUILDPLATFORM python:3.10
-
+FROM python:3.10
+#--platform=$BUILDPLATFORM
 LABEL maintainer="Wenfeng Wang <w@npi.ai>"
 
 RUN apt update

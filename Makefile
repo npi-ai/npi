@@ -18,7 +18,7 @@ LD_FLAGS += -X 'main.BuildDate=${DATE}'
 LD_FLAGS += -X 'main.Platform=${GOOS}/${GOARCH}'
 
 GO_BUILD = GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C ${NPI_CMD_ROOT}/cli -trimpath
-DOCKER_PLATFORM ?= linux/amd64,linux/arm64
+DOCKER_PLATFORM ?= linux/arm/v8,linux/amd64
 
 build-npi:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}"  -o ${CMD_OUTPUT_DIR}/npi ${NPI_CMD_ROOT}/cli
@@ -27,29 +27,13 @@ release-npi-cli:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/cli/npi ${NPI_CMD_ROOT}/cli
 	zip -j ${CMD_OUTPUT_DIR}/npi-${VERSION}-${GOOS}-${GOARCH}.zip ${CMD_OUTPUT_DIR}/npi
 
-docker-build-amd64:
-	docker buildx build --platform linux/amd64 --build-arg platform=linux/amd64 \
-		-t npiai/npi:${IMAGE_TAG} . --push
-
-docker-build-arm64:
-	docker buildx build --platform linux/arm64 --build-arg platform=linux/arm64 \
-		-t npiai/npi:${IMAGE_TAG} . --push
-
 docker-build:
-	docker-build-arm64
-	docker-build-amd64
-
-docker-build-base-amd64:
-	docker buildx build --platform linux/amd64 --build-arg platform=linux/amd64 \
-		-t npiai/base:3.10 -f build/base.Dockerfile build --push
-
-docker-build-base-arm64:
-	docker buildx build --platform linux/arm64 --build-arg platform=linux/arm64 \
-		-t npiai/base:3.10 -f build/base.Dockerfile build --push
+	docker buildx build --platform ${DOCKER_PLATFORM} \
+    		-t npiai/npi:${IMAGE_TAG} . --push
 
 docker-build-base:
-	docker-build-base-arm64
-	docker-build-base-amd64
+	docker buildx build --platform linux/arm/v8,linux/amd64 \
+    		-t npiai/base:3.10 -f build/base.Dockerfile build --push
 
 docker-build-local:
 	docker build -t npiai/npi:${IMAGE_TAG} .
