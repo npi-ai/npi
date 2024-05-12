@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +13,8 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func authCommand() *cobra.Command {

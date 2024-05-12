@@ -27,12 +27,17 @@ release-npi-cli:
 	$(GO_BUILD) -ldflags "${LD_FLAGS}" -o ${CMD_OUTPUT_DIR}/cli/npi ${NPI_CMD_ROOT}/cli
 	zip -j ${CMD_OUTPUT_DIR}/npi-${VERSION}-${GOOS}-${GOARCH}.zip ${CMD_OUTPUT_DIR}/npi
 
-docker-build:
-	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
+docker-build-amd64:
+	docker buildx build --platform linux/amd64 --build-arg platform=linux/amd64 \
+		-t npiai/npi:${IMAGE_TAG} . --push
 
-# only run this on macOS!
-docker-build-mac:
-	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi-mac:${IMAGE_TAG} . --push
+docker-build-arm64:
+	docker buildx build --platform linux/arm64 --build-arg platform=linux/arm64 \
+		-t npiai/npi:${IMAGE_TAG} . --push
+
+docker-build:
+	docker-build-arm64
+	docker-build-amd64
 
 docker-build-local:
 	docker build -t npiai/npi:${IMAGE_TAG} .
