@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM npiai/base:3.10
+FROM npiai/base:3.10
 
 LABEL maintainer="Wenfeng Wang <w@npi.ai>"
 
