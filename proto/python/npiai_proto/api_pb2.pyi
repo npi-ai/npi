@@ -113,6 +113,34 @@ class ActionResultRequest(_message.Message):
     action_result: str
     def __init__(self, action_id: _Optional[str] = ..., action_result: _Optional[str] = ...) -> None: ...
 
+class AuthorizeRequest(_message.Message):
+    __slots__ = ("type", "credentials")
+    class CredentialsEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    type: AppType
+    credentials: _containers.ScalarMap[str, str]
+    def __init__(self, type: _Optional[_Union[AppType, str]] = ..., credentials: _Optional[_Mapping[str, str]] = ...) -> None: ...
+
+class AuthorizeResponse(_message.Message):
+    __slots__ = ("result",)
+    class ResultEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    result: _containers.ScalarMap[str, str]
+    def __init__(self, result: _Optional[_Mapping[str, str]] = ...) -> None: ...
+
 class Response(_message.Message):
     __slots__ = ("code", "request_id", "thread_id", "chat_response", "action_response", "empty")
     CODE_FIELD_NUMBER: _ClassVar[int]

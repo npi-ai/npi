@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AppServer_Chat_FullMethodName         = "/npi.core.api.AppServer/Chat"
-	AppServer_GetAppSchema_FullMethodName = "/npi.core.api.AppServer/GetAppSchema"
+	AppServer_Chat_FullMethodName               = "/npi.core.api.AppServer/Chat"
+	AppServer_GetAppSchema_FullMethodName       = "/npi.core.api.AppServer/GetAppSchema"
+	AppServer_Authorize_FullMethodName          = "/npi.core.api.AppServer/Authorize"
+	AppServer_GoogleAuthCallback_FullMethodName = "/npi.core.api.AppServer/GoogleAuthCallback"
+	AppServer_Ping_FullMethodName               = "/npi.core.api.AppServer/Ping"
 )
 
 // AppServerClient is the client API for AppServer service.
@@ -29,6 +33,9 @@ const (
 type AppServerClient interface {
 	Chat(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetAppSchema(ctx context.Context, in *AppSchemaRequest, opts ...grpc.CallOption) (*AppSchemaResponse, error)
+	Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error)
+	GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type appServerClient struct {
@@ -57,12 +64,42 @@ func (c *appServerClient) GetAppSchema(ctx context.Context, in *AppSchemaRequest
 	return out, nil
 }
 
+func (c *appServerClient) Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error) {
+	out := new(AuthorizeResponse)
+	err := c.cc.Invoke(ctx, AppServer_Authorize_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appServerClient) GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AppServer_GoogleAuthCallback_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appServerClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AppServer_Ping_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AppServerServer is the server API for AppServer service.
 // All implementations should embed UnimplementedAppServerServer
 // for forward compatibility
 type AppServerServer interface {
 	Chat(context.Context, *Request) (*Response, error)
 	GetAppSchema(context.Context, *AppSchemaRequest) (*AppSchemaResponse, error)
+	Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error)
+	GoogleAuthCallback(context.Context, *AuthorizeRequest) (*emptypb.Empty, error)
+	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }
 
 // UnimplementedAppServerServer should be embedded to have forward compatible implementations.
@@ -74,6 +111,15 @@ func (UnimplementedAppServerServer) Chat(context.Context, *Request) (*Response, 
 }
 func (UnimplementedAppServerServer) GetAppSchema(context.Context, *AppSchemaRequest) (*AppSchemaResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAppSchema not implemented")
+}
+func (UnimplementedAppServerServer) Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Authorize not implemented")
+}
+func (UnimplementedAppServerServer) GoogleAuthCallback(context.Context, *AuthorizeRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GoogleAuthCallback not implemented")
+}
+func (UnimplementedAppServerServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 
 // UnsafeAppServerServer may be embedded to opt out of forward compatibility for this service.
@@ -123,6 +169,60 @@ func _AppServer_GetAppSchema_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AppServer_Authorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthorizeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServerServer).Authorize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AppServer_Authorize_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServerServer).Authorize(ctx, req.(*AuthorizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AppServer_GoogleAuthCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthorizeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServerServer).GoogleAuthCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AppServer_GoogleAuthCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServerServer).GoogleAuthCallback(ctx, req.(*AuthorizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AppServer_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServerServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AppServer_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServerServer).Ping(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AppServer_ServiceDesc is the grpc.ServiceDesc for AppServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -137,6 +237,18 @@ var AppServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAppSchema",
 			Handler:    _AppServer_GetAppSchema_Handler,
+		},
+		{
+			MethodName: "Authorize",
+			Handler:    _AppServer_Authorize_Handler,
+		},
+		{
+			MethodName: "GoogleAuthCallback",
+			Handler:    _AppServer_GoogleAuthCallback_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _AppServer_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -9,6 +9,9 @@ option go_package = "github.com/npi-ai/npi/server";
 service AppServer {
   rpc Chat(Request) returns (Response);
   rpc GetAppSchema(AppSchemaRequest) returns (AppSchemaResponse);
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  rpc GoogleAuthCallback(AuthorizeRequest) returns (google.protobuf.Empty);
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 enum RequestCode {
@@ -60,6 +63,14 @@ message ActionResultRequest {
   string action_result = 2;
 }
 
+message AuthorizeRequest {
+  AppType type = 1;
+  map<string, string> credentials = 2;
+}
+
+message AuthorizeResponse {
+  map<string, string> result = 1;
+}
 
 enum ResponseCode {
   RESPONSE_UNKNOWN = 0;

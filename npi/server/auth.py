@@ -1,15 +1,12 @@
 """the http server for NPI backend"""
 
 import json
-from fastapi import FastAPI, responses
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 
 from pydantic import BaseModel
 
 from npi.config import config
 from npi.app.google import GoogleCalendar, Gmail
-
-app = FastAPI()
 
 __SCOPE = {
     "gmail": Gmail.SCOPE,
@@ -45,11 +42,10 @@ class TwilioAuthRequest(BaseModel):
 STATE = {}
 
 
-@app.post("/auth/google")
 async def auth_google(req: GoogleAuthRequest):
     """the core api of NPI"""
     if req.app not in __SCOPE:
-        return responses.Response("invalid app", status_code=400)
+        raise ValueError(f"app {req.app} is not supported")
     secret_cfg = json.loads(req.secrets)
     flow = InstalledAppFlow.from_client_config(
         client_config=secret_cfg,
@@ -67,12 +63,9 @@ async def auth_google(req: GoogleAuthRequest):
     return {'url': url}
 
 
-@app.get("/auth/google/callback")
-async def auth_google(state: str, code: str):
-    """the core api of NPI"""
-
+async def google_callback(state: str, code: str):
     if state not in STATE:
-        return responses.FileResponse("invalid state")
+        raise ValueError(f"invalid state {state}")
 
     cfg = STATE[state]
     flow = Flow.from_client_config(
@@ -92,31 +85,19 @@ async def auth_google(state: str, code: str):
     return 'Success, close the window.'
 
 
-@app.post('/auth/github')
 async def auth_github(req: GithubAuthRequest):
     config.set_github_credentials(req.access_token)
-    return responses.Response(status_code=200)
 
 
-@app.post('/auth/discord')
 async def auth_discord(req: DiscordAuthRequest):
     config.set_discord_credentials(req.access_token)
-    return responses.Response(status_code=200)
 
 
-@app.post('/auth/twitter')
 async def auth_twitter(req: TwitterAuthRequest):
     config.set_twitter_credentials(req.username, req.password)
-    return responses.Response(status_code=200)
 
 
-@app.post('/auth/twilio')
 async def auth_twilio(req: TwilioAuthRequest):
     config.set_twilio_credentials(account_sid=req.account_sid, auth_token=req.auth_token,
                                   from_phone_number=req.from_phone_number)
-    return responses.Response(status_code=200)
 
-
-@app.get('/ping')
-async def ping():
-    return responses.Response(status_code=200)

@@ -1,4 +1,4 @@
-module github.com/npi-ai/proto/go
+module github.com/npi-ai/npi/proto/go
 
 go 1.21
 

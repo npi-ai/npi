@@ -9,6 +9,7 @@ import (
 
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockAppServerClient is a mock of AppServerClient interface.
@@ -32,6 +33,26 @@ func NewMockAppServerClient(ctrl *gomock.Controller) *MockAppServerClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAppServerClient) EXPECT() *MockAppServerClientMockRecorder {
 	return m.recorder
+}
+
+// Authorize mocks base method.
+func (m *MockAppServerClient) Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Authorize", varargs...)
+	ret0, _ := ret[0].(*AuthorizeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Authorize indicates an expected call of Authorize.
+func (mr *MockAppServerClientMockRecorder) Authorize(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockAppServerClient)(nil).Authorize), varargs...)
 }
 
 // Chat mocks base method.
@@ -74,6 +95,46 @@ func (mr *MockAppServerClientMockRecorder) GetAppSchema(ctx, in interface{}, opt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSchema", reflect.TypeOf((*MockAppServerClient)(nil).GetAppSchema), varargs...)
 }
 
+// GoogleAuthCallback mocks base method.
+func (m *MockAppServerClient) GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GoogleAuthCallback", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GoogleAuthCallback indicates an expected call of GoogleAuthCallback.
+func (mr *MockAppServerClientMockRecorder) GoogleAuthCallback(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GoogleAuthCallback", reflect.TypeOf((*MockAppServerClient)(nil).GoogleAuthCallback), varargs...)
+}
+
+// Ping mocks base method.
+func (m *MockAppServerClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Ping", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockAppServerClientMockRecorder) Ping(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockAppServerClient)(nil).Ping), varargs...)
+}
+
 // MockAppServerServer is a mock of AppServerServer interface.
 type MockAppServerServer struct {
 	ctrl     *gomock.Controller
@@ -95,6 +156,21 @@ func NewMockAppServerServer(ctrl *gomock.Controller) *MockAppServerServer {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAppServerServer) EXPECT() *MockAppServerServerMockRecorder {
 	return m.recorder
+}
+
+// Authorize mocks base method.
+func (m *MockAppServerServer) Authorize(ctx context.Context, in *AuthorizeRequest) (*AuthorizeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Authorize", ctx, in)
+	ret0, _ := ret[0].(*AuthorizeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Authorize indicates an expected call of Authorize.
+func (mr *MockAppServerServerMockRecorder) Authorize(ctx, in interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockAppServerServer)(nil).Authorize), ctx, in)
 }
 
 // Chat mocks base method.
@@ -125,4 +201,34 @@ func (m *MockAppServerServer) GetAppSchema(ctx context.Context, in *AppSchemaReq
 func (mr *MockAppServerServerMockRecorder) GetAppSchema(ctx, in interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSchema", reflect.TypeOf((*MockAppServerServer)(nil).GetAppSchema), ctx, in)
+}
+
+// GoogleAuthCallback mocks base method.
+func (m *MockAppServerServer) GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GoogleAuthCallback", ctx, in)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GoogleAuthCallback indicates an expected call of GoogleAuthCallback.
+func (mr *MockAppServerServerMockRecorder) GoogleAuthCallback(ctx, in interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GoogleAuthCallback", reflect.TypeOf((*MockAppServerServer)(nil).GoogleAuthCallback), ctx, in)
+}
+
+// Ping mocks base method.
+func (m *MockAppServerServer) Ping(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ping", ctx, in)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockAppServerServerMockRecorder) Ping(ctx, in interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockAppServerServer)(nil).Ping), ctx, in)
 }

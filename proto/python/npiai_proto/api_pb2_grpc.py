@@ -3,6 +3,7 @@
 import grpc
 
 from . import api_pb2 as api__pb2
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
 class AppServerStub(object):
@@ -24,6 +25,21 @@ class AppServerStub(object):
                 request_serializer=api__pb2.AppSchemaRequest.SerializeToString,
                 response_deserializer=api__pb2.AppSchemaResponse.FromString,
                 )
+        self.Authorize = channel.unary_unary(
+                '/npi.core.api.AppServer/Authorize',
+                request_serializer=api__pb2.AuthorizeRequest.SerializeToString,
+                response_deserializer=api__pb2.AuthorizeResponse.FromString,
+                )
+        self.GoogleAuthCallback = channel.unary_unary(
+                '/npi.core.api.AppServer/GoogleAuthCallback',
+                request_serializer=api__pb2.AuthorizeRequest.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
+        self.Ping = channel.unary_unary(
+                '/npi.core.api.AppServer/Ping',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
 
 
 class AppServerServicer(object):
@@ -41,6 +57,24 @@ class AppServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Authorize(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GoogleAuthCallback(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Ping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AppServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -53,6 +87,21 @@ def add_AppServerServicer_to_server(servicer, server):
                     servicer.GetAppSchema,
                     request_deserializer=api__pb2.AppSchemaRequest.FromString,
                     response_serializer=api__pb2.AppSchemaResponse.SerializeToString,
+            ),
+            'Authorize': grpc.unary_unary_rpc_method_handler(
+                    servicer.Authorize,
+                    request_deserializer=api__pb2.AuthorizeRequest.FromString,
+                    response_serializer=api__pb2.AuthorizeResponse.SerializeToString,
+            ),
+            'GoogleAuthCallback': grpc.unary_unary_rpc_method_handler(
+                    servicer.GoogleAuthCallback,
+                    request_deserializer=api__pb2.AuthorizeRequest.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'Ping': grpc.unary_unary_rpc_method_handler(
+                    servicer.Ping,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -95,5 +144,56 @@ class AppServer(object):
         return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/GetAppSchema',
             api__pb2.AppSchemaRequest.SerializeToString,
             api__pb2.AppSchemaResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Authorize(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/Authorize',
+            api__pb2.AuthorizeRequest.SerializeToString,
+            api__pb2.AuthorizeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GoogleAuthCallback(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/GoogleAuthCallback',
+            api__pb2.AuthorizeRequest.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Ping(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/Ping',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

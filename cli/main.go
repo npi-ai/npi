@@ -33,10 +33,11 @@ func init() {
 		}
 		if cmd.Name() == "connect" || cmd.Name() == "version" {
 			return
-		} else {
-			readConfig()
 		}
 	}
+	rootCmd.PersistentFlags().StringVar(&cfg.NPIServer, "endpoint", "127.0.0.1:9140", "the endpoint of NPi server")
+	rootCmd.PersistentFlags().StringVar(&cfg.APIKey, "api-key", "", "the api access key for NPi server")
+	rootCmd.PersistentFlags().BoolVar(&cfg.Insecure, "insecure", false, "if using insecure connection")
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(
 		authCommand(),

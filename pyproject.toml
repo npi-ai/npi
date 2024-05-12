@@ -29,6 +29,7 @@ discord-py = "^2.3.2"
 pyyaml = "^6.0.1"
 slack-sdk = "^3.27.1"
 twilio = "^9.0.5"
+types-protobuf = "^5.26.0.20240422"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^69.2.0"

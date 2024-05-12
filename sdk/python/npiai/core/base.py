@@ -1,9 +1,10 @@
 import json
 import threading
 import traceback
-from typing import Union, List
+from typing import List
 import grpc
 import uuid
+from abc import ABC, abstractmethod
 
 from openai import OpenAI
 from openai.types.chat import (
@@ -18,7 +19,7 @@ from npiai.utils import logger
 from npiai.core import hitl
 
 
-class App:
+class App(ABC):
     __app_name: str
     __app_type: api_pb2.AppType
     __npi_endpoint: str
@@ -26,20 +27,23 @@ class App:
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-        self,
-        app_name: str,
-        app_type: api_pb2.AppType,
-        endpoint: str = "localhost:9140",
-        hitl_handler: hitl.HITLHandler = None,
+            self,
+            app_name: str,
+            app_type: api_pb2.AppType,
+            endpoint: str = "localhost:9140",
+            hitl_handler: hitl.HITLHandler = None,
+            npi_token: str = None,
     ):
         self.__app_name = app_name
         if endpoint is None:
             endpoint = "localhost:9140"
         self.__npi_endpoint = endpoint
         self.__app_type = app_type
-        channel = grpc.insecure_channel(self.__npi_endpoint)
+
+        channel = grpc.secure_channel(target=self.__npi_endpoint, credentials=grpc.ssl_channel_credentials())
         self.stub = api_pb2_grpc.AppServerStub(channel)
         self.hitl_handler = hitl_handler
+        self.__npi_token = npi_token
 
     def tool_name(self):
         return self.__app_name
@@ -47,9 +51,10 @@ class App:
     def schema(self):
         try:
             resp = self.stub.GetAppSchema(
-                api_pb2.AppSchemaRequest(
+                request=api_pb2.AppSchemaRequest(
                     type=self.__app_type
-                )
+                ),
+                metadata=self.__get_metadata(),
             )
         except Exception as e:
             logger.error(e)
@@ -58,13 +63,14 @@ class App:
 
     def chat(self, msg: str) -> str:
         resp = self.stub.Chat(
-            api_pb2.Request(
+            request=api_pb2.Request(
                 code=api_pb2.RequestCode.CHAT,
                 chat_request=api_pb2.ChatRequest(
                     type=self.__app_type,
                     instruction=msg
-                )
-            )
+                ),
+            ),
+            metadata=self.__get_metadata(),
         )
         while True:
             match resp.code:
@@ -73,33 +79,39 @@ class App:
                 case api_pb2.ResponseCode.MESSAGE:
                     logger.info(f'[{self.__app_name}]: Received message: {resp.chat_response.message}')
                     resp = self.stub.Chat(
-                        api_pb2.Request(
+                        request=api_pb2.Request(
                             code=api_pb2.RequestCode.FETCH,
                             request_id=str(uuid.uuid4()),
                             thread_id=resp.thread_id,
                             chat_request=api_pb2.ChatRequest(
                                 type=self.__app_type,
                             )
-                        )
+                        ),
+                        metadata=self.__get_metadata(),
                     )
                 case api_pb2.ResponseCode.SUCCESS:
                     resp = self.stub.Chat(
-                        api_pb2.Request(
+                        request=api_pb2.Request(
                             code=api_pb2.RequestCode.FETCH,
                             request_id=str(uuid.uuid4()),
                             thread_id=resp.thread_id,
                             chat_request=api_pb2.ChatRequest(
                                 type=self.__app_type,
                             )
-                        )
+                        ),
+                        metadata=self.__get_metadata(),
                     )
                 case api_pb2.ResponseCode.ACTION_REQUIRED:
-                    resp = self.stub.Chat(self.__call_human(resp))
+                    resp = self.stub.Chat(request=self.__call_human(resp), metadata=self.__get_metadata())
                 case _:
                     raise Exception("Error: failed to call function")
 
     def hitl(self, handler: hitl.HITLHandler):
         self.hitl_handler = handler
+
+    # @abstractmethod
+    def authorize(self, **kwargs):
+        pass
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
         human_resp = self.hitl_handler.handle(
@@ -122,6 +134,10 @@ class App:
             )
         )
 
+    def __get_metadata(self):
+        return (('x-host', 'test.playground.npi.ai'),
+                ('x-npi-token', self.__npi_token))
+
 
 class Agent:
     __agent_name: str
@@ -134,13 +150,13 @@ class Agent:
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-        self,
-        agent_name: str,
-        description: str,
-        prompt: str,
-        endpoint: str = None,
-        llm: OpenAI = None,
-        hitl_handler: hitl.HITLHandler = None,
+            self,
+            agent_name: str,
+            description: str,
+            prompt: str,
+            endpoint: str = None,
+            llm: OpenAI = None,
+            hitl_handler: hitl.HITLHandler = None,
     ):
         self.__agent_name = agent_name
         self.__description = description
