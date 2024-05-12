@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 	api "github.com/npi-ai/npi/proto/go/api"
@@ -74,18 +74,17 @@ func authGoogleCommand() *cobra.Command {
 				os.Exit(-1)
 			}
 
-			m := map[string]string{}
-			_ = json.Unmarshal([]byte(resp.Result["body"]), &m)
 			color.Green("please finish the authorization in the browser...")
 			errChan := make(chan error)
 			go server(context.Background(), errChan)
-			err = browser.OpenURL(m["url"])
+			err = browser.OpenURL(resp.Result["url"])
 			err = <-errChan
 			if err != nil {
 				color.Red("failed to authorization: %v", err)
 				os.Exit(-1)
 			}
 			close(errChan)
+			time.Sleep(1 * time.Second)
 		},
 	}
 	cmd.Flags().StringVar(&googleSecretFile, "secret-file", "", "the secret file for Google API")
@@ -105,18 +104,20 @@ func oauthCallback(ch chan error) func(w http.ResponseWriter, r *http.Request) {
 		conn := getGRPCConn()
 		defer conn.Close()
 		cli := api.NewAppServerClient(conn)
+		m := map[string]string{
+			"state": queryParams.Get("state"),
+			"code":  queryParams.Get("code"),
+		}
 		_, err := cli.GoogleAuthCallback(context.Background(), &api.AuthorizeRequest{
-			Credentials: map[string]string{
-				"state": queryParams.Get("code"),
-				"code":  queryParams.Get("state"),
-			},
+			Credentials: m,
 		})
 		if err != nil {
 			ch <- err
 			return
 		}
-		color.Green("authorization success")
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("authorize success, please close window"))
+		color.Green("authorization success")
 		ch <- nil
 	}
 }

@@ -4,14 +4,16 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
-import uvicorn
 
+# from proto.
+from google.protobuf.empty_pb2 import Empty
 from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
 from npi.app import google, discord, github, twilio
 from npi.browser_app import twitter, general_browser_agent as browser
 from npi.utils import logger
 from npi.error.auth import UnauthorizedError
+from npi.server import auth
 
 
 class Chat(api_pb2_grpc.AppServerServicer):
@@ -41,9 +43,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 raise Exception("unsupported application")
 
     async def Chat(
-        self,
-        request: api_pb2.Request,
-        _: grpc.ServicerContext,
+            self,
+            request: api_pb2.Request,
+            _: grpc.ServicerContext,
     ) -> api_pb2.Response:
         logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
@@ -72,9 +74,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return response
 
     async def GetAppSchema(
-        self,
-        request: api_pb2.AppSchemaRequest,
-        _: grpc.ServicerContext,
+            self,
+            request: api_pb2.AppSchemaRequest,
+            _: grpc.ServicerContext,
     ) -> api_pb2.AppSchemaResponse:
         try:
             app = self.get_app(request.type)
@@ -102,6 +104,63 @@ class Chat(api_pb2_grpc.AppServerServicer):
         }
         response.schema = f"{json.dumps(schema)}"
         return response
+
+    async def Authorize(
+            self,
+            request: api_pb2.AuthorizeRequest,
+            _: grpc.ServicerContext,
+    ) -> api_pb2.AuthorizeResponse:
+        match request.type:
+            case api_pb2.AppType.GOOGLE_GMAIL:
+                url = await auth.auth_google(auth.GoogleAuthRequest(
+                    secrets=request.credentials["secrets"],
+                    app="gmail"),
+                )
+                return api_pb2.AuthorizeResponse(result=url)
+            case api_pb2.AppType.GOOGLE_CALENDAR:
+                url = await auth.auth_google(auth.GoogleAuthRequest(
+                    secrets=request.credentials["secrets"],
+                    app="calendar"),
+                )
+                return api_pb2.AuthorizeResponse(result=url)
+            case api_pb2.AppType.TWITTER:
+                await auth.auth_discord(auth.DiscordAuthRequest(
+                    from_phone_number=request.credentials["from_phone_number"],
+                    account_sid=request.credentials["account_sid"],
+                    auth_token=request.credentials["auth_token"],
+                ))
+                return api_pb2.AuthorizeResponse(result={})
+            case api_pb2.AppType.DISCORD:
+                await auth.auth_discord(auth.DiscordAuthRequest(
+                    access_token=request.credentials["access_token"],
+                ))
+                return api_pb2.AuthorizeResponse(result={})
+            case api_pb2.AppType.GITHUB:
+                await auth.auth_github(auth.GithubAuthRequest(
+                    access_token=request.credentials["access_token"],
+                ))
+                return api_pb2.AuthorizeResponse(result={})
+            case api_pb2.AppType.TWILIO:
+                return api_pb2.AuthorizeResponse(result={})
+            case _:
+                raise Exception("unsupported application")
+
+    async def GoogleAuthCallback(
+            self,
+            request: api_pb2.AuthorizeRequest,
+            _: grpc.ServicerContext,
+    ) -> Empty:
+        await auth.google_callback(
+            state=request.credentials["state"],
+            code=request.credentials["code"])
+        return Empty()
+
+    async def Ping(
+            self,
+            request: Empty,
+            _: grpc.ServicerContext,
+    ) -> Empty:
+        pass
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
@@ -185,6 +244,7 @@ async def serve(address: str) -> None:
     server = grpc.aio.server(ThreadPoolExecutor())
     api_pb2_grpc.add_AppServerServicer_to_server(Chat(), server)
     server.add_insecure_port(address)
+    logger.info(f"Server serving at {address}")
     await server.start()
 
     # logger.info(f"Server serving at {address}")
@@ -200,23 +260,9 @@ async def serve(address: str) -> None:
     await server.wait_for_termination()
 
 
-async def start():
-    http_config = uvicorn.Config(
-        "npi.server.auth:app",
-        host="0.0.0.0",
-        port=9141,
-        reload=True
-    )
-    server = uvicorn.Server(http_config)
-    server_task = asyncio.create_task(server.serve())
-
-    await serve("[::]:9140")
-    await server_task
-
-
 def main():
     try:
-        asyncio.run(start())
+        asyncio.run(serve("[::]:9140"))
     finally:
         asyncio.run(*_cleanup_coroutines)
 
