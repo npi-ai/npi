@@ -39,6 +39,18 @@ docker-build:
 	docker-build-arm64
 	docker-build-amd64
 
+docker-build-base-amd64:
+	docker buildx build --platform linux/amd64 --build-arg platform=linux/amd64 \
+		-t npiai/base:3.10 -f build/base.Dockerfile build --push
+
+docker-build-base-arm64:
+	docker buildx build --platform linux/arm64 --build-arg platform=linux/arm64 \
+		-t npiai/base:3.10 -f build/base.Dockerfile build --push
+
+docker-build-base:
+	docker-build-base-arm64
+	docker-build-base-amd64
+
 docker-build-local:
 	docker build -t npiai/npi:${IMAGE_TAG} .
 
