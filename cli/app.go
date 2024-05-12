@@ -4,14 +4,16 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"google.golang.org/grpc/metadata"
+	"log"
+	"os"
+
 	"github.com/fatih/color"
 	"github.com/google/uuid"
-	api "github.com/npi-ai/proto/go/api"
+	api "github.com/npi-ai/npi/proto/go/api"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
-	"os"
 )
 
 func appCommand() *cobra.Command {
@@ -205,6 +207,13 @@ func doRequest(app api.AppType, instruction string) {
 		}
 	}
 
+}
+
+func getMetadata(ctx context.Context) context.Context {
+	md := metadata.New(map[string]string{
+		"x-npi-token": cfg.APIKey,
+	})
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 func handleError(app api.AppType, err error) {

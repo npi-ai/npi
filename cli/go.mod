@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/go-resty/resty/v2 v2.12.0
 	github.com/google/uuid v1.6.0
-	github.com/npi-ai/proto/go v0.0.0
+	github.com/npi-ai/npi/proto/go v0.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/spf13/cobra v1.8.0
 	google.golang.org/grpc v1.63.2
@@ -14,7 +14,7 @@ require (
 )
 
 replace (
-	github.com/npi-ai/proto/go  => ../proto/go
+	github.com/npi-ai/npi/proto/go  => ../proto/go
 )
 
 require (

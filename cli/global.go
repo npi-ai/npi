@@ -15,9 +15,8 @@ import (
 
 var (
 	cfg                    = CMDConfig{}
-	configHome             string
 	configFileName         = "config.yaml"
-	httpClient             *resty.Client
+	configHome             string
 	npiCheckUpdateEndpoint = "https://check-cli.npi.ai/latest"
 )
 
@@ -101,24 +100,4 @@ func checkConfig() {
 		color.Red("the config home is not a directory, please rm it and try again")
 		os.Exit(-1)
 	}
-}
-
-func readConfig() {
-	//f, err := os.Open(filepath.Join(configHome, configFileName))
-	//if err != nil {
-	//	color.Red("the config file not found, please use 'npi connect' to connect to server")
-	//	os.Exit(-1)
-	//}
-	//defer func() {
-	//	_ = f.Close()
-	//}()
-	//decoder := yaml.NewDecoder(f)
-	//err = decoder.Decode(&cfg)
-	//if err != nil {
-	//	color.Red("failed to read config file: %v ", err)
-	//	os.Exit(-1)
-	//}
-	httpClient = resty.New().SetBaseURL("http://" + cfg.GetHTTPEndpoint())
-	httpClient.SetTimeout(5 * time.Second)
-	httpClient.SetHeader("Authorization", cfg.APIKey)
 }
