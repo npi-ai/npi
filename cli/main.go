@@ -25,7 +25,8 @@ func init() {
 	cobra.EnableCommandSorting = false
 
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		checkConfig()
+		cmdCfg := loadCfg()
+		cfg.merge(rootCmd.PersistentFlags(), *cmdCfg)
 		err := checkUpdate()
 		if err != nil {
 			color.Yellow("failed to check updating: %v ", err)
@@ -44,6 +45,7 @@ func init() {
 		connectCommand(),
 		appCommand(),
 		versionCommand(),
+		configCommand(),
 	)
 }
 
