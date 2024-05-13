@@ -39,10 +39,8 @@ docker-build-base-x86:
 		--build-arg platform=linux/amd64 \
 		-t npiai/base:3.10 -f build/base.Dockerfile build
 
-
 docker-build-base:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/base:3.10 -f build/base.Dockerfile build --push
-
 	#docker push npiai/base:3.10
 
 docker-build-local:
