@@ -1,0 +1,92 @@
+import { Steps, Callout } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
+# Twilio
+
+The Twilio App facilitates communication with Twilio API by providing features that allow you to send or fetch WhatsApp or SMS messages.
+
+<Callout type='info'>
+  Please note that the Twilio App is designed as a supplementary tool for an
+  existing chatbot and does not actively listen for new messages. For effective
+  operation, the app requires explicit type of Whatsapp or SMS within your instructions.
+</Callout>
+
+## Setup
+
+<Steps>
+
+    ### Get Twilio Access Token
+
+    Follow this guide to grab your account ID and auth token: https://www.twilio.com/docs/iam/api/authtoken
+
+    ### Authorization
+
+    ```
+    npi auth twilio --account {account_sid} --token {your_auth_token} --from {phone_number_send_from}
+    ```
+
+    ### Usage
+
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app twilio "send hi to whatsapp number: +1650xxxxxxx"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.app.twilio import Twilio
+            twilio = Twilio()
+            twilio.chat('send hi to whatsapp number: +1650xxxxxxx')
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Supported Features
+
+### Direct Messaging
+
+- **Description**: Engage in one-on-one conversations by sending direct messages to a user.
+- **In-Context Parameters**[^1]:
+  - User Phone number.
+  - Message body (***Inferred***).
+
+<h4 className='examples'>Examples</h4>
+
+1. Send a Greeting Message to a User
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twilio "send hi to whatsapp number: +1650xxxxxxx"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twilio.chat('send hi to whatsapp number: +1650xxxxxxx')
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Ask for User Confirmation and Await Their Reply
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app twilio "Send a direct message to +1650xxxxxxx asking them to confirm next Monday's meeting, and wait for their reply."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            twilio.chat("Send a direct message to +1650xxxxxxx asking them to confirm next Monday's meeting, and wait for their reply.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.
