@@ -99,7 +99,9 @@ func loadCfg() *CMDConfig {
 	f, err := os.Open(makeSureConfigFileExist())
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &CMDConfig{}
+			return &CMDConfig{
+				Insecure: true,
+			}
 		}
 		color.Red("failed to open config file: %v", err)
 		os.Exit(-1)

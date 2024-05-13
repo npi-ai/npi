@@ -124,10 +124,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 )
                 return api_pb2.AuthorizeResponse(result=url)
             case api_pb2.AppType.TWITTER:
-                await auth.auth_discord(auth.DiscordAuthRequest(
-                    from_phone_number=request.credentials["from_phone_number"],
-                    account_sid=request.credentials["account_sid"],
-                    auth_token=request.credentials["auth_token"],
+                await auth.auth_twitter(auth.TwitterAuthRequest(
+                    username=request.credentials["username"],
+                    password=request.credentials["password"],
                 ))
                 return api_pb2.AuthorizeResponse(result={})
             case api_pb2.AppType.DISCORD:
@@ -141,6 +140,11 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 ))
                 return api_pb2.AuthorizeResponse(result={})
             case api_pb2.AppType.TWILIO:
+                await auth.auth_twilio(auth.TwilioAuthRequest(
+                    from_phone_number=request.credentials["from_phone_number"],
+                    account_sid=request.credentials["account_sid"],
+                    auth_token=request.credentials["auth_token"],
+                ))
                 return api_pb2.AuthorizeResponse(result={})
             case _:
                 raise Exception("unsupported application")

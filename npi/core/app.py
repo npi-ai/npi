@@ -144,7 +144,7 @@ class App:
         self.name = name
         self.description = description
         self.llm = llm or AsyncClient(api_key=config.get_oai_key())
-        self.default_model = model or 'gpt-4-turbo-preview'
+        self.default_model = model or 'gpt-4o-2024-05-13'
         self.tool_choice = cast(ChatCompletionToolChoiceOptionParam, tool_choice or 'auto')
         self.system_role = system_role
         self.tools = []

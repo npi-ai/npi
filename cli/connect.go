@@ -24,7 +24,7 @@ func (c *CMDConfig) GetGRPCEndpoint() string {
 }
 
 func (c *CMDConfig) merge(fs *pflag.FlagSet, i CMDConfig) {
-	if !fs.Changed("endpoint") {
+	if !fs.Changed("endpoint") && i.NPIServer != "" {
 		c.NPIServer = i.NPIServer
 	}
 
@@ -39,7 +39,6 @@ func (c *CMDConfig) merge(fs *pflag.FlagSet, i CMDConfig) {
 
 func (c *CMDConfig) print() {
 	data, _ := yaml.Marshal(c)
-	println(string(data))
 	color.BlueString(string(data))
 }
 
