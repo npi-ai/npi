@@ -22,3 +22,12 @@ generate-py:
  		 --pyi_out=${NPI_PROTO_ROOT}/python/npiai_proto \
  		 --grpc_python_out=${NPI_PROTO_ROOT}/python/npiai_proto \
  		 api.proto
+
+# https://github.com/grpc/grpc-web
+generate-js:
+	mkdir -p ${NPI_PROTO_ROOT}/js/api
+	protoc -I=${NPI_PROTO_ROOT}/include \
+		  -I=${NPI_PROTO_ROOT}/proto \
+		  --js_out=import_style=commonjs,binary:${NPI_PROTO_ROOT}/js/api \
+		  --grpc-web_out=import_style=commonjs+dts,mode=grpcwebtext:${NPI_PROTO_ROOT}/js/api \
+		  api.proto
