@@ -25,6 +25,33 @@ type CMDLatestVersion struct {
 	URL     string `json:"url"`
 }
 
+func makeSureConfigFileExist() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		color.Red("failed to get home dir: %v ", err)
+		os.Exit(-1)
+	}
+	configHome = filepath.Join(home, ".npiai")
+	info, err := os.Stat(configHome)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.Mkdir(configHome, 0755)
+			if err != nil {
+				color.Red("failed to create config home: %v ", err)
+				os.Exit(-1)
+			}
+		} else {
+			color.Red("failed to get config home: %v ", err)
+			os.Exit(-1)
+		}
+	}
+	if !info.IsDir() {
+		color.Red("the config home is not a directory, please rm it and try again")
+		os.Exit(-1)
+	}
+	return filepath.Join(configHome, configFileName)
+}
+
 func checkUpdate() error {
 	cli := resty.New()
 	cli.SetTimeout(1 * time.Second)
@@ -73,31 +100,4 @@ func checkUpdate() error {
 	}
 	_ = f.Close()
 	return nil
-}
-
-func checkConfig() {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		color.Red("failed to get home dir: %v ", err)
-		os.Exit(-1)
-	}
-	configHome = filepath.Join(home, ".npiai")
-	info, err := os.Stat(configHome)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err = os.Mkdir(configHome, 0755)
-			if err != nil {
-				color.Red("failed to create config home: %v ", err)
-				os.Exit(-1)
-			}
-			return
-		} else {
-			color.Red("failed to get config home: %v ", err)
-			os.Exit(-1)
-		}
-	}
-	if !info.IsDir() {
-		color.Red("the config home is not a directory, please rm it and try again")
-		os.Exit(-1)
-	}
 }

@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	api "github.com/npi-ai/npi/proto/go/api"
+	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"gopkg.in/yaml.v3"
 	"os"
 	"time"
 
@@ -19,6 +21,26 @@ type CMDConfig struct {
 
 func (c *CMDConfig) GetGRPCEndpoint() string {
 	return c.NPIServer
+}
+
+func (c *CMDConfig) merge(fs *pflag.FlagSet, i CMDConfig) {
+	if !fs.Changed("endpoint") {
+		c.NPIServer = i.NPIServer
+	}
+
+	if !fs.Changed("api-key") {
+		c.APIKey = i.APIKey
+	}
+
+	if !fs.Changed("insecure") {
+		c.Insecure = i.Insecure
+	}
+}
+
+func (c *CMDConfig) print() {
+	data, _ := yaml.Marshal(c)
+	println(string(data))
+	color.BlueString(string(data))
 }
 
 func connectCommand() *cobra.Command {
