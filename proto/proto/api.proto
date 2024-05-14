@@ -3,15 +3,40 @@ syntax = "proto3";
 package npi.core.api;
 
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/npi-ai/npi/server";
 
 service AppServer {
-  rpc Chat(Request) returns (Response);
-  rpc GetAppSchema(AppSchemaRequest) returns (AppSchemaResponse);
-  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
-  rpc GoogleAuthCallback(AuthorizeRequest) returns (google.protobuf.Empty);
-  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Chat(Request) returns (Response) {
+    option (google.api.http) = {
+      post: "/apps/chat"
+      body: "*"
+    };
+  };
+  rpc GetAppSchema(AppSchemaRequest) returns (AppSchemaResponse) {
+    option (google.api.http) = {
+      get: "/apps/{type}/schema"
+//      body: "*"
+    };
+  };
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
+    option (google.api.http) = {
+      post: "/apps/authorize"
+      body: "*"
+    };
+  };
+  rpc GoogleAuthCallback(AuthorizeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/apps/google/auth/callback"
+      body: "*"
+    };
+  };
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/ping"
+    };
+  };
 }
 
 enum RequestCode {

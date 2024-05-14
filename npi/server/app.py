@@ -9,7 +9,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from npiai_proto import api_pb2_grpc, api_pb2
 from npi.core.thread import ThreadManager, Thread
-from npi.app import google, discord, github, twilio
+from npi.app import google, discord, github, twilio, slack
 from npi.browser_app import twitter, general_browser_agent as browser
 from npi.utils import logger
 from npi.error.auth import UnauthorizedError
@@ -39,6 +39,8 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 return browser.GeneralBrowserAgent()
             case api_pb2.TWILIO:
                 return twilio.Twilio()
+            case api_pb2.SLACK:
+                return slack.Slack()
             case _:
                 raise Exception("unsupported application")
 

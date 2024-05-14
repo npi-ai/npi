@@ -1,0 +1,393 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AppServer"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/apps/authorize": {
+      "post": {
+        "operationId": "AppServer_Authorize",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAuthorizeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAuthorizeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AppServer"
+        ]
+      }
+    },
+    "/apps/chat": {
+      "post": {
+        "operationId": "AppServer_Chat",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AppServer"
+        ]
+      }
+    },
+    "/apps/google/auth/callback": {
+      "post": {
+        "operationId": "AppServer_GoogleAuthCallback",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAuthorizeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AppServer"
+        ]
+      }
+    },
+    "/apps/{type}/schema": {
+      "get": {
+        "operationId": "AppServer_GetAppSchema",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAppSchemaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "APP_UNKNOWN",
+              "GOOGLE_GMAIL",
+              "GOOGLE_CALENDAR",
+              "GITHUB",
+              "SLACK",
+              "DISCORD",
+              "TWITTER",
+              "WEB_BROWSER",
+              "TWILIO"
+            ]
+          }
+        ],
+        "tags": [
+          "AppServer"
+        ]
+      }
+    },
+    "/ping": {
+      "get": {
+        "operationId": "AppServer_Ping",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "AppServer"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiActionRequiredResponse": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/apiActionType"
+        },
+        "actionId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "apiActionResultRequest": {
+      "type": "object",
+      "properties": {
+        "actionId": {
+          "type": "string"
+        },
+        "actionResult": {
+          "type": "string"
+        }
+      }
+    },
+    "apiActionType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_ACTION",
+        "INFORMATION",
+        "SINGLE_SELECTION",
+        "MULTIPLE_SELECTION",
+        "CONFIRMATION"
+      ],
+      "default": "UNKNOWN_ACTION"
+    },
+    "apiAppSchemaResponse": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "apiAppType": {
+      "type": "string",
+      "enum": [
+        "APP_UNKNOWN",
+        "GOOGLE_GMAIL",
+        "GOOGLE_CALENDAR",
+        "GITHUB",
+        "SLACK",
+        "DISCORD",
+        "TWITTER",
+        "WEB_BROWSER",
+        "TWILIO"
+      ],
+      "default": "APP_UNKNOWN"
+    },
+    "apiAuthorizeRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/apiAppType"
+        },
+        "credentials": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "apiAuthorizeResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "apiChatRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/apiAppType"
+        },
+        "instruction": {
+          "type": "string"
+        }
+      }
+    },
+    "apiChatResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "apiRequest": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/apiRequestCode"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "chatRequest": {
+          "$ref": "#/definitions/apiChatRequest"
+        },
+        "actionResultRequest": {
+          "$ref": "#/definitions/apiActionResultRequest"
+        },
+        "empty": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    "apiRequestCode": {
+      "type": "string",
+      "enum": [
+        "REQUEST_UNKNOWN",
+        "CHAT",
+        "FETCH",
+        "ACTION_RESULT"
+      ],
+      "default": "REQUEST_UNKNOWN"
+    },
+    "apiResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/apiResponseCode"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "threadId": {
+          "type": "string"
+        },
+        "chatResponse": {
+          "$ref": "#/definitions/apiChatResponse"
+        },
+        "actionResponse": {
+          "$ref": "#/definitions/apiActionRequiredResponse"
+        },
+        "empty": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    "apiResponseCode": {
+      "type": "string",
+      "enum": [
+        "RESPONSE_UNKNOWN",
+        "SUCCESS",
+        "FAILED",
+        "MESSAGE",
+        "ACTION_REQUIRED",
+        "FINISHED"
+      ],
+      "default": "RESPONSE_UNKNOWN"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

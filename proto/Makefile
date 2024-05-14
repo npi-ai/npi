@@ -31,3 +31,11 @@ generate-js:
 		  --js_out=import_style=commonjs,binary:${NPI_PROTO_ROOT}/js/api \
 		  --grpc-web_out=import_style=commonjs+dts,mode=grpcwebtext:${NPI_PROTO_ROOT}/js/api \
 		  api.proto
+
+generate-http:
+	mkdir -p ${NPI_PROTO_ROOT}/go
+	protoc -I=${NPI_PROTO_ROOT}/include -I=${NPI_PROTO_ROOT}/proto \
+		  --grpc-gateway_opt paths=source_relative \
+		  --grpc-gateway_opt generate_unbound_methods=true \
+		  --grpc-gateway_out ${NPI_PROTO_ROOT}/go/api \
+		  --openapiv2_out ${NPI_PROTO_ROOT}/go/api api.proto
