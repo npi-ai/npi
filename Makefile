@@ -30,6 +30,9 @@ release-npi-cli:
 docker-build:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/npi:${IMAGE_TAG} . --push
 
+docker-build-gateway:
+	docker buildx build --platform linux/amd64 -t npiai/gateway:latest -f build/gateway.Dockerfile proto/go --push
+
 docker-build-base:
 	docker buildx build --platform ${DOCKER_PLATFORM} -t npiai/base:3.10 -f build/base.Dockerfile build --push
 
