@@ -44,7 +44,10 @@ class PlaywrightContext:
     async def start(self):
         """Start the Playwright browser"""
         self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=self.headless)
+        self.browser = await self.playwright.chromium.launch(
+            headless=self.headless,
+            args=['--disable-gpu'],
+        )
 
         self.context = await self.browser.new_context(
             locale='en-US',
