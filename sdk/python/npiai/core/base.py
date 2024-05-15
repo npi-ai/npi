@@ -27,12 +27,12 @@ class App(ABC):
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-            self,
-            app_name: str,
-            app_type: api_pb2.AppType,
-            endpoint: str = "localhost:9140",
-            hitl_handler: hitl.HITLHandler = None,
-            npi_token: str = None,
+        self,
+        app_name: str,
+        app_type: api_pb2.AppType,
+        endpoint: str = "localhost:9140",
+        hitl_handler: hitl.HITLHandler = None,
+        npi_token: str = None,
     ):
         self.__app_name = app_name
         if endpoint is None:
@@ -139,31 +139,69 @@ class App(ABC):
                 ('x-npi-token', self.__npi_token))
 
 
+class AgentApp(App):
+    agent: 'Agent'
+
+    def __init__(
+        self,
+        agent: 'Agent'
+    ):
+        super().__init__(
+            app_name=agent.agent_name,
+            app_type=api_pb2.AppType.APP_UNKNOWN,
+            hitl_handler=agent.hitl_handler,
+        )
+
+        self.agent = agent
+
+    def schema(self):
+        return {
+            "type": "function",
+            "function": {
+                "name": f"{self.tool_name()}",
+                "description": f"{self.agent.description}",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string",
+                            "description": f"the task you want to do with tool {self.tool_name()}",
+                        },
+                    },
+                    "required": ["message"],
+                },
+            },
+        }
+
+    def chat(self, msg: str) -> str:
+        return self.agent.run(msg)
+
+
 class Agent:
-    __agent_name: str
-    __npi_endpoint: str
-    __prompt: str
-    __description: str
-    __llm: OpenAI
+    agent_name: str
+    prompt: str
+    description: str
+    llm: OpenAI
     tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
     fn_map: dict = {}
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-            self,
-            agent_name: str,
-            description: str,
-            prompt: str,
-            endpoint: str = None,
-            llm: OpenAI = None,
-            hitl_handler: hitl.HITLHandler = None,
+        self,
+        agent_name: str,
+        description: str,
+        prompt: str,
+        llm: OpenAI = None,
+        hitl_handler: hitl.HITLHandler = None,
     ):
-        self.__agent_name = agent_name
-        self.__description = description
-        self.__prompt = prompt
-        self.__npi_endpoint = endpoint
-        self.__llm = llm
+        self.agent_name = agent_name
+        self.description = description
+        self.prompt = prompt
+        self.llm = llm
         self.hitl_handler = hitl_handler
+
+    def as_app(self) -> App:
+        return AgentApp(self)
 
     def use(self, *apps: App):
         for app in apps:
@@ -175,8 +213,7 @@ class Agent:
 
     def group(self, *agents: 'Agent'):
         for agent in agents:
-            app_name = agent.__as_app().tool_name()
-            self.fn_map[app_name] = agent
+            self.use(agent.as_app())
 
     def hitl(self, handler: hitl.HITLHandler):
         self.hitl_handler = handler
@@ -184,7 +221,7 @@ class Agent:
     def run(self, msg: str) -> str:
 
         messages = [ChatCompletionSystemMessageParam(
-            content=self.__prompt,
+            content=self.prompt,
             role="system",
         ), ChatCompletionUserMessageParam(
             content=msg,
@@ -192,7 +229,7 @@ class Agent:
         )]
 
         while True:
-            response = self.__llm.chat.completions.create(
+            response = self.llm.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=messages,
                 tools=self.__tools(),
@@ -218,7 +255,7 @@ class Agent:
                 try:
                     res = self.__call(fn_name, args)
                     # logger.info(f"Response: {res}")
-                    logger.debug(f'[{self.__agent_name}]: app `{fn_name}` returned: {res}')
+                    logger.debug(f'[{self.agent_name}]: app `{fn_name}` returned: {res}')
                 except Exception as e:
                     res = ''.join(traceback.format_exception(e))
                     logger.error(res)
@@ -252,7 +289,7 @@ class Agent:
         return _stop
 
     def __call(self, fn_name: str, args: dict) -> str:
-        call_msg = f'[{self.__agent_name}]: Calling {fn_name}({args})'
+        call_msg = f'[{self.agent_name}]: Calling {fn_name}({args})'
         logger.info(call_msg)
 
         if fn_name not in self.fn_map:
@@ -266,6 +303,3 @@ class Agent:
         for tool_name, tool in self.fn_map.items():
             tools.append(tool.schema())
         return tools
-
-    def __as_app(self) -> App:
-        return App(self.__agent_name, api_pb2.AppType.CHAT)
