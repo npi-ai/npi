@@ -6,9 +6,9 @@ COPY . /npiai
 WORKDIR /npiai
 
 ENV PATH="/root/.local/bin:${PATH}"
+RUN poetry install
 RUN poetry run playwright install-deps chromium
 RUN poetry run playwright install chromium
-RUN poetry install
 
 ENV NPI_CONFIG_FILE="/npiai/config/config.yaml"
 
