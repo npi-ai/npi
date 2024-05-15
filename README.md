@@ -63,7 +63,7 @@ docker run -d --name npi --pull always \
     -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi
 ```
 
-Confirm server connectivity by running `npi connect test`. If you receive a `NPi Server is operational!` message, the
+Confirm server connectivity by running `npi connect test`, it may take a few seconds. If you receive a `NPi Server is operational!` message, the
 setup is
 successful. Otherwise, consult the logs with `docker logs npi` and report issues
 to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
