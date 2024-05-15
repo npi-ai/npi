@@ -1,16 +1,16 @@
 from typing_extensions import override
-import json
 
 from openai import AssistantEventHandler, Client
 from npiai.core.toolset import ToolSet
 
 
 class EventHandler(AssistantEventHandler):
-    def __init__(self, toolset: ToolSet, llm: Client, thread_id: str):
+    def __init__(self, toolset: ToolSet, llm: Client, thread_id: str, stream_handler=None):
         super().__init__()
         self.toolset = toolset
         self.llm = llm
         self.thread_id = thread_id
+        self.stream_handler = stream_handler
 
     @override
     def on_event(self, event):
@@ -40,6 +40,4 @@ class EventHandler(AssistantEventHandler):
                 tool_outputs=tool_outputs,
                 event_handler=EventHandler(self.toolset, self.llm, self.thread_id),
         ) as stream:
-            for text in stream.text_deltas:
-                print(text, end="", flush=True)
-            print()
+            self.stream_handler(run_id, stream)

@@ -113,6 +113,9 @@ class App(ABC):
     def hitl(self, handler: hitl.HITLHandler):
         self.hitl_handler = handler
 
+    def authorize(self):
+        pass
+
     def _authorize(self, credentials: dict[str, str]):
         self.stub.Authorize(
             request=api_pb2.AuthorizeRequest(
