@@ -63,25 +63,11 @@ NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"
 </Callout>
 Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
 
-<Tabs items={['macOS', 'linux']}>
-    <Tabs.Tab >
-        ```sh
-        docker run -d --name npi --pull always \
-            -p 9140:9140 \
-            -p 9141:9141 \
-            -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi-mac:latest
-        ```
-    </Tabs.Tab>
-    <Tabs.Tab >
-        ```sh
-        docker run -d --name npi --pull always \
-            -p 9140:9140 \
-            -p 9141:9141 \
-            -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi:latest
-        ```
-    </Tabs.Tab>
-</Tabs>
-
+```sh
+docker run -d --name npi --pull always \
+    -p 9140:9140 \
+    -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi:latest
+```
 
 Confirm server connectivity by running `npi connect test`. If you receive a `server connected` message, the setup is successful. Otherwise, consult the logs with `docker logs npi` and report issues to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
 
@@ -102,7 +88,10 @@ npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 Easily star and fork the NPi Repository using:
 
 ```sh
-npi app github "Star, fork, and leave a supportive message in issue #27 of npi-ai/npi"
+    npi app github "what's the first pr of npi-ai/npi, and output the access url"
+
+    # if you like npi, star us for support
+    npi app github "star npi-ai/npi"
 ```
 
 ### Clean up

@@ -70,15 +70,6 @@ docker run -d --name npi --pull always \
     -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi
 ```
 
-For macOS users, use this command instead:
-
-```sh
-docker run -d --name npi --pull always \
-   -p 9140:9140 \
-   -p 9141:9141 \
-   -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi-mac
-```
-
 Confirm server connectivity by running `npi connect test`. If you receive a `NPi Server is operational!` message, the
 setup is
 successful. Otherwise, consult the logs with `docker logs npi` and report issues
@@ -104,7 +95,10 @@ npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 Easily star and fork the NPi Repository using:
 
 ```sh
-npi app github "Star, fork, and leave a supportive message in issue #27 of npi-ai/npi"
+npi app github "what's the first pr of npi-ai/npi, and output the access url"
+
+# if you like npi, star us for support
+npi app github "star npi-ai/npi"
 ```
 
 #### Clean up
