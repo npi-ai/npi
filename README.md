@@ -23,17 +23,11 @@ NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agent
 Download the binary from the following links.
 
 ```sh
-# For darwin/arm64
-curl -O https://s.npi.ai/cli/latest/darwin/arm64/npi
+# For macOS
+curl -O https://s.npi.ai/cli/latest/darwin/npi
 
-# For darwin/amd64
-curl -O https://s.npi.ai/cli/latest/darwin/amd64/npi
-
-# For linux/arm64
-curl -O https://s.npi.ai/cli/latest/linux/arm64/npi
-
-# For linux/amd64
-curl -O https://s.npi.ai/cli/latest/linux/amd64/npi
+# For Linux
+curl -O https://s.npi.ai/cli/latest/linux/npi
 
 ```
 
@@ -66,7 +60,6 @@ Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
 ```sh
 docker run -d --name npi --pull always \
     -p 9140:9140 \
-    -p 9141:9141 \
     -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi
 ```
 
@@ -95,7 +88,7 @@ npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 Easily star and fork the NPi Repository using:
 
 ```sh
-npi app github "what's the first pr of npi-ai/npi, and output the access url"
+npi app github "what's the first PR of npi-ai/npi, include the access url, and output with json format"
 
 # if you like npi, star us for support
 npi app github "star npi-ai/npi"

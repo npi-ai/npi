@@ -8,7 +8,7 @@ IMAGE_TAG ?= ${VERSION}
 #os linux or darwin
 GOOS ?= darwin
 #arch amd64 or arm64
-GOARCH ?= arm64
+GOARCH ?= amd64
 
 CMD_OUTPUT_DIR ?= ${NPI_CMD_ROOT}/bin
 

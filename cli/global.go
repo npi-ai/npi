@@ -40,6 +40,7 @@ func makeSureConfigFileExist() string {
 				color.Red("failed to create config home: %v ", err)
 				os.Exit(-1)
 			}
+			return filepath.Join(configHome, configFileName)
 		} else {
 			color.Red("failed to get config home: %v ", err)
 			os.Exit(-1)
