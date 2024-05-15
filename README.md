@@ -42,10 +42,10 @@ Verify the installation by running `npi version`. If you see the output similar 
 
 ```json
 {
-  "BuildDate": "2024-04-23_02:23:50-0700",
-  "GitCommit": "934739f",
-  "Platform": "darwin/arm64",
-  "Version": "v0.0.1"
+   "BuildDate": "2024-05-15_16:26:11-0500",
+   "GitCommit": "8341471",
+   "Platform": "linux/amd64",
+   "Version": "v0.0.3"
 }
 ```
 
