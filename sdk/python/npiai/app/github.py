@@ -10,3 +10,6 @@ class GitHub(App):
             app_type=api_pb2.GITHUB,
             endpoint=npi_endpoint,
         )
+
+    def authorize(self, access_token: str):
+        super()._authorize(credentials={"access_token": access_token})

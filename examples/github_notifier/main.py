@@ -1,6 +1,6 @@
 from openai import OpenAI
 from npiai.core import Agent
-from npiai.core.hitl import ConsoleHITLHandler
+from npiai.tools.hitl.console import ConsoleHandler
 from npiai.app.github import GitHub
 from npiai.app.google import Gmail
 
@@ -11,7 +11,7 @@ def main():
         prompt='You are a Github Notifier that informs users when a new issue or pull request is open.',
         description='Github Notifier that informs users when a new issue or pull request is open',
         llm=OpenAI(),
-        hitl_handler=ConsoleHITLHandler()
+        hitl_handler=ConsoleHandler()
     )
 
     agent.use(GitHub(), Gmail())
