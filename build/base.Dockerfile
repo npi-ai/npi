@@ -9,6 +9,8 @@ WORKDIR /root/playwright
 RUN apt update
 RUN apt install curl vim wget pipx -y
 RUN pipx install poetry
-# ENV PATH="/root/.local/bin:${PATH}"
-# RUN poetry run playwright install-deps chromium
-# RUN poetry run playwright install chromium
+ENV PATH="/root/.local/bin:${PATH}"
+RUN poetry config virtualenvs.create false
+RUN poetry install
+RUN poetry run playwright install-deps chromium
+RUN poetry run playwright install chromium

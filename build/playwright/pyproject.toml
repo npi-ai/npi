@@ -4,6 +4,8 @@ version = "0.0.1"
 description = "Open Source **tool using** API platform for Agent builders"
 authors = ["Wenfeng Wang <w@npi.ai>"]
 readme = "README.md"
+env.name = "npi"
+
 
 [tool.poetry.dependencies]
 python = "^3.10.10"
