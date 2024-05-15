@@ -33,14 +33,17 @@ class App(ABC):
             endpoint: str = "localhost:9140",
             hitl_handler: hitl.HITLHandler = None,
             npi_token: str = None,
+            insecure: bool = True,
     ):
         self.__app_name = app_name
         if endpoint is None:
             endpoint = "localhost:9140"
         self.__npi_endpoint = endpoint
         self.__app_type = app_type
-
-        channel = grpc.secure_channel(target=self.__npi_endpoint, credentials=grpc.ssl_channel_credentials())
+        if insecure:
+            channel = grpc.insecure_channel(self.__npi_endpoint)
+        else:
+            channel = grpc.secure_channel(target=self.__npi_endpoint, credentials=grpc.ssl_channel_credentials())
         self.stub = api_pb2_grpc.AppServerStub(channel)
         self.hitl_handler = hitl_handler
         self.__npi_token = npi_token
@@ -104,14 +107,23 @@ class App(ABC):
                 case api_pb2.ResponseCode.ACTION_REQUIRED:
                     resp = self.stub.Chat(request=self.__call_human(resp), metadata=self.__get_metadata())
                 case _:
+                    logger.error(f'[{self.__app_name}]: Error: failed to call function, unknown response code {resp.code}')
                     raise Exception("Error: failed to call function")
 
     def hitl(self, handler: hitl.HITLHandler):
         self.hitl_handler = handler
 
-    # @abstractmethod
-    def authorize(self, **kwargs):
+    def authorize(self):
         pass
+
+    def _authorize(self, credentials: dict[str, str]):
+        self.stub.Authorize(
+            request=api_pb2.AuthorizeRequest(
+                type=self.__app_type,
+                credentials=credentials,
+            ),
+        )
+        logger.info(f'[{self.__app_name}]: Authorized')
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
         human_resp = self.hitl_handler.handle(
