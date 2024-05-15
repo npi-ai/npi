@@ -6,11 +6,11 @@ from npiai.tools.hitl.console import ConsoleHandler
 from npiai.core.toolset import ToolSet
 from npiai.integration.oai import EventHandler
 
-client = OpenAI(api_key="xxxxxx")
+client = OpenAI(api_key="xxxxx")
 
 if __name__ == "__main__":
     gh = GitHub()
-    gh.authorize(access_token="")
+    gh.authorize(access_token="xxxxx")
     ts = (ToolSet.builder().
           use(gh).
           llm(client).
@@ -27,12 +27,12 @@ if __name__ == "__main__":
     message = client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content="what's the latest issue?",
+        content="what's title of issue #27 of repo npi-ai/npi?",
     )
 
     with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
-            event_handler=EventHandler(toolset=ts)
+            event_handler=EventHandler(toolset=ts, llm=client, thread_id=thread.id),
     ) as stream:
         stream.until_done()

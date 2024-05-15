@@ -6,10 +6,11 @@ from npiai.core.toolset import ToolSet
 
 
 class EventHandler(AssistantEventHandler):
-    def __init__(self, toolset: ToolSet):
+    def __init__(self, toolset: ToolSet, llm: Client, thread_id: str):
         super().__init__()
         self.toolset = toolset
-        # self.llm = llm
+        self.llm = llm
+        self.thread_id = thread_id
 
     @override
     def on_event(self, event):
@@ -23,24 +24,21 @@ class EventHandler(AssistantEventHandler):
         tool_outputs = []
 
         for tool in data.required_action.submit_tool_outputs.tool_calls:
-            js = json.loads(tool.function.arguments)
-            if tool.function.name == "gmail":
-                resp = self.npi_tools["gmail"].chat(js['message'])
-                tool_outputs.append({
-                    "tool_call_id": tool.id,
-                    "output": resp,
-                })
+            tool_outputs.append({
+                "tool_call_id": tool.id,
+                "output": self.toolset.call(tool),
+            })
 
         # Submit all tool_outputs at the same time
         self.submit_tool_outputs(tool_outputs, run_id)
 
     def submit_tool_outputs(self, tool_outputs, run_id):
         # Use the submit_tool_outputs_stream helper
-        with client.beta.threads.runs.submit_tool_outputs_stream(
-                thread_id=self.current_run.thread_id,
-                run_id=self.current_run.id,
+        with self.llm.beta.threads.runs.submit_tool_outputs_stream(
+                thread_id=self.thread_id,
+                run_id=run_id,
                 tool_outputs=tool_outputs,
-                event_handler=self,
+                event_handler=EventHandler(self.toolset, self.llm, self.thread_id),
         ) as stream:
             for text in stream.text_deltas:
                 print(text, end="", flush=True)

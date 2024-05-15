@@ -1,7 +1,11 @@
 from npiai.core.base import App
 from npiai.core.hitl import HITLHandler
 from openai import Client
+from openai.types.chat import ChatCompletionMessageToolCallParam, ChatCompletionFunctionMessageParam
+
 from npiai.tools.hitl import EmptyHandler
+import json
+
 
 
 class ToolSet:
@@ -54,6 +58,10 @@ class ToolSet:
             tools.append(tool.schema())
         return tools
 
-    def call(self, tool_call):
-        pass
+    def call(self, body) -> str:
+        tool = self._tools.get(body.function.name)
+        if tool is None:
+            return "Tool not found"
+        params = json.loads(body.function.arguments)
 
+        return tool.chat(params['message'])
