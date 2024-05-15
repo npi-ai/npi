@@ -46,7 +46,7 @@ class PlaywrightContext:
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,
-            args=['--disable-gpu'],
+            args=['--disable-gpu', '--single-process'],
         )
 
         self.context = await self.browser.new_context(
