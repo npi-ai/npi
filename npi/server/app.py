@@ -14,6 +14,7 @@ from npi.browser_app import twitter, general_browser_agent as browser
 from npi.utils import logger
 from npi.error.auth import UnauthorizedError
 from npi.server import auth
+from npi.config import config
 
 
 class Chat(api_pb2_grpc.AppServerServicer):
@@ -112,44 +113,46 @@ class Chat(api_pb2_grpc.AppServerServicer):
             request: api_pb2.AuthorizeRequest,
             _: grpc.ServicerContext,
     ) -> api_pb2.AuthorizeResponse:
+        result = {}
+        if config.is_authorized(request.type):
+            return api_pb2.AuthorizeResponse(result=result)
         match request.type:
             case api_pb2.AppType.GOOGLE_GMAIL:
                 url = await auth.auth_google(auth.GoogleAuthRequest(
                     secrets=request.credentials["secrets"],
+                    callback=request.credentials["callback"],
                     app="gmail"),
                 )
-                return api_pb2.AuthorizeResponse(result=url)
+                result = url
             case api_pb2.AppType.GOOGLE_CALENDAR:
                 url = await auth.auth_google(auth.GoogleAuthRequest(
                     secrets=request.credentials["secrets"],
+                    callback=request.credentials["callback"],
                     app="calendar"),
                 )
-                return api_pb2.AuthorizeResponse(result=url)
+                result = url
             case api_pb2.AppType.TWITTER:
                 await auth.auth_twitter(auth.TwitterAuthRequest(
                     username=request.credentials["username"],
                     password=request.credentials["password"],
                 ))
-                return api_pb2.AuthorizeResponse(result={})
             case api_pb2.AppType.DISCORD:
                 await auth.auth_discord(auth.DiscordAuthRequest(
                     access_token=request.credentials["access_token"],
                 ))
-                return api_pb2.AuthorizeResponse(result={})
             case api_pb2.AppType.GITHUB:
                 await auth.auth_github(auth.GithubAuthRequest(
                     access_token=request.credentials["access_token"],
                 ))
-                return api_pb2.AuthorizeResponse(result={})
             case api_pb2.AppType.TWILIO:
                 await auth.auth_twilio(auth.TwilioAuthRequest(
                     from_phone_number=request.credentials["from_phone_number"],
                     account_sid=request.credentials["account_sid"],
                     auth_token=request.credentials["auth_token"],
                 ))
-                return api_pb2.AuthorizeResponse(result={})
             case _:
                 raise Exception("unsupported application")
+        return api_pb2.AuthorizeResponse(result=result)
 
     async def GoogleAuthCallback(
             self,
@@ -158,7 +161,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
     ) -> Empty:
         await auth.google_callback(
             state=request.credentials["state"],
-            code=request.credentials["code"])
+            code=request.credentials["code"],
+            callback=request.credentials["callback"],
+        )
         return Empty()
 
     async def Ping(

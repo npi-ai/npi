@@ -180,9 +180,11 @@ func doRequest(app api.AppType, instruction string) {
 			case api.ActionType_INFORMATION:
 				fmt.Printf("Action Required: Need more information.\n\n")
 				fmt.Printf("Request for: %s\n", ar.Message)
+				fmt.Printf("Your response >  ")
 
 				reader := bufio.NewReader(os.Stdin)
 				arr.ActionResult, _ = reader.ReadString('\n')
+				println(arr.ActionResult)
 				if err != nil {
 					handleError(app, err)
 				}
@@ -198,14 +200,14 @@ func doRequest(app api.AppType, instruction string) {
 				} else {
 					arr.ActionResult = "denied"
 				}
-				req = &api.Request{
-					Code:      api.RequestCode_ACTION_RESULT,
-					RequestId: uuid.New().String(),
-					ThreadId:  resp.ThreadId,
-					Request: &api.Request_ActionResultRequest{
-						ActionResultRequest: arr,
-					},
-				}
+			}
+			req = &api.Request{
+				Code:      api.RequestCode_ACTION_RESULT,
+				RequestId: uuid.New().String(),
+				ThreadId:  resp.ThreadId,
+				Request: &api.Request_ActionResultRequest{
+					ActionResultRequest: arr,
+				},
 			}
 		}
 		resp, err = cli.Chat(getMetadata(context.Background()), req)

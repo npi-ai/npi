@@ -1,6 +1,8 @@
 import os
 from dataclasses import dataclass
 
+from npiai_proto import api_pb2
+
 CONFIG = {}
 
 
@@ -53,57 +55,63 @@ def get_oai_key() -> str | None:
 
 
 def get_gmail_credentials() -> GmailCredentials | None:
-    return CONFIG.get('gmail_credentials', None)
+    return CONFIG.get(api_pb2.AppType.GOOGLE_GMAIL, None)
 
 
 def set_gmail_credentials(secret: str, token: str):
-    CONFIG['gmail_credentials'] = GmailCredentials(secret=secret, token=token)
+    CONFIG[api_pb2.AppType.GOOGLE_GMAIL] = GmailCredentials(secret=secret, token=token)
 
 
 def get_google_calendar_credentials() -> GoogleCalendarCredentials | None:
-    return CONFIG.get('google_calendar_credentials', None)
+    return CONFIG.get(api_pb2.AppType.GOOGLE_CALENDAR, None)
 
 
 def set_google_calendar_credentials(secret: str, token: str):
-    CONFIG['google_calendar_credentials'] = GoogleCalendarCredentials(secret=secret, token=token)
-
-
-def get_github_credentials() -> GithubCredentials | None:
-    return CONFIG.get('github_credentials', None)
-
-
-def get_twilio_credentials() -> TwilioCredentials | None:
-    return CONFIG.get('twilio_credentials', None)
+    CONFIG[api_pb2.AppType.GOOGLE_CALENDAR] = GoogleCalendarCredentials(secret=secret, token=token)
 
 
 def set_github_credentials(access_token: str):
-    CONFIG['github_credentials'] = GithubCredentials(access_token=access_token)
+    CONFIG[api_pb2.AppType.GITHUB] = GithubCredentials(access_token=access_token)
 
 
-def get_discord_credentials() -> DiscordCredentials | None:
-    return CONFIG.get('discord_credentials', None)
+def get_github_credentials() -> GithubCredentials | None:
+    return CONFIG.get(api_pb2.AppType.GITHUB, None)
 
 
 def set_discord_credentials(access_token: str):
-    CONFIG['discord_credentials'] = DiscordCredentials(access_token=access_token)
+    CONFIG[api_pb2.AppType.DISCORD] = DiscordCredentials(access_token=access_token)
 
 
-def get_slack_credentials() -> SlackCredentials | None:
-    return CONFIG.get('slack_credentials', None)
-
-
-def set_slack_credentials(access_token: str):
-    CONFIG['slack_credentials'] = SlackCredentials(access_token=access_token)
-
-
-def get_twitter_credentials() -> TwitterCredentials | None:
-    return CONFIG.get('twitter_credentials', None)
-
-
-def set_twitter_credentials(username: str, password: str):
-    CONFIG['twitter_credentials'] = TwitterCredentials(username=username, password=password)
+def get_discord_credentials() -> DiscordCredentials | None:
+    return CONFIG.get(api_pb2.AppType.DISCORD, None)
 
 
 def set_twilio_credentials(account_sid: str, auth_token: str, from_phone_number: str):
-    CONFIG['twilio_credentials'] = TwilioCredentials(from_phone_number=from_phone_number,
-                                                     account_sid=account_sid, auth_token=auth_token)
+    CONFIG[api_pb2.AppType.TWILIO] = TwilioCredentials(
+        from_phone_number=from_phone_number,
+        account_sid=account_sid,
+        auth_token=auth_token)
+
+
+def get_twilio_credentials() -> TwilioCredentials | None:
+    return CONFIG.get(api_pb2.AppType.GITHUB.TWILIO, None)
+
+
+def set_slack_credentials(access_token: str):
+    CONFIG[api_pb2.AppType.SLACK] = SlackCredentials(access_token=access_token)
+
+
+def get_slack_credentials() -> SlackCredentials | None:
+    return CONFIG.get(api_pb2.AppType.SLACK, None)
+
+
+def set_twitter_credentials(username: str, password: str):
+    CONFIG[api_pb2.AppType.TWITTER] = TwitterCredentials(username=username, password=password)
+
+
+def get_twitter_credentials() -> TwitterCredentials | None:
+    return CONFIG.get(api_pb2.AppType.TWITTER, None)
+
+
+def is_authorized(app: api_pb2.AppType) -> bool:
+    return CONFIG.get(app, None) is not None

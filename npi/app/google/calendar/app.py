@@ -76,7 +76,8 @@ class GoogleCalendar(GoogleApp):
         cb.action.action_id = cb.id()
         await params.get_thread().send_msg(cb=cb)
         loguru.logger.info(f"Waiting for user input")
-        return await cb.wait()
+        result = await cb.wait()
+        return result.result.action_result
 
     @npi_tool
     def __retrieve_events(self, params: RetrieveEventsParameters) -> str:
