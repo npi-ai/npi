@@ -35,6 +35,11 @@ class AppServerStub(object):
                 request_serializer=api__pb2.AuthorizeRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.GetAppScreen = channel.unary_unary(
+                '/npi.core.api.AppServer/GetAppScreen',
+                request_serializer=api__pb2.GetAppScreenRequest.SerializeToString,
+                response_deserializer=api__pb2.GetAppScreenResponse.FromString,
+                )
         self.Ping = channel.unary_unary(
                 '/npi.core.api.AppServer/Ping',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -69,6 +74,12 @@ class AppServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetAppScreen(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Ping(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -97,6 +108,11 @@ def add_AppServerServicer_to_server(servicer, server):
                     servicer.GoogleAuthCallback,
                     request_deserializer=api__pb2.AuthorizeRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'GetAppScreen': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAppScreen,
+                    request_deserializer=api__pb2.GetAppScreenRequest.FromString,
+                    response_serializer=api__pb2.GetAppScreenResponse.SerializeToString,
             ),
             'Ping': grpc.unary_unary_rpc_method_handler(
                     servicer.Ping,
@@ -178,6 +194,23 @@ class AppServer(object):
         return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/GoogleAuthCallback',
             api__pb2.AuthorizeRequest.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetAppScreen(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/npi.core.api.AppServer/GetAppScreen',
+            api__pb2.GetAppScreenRequest.SerializeToString,
+            api__pb2.GetAppScreenResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

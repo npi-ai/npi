@@ -24,6 +24,7 @@ const (
 	AppServer_GetAppSchema_FullMethodName       = "/npi.core.api.AppServer/GetAppSchema"
 	AppServer_Authorize_FullMethodName          = "/npi.core.api.AppServer/Authorize"
 	AppServer_GoogleAuthCallback_FullMethodName = "/npi.core.api.AppServer/GoogleAuthCallback"
+	AppServer_GetAppScreen_FullMethodName       = "/npi.core.api.AppServer/GetAppScreen"
 	AppServer_Ping_FullMethodName               = "/npi.core.api.AppServer/Ping"
 )
 
@@ -35,6 +36,7 @@ type AppServerClient interface {
 	GetAppSchema(ctx context.Context, in *AppSchemaRequest, opts ...grpc.CallOption) (*AppSchemaResponse, error)
 	Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error)
 	GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetAppScreen(ctx context.Context, in *GetAppScreenRequest, opts ...grpc.CallOption) (*GetAppScreenResponse, error)
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -82,6 +84,15 @@ func (c *appServerClient) GoogleAuthCallback(ctx context.Context, in *AuthorizeR
 	return out, nil
 }
 
+func (c *appServerClient) GetAppScreen(ctx context.Context, in *GetAppScreenRequest, opts ...grpc.CallOption) (*GetAppScreenResponse, error) {
+	out := new(GetAppScreenResponse)
+	err := c.cc.Invoke(ctx, AppServer_GetAppScreen_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *appServerClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AppServer_Ping_FullMethodName, in, out, opts...)
@@ -99,6 +110,7 @@ type AppServerServer interface {
 	GetAppSchema(context.Context, *AppSchemaRequest) (*AppSchemaResponse, error)
 	Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error)
 	GoogleAuthCallback(context.Context, *AuthorizeRequest) (*emptypb.Empty, error)
+	GetAppScreen(context.Context, *GetAppScreenRequest) (*GetAppScreenResponse, error)
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }
 
@@ -117,6 +129,9 @@ func (UnimplementedAppServerServer) Authorize(context.Context, *AuthorizeRequest
 }
 func (UnimplementedAppServerServer) GoogleAuthCallback(context.Context, *AuthorizeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GoogleAuthCallback not implemented")
+}
+func (UnimplementedAppServerServer) GetAppScreen(context.Context, *GetAppScreenRequest) (*GetAppScreenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAppScreen not implemented")
 }
 func (UnimplementedAppServerServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -205,6 +220,24 @@ func _AppServer_GoogleAuthCallback_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AppServer_GetAppScreen_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAppScreenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServerServer).GetAppScreen(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AppServer_GetAppScreen_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServerServer).GetAppScreen(ctx, req.(*GetAppScreenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AppServer_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -245,6 +278,10 @@ var AppServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GoogleAuthCallback",
 			Handler:    _AppServer_GoogleAuthCallback_Handler,
+		},
+		{
+			MethodName: "GetAppScreen",
+			Handler:    _AppServer_GetAppScreen_Handler,
 		},
 		{
 			MethodName: "Ping",

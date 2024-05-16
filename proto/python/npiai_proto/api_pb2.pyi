@@ -1,4 +1,5 @@
 from google.protobuf import empty_pb2 as _empty_pb2
+from google.api import annotations_pb2 as _annotations_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -174,3 +175,17 @@ class ActionRequiredResponse(_message.Message):
     message: str
     options: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, type: _Optional[_Union[ActionType, str]] = ..., action_id: _Optional[str] = ..., message: _Optional[str] = ..., options: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class GetAppScreenRequest(_message.Message):
+    __slots__ = ("thread_id", "type")
+    THREAD_ID_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    thread_id: str
+    type: AppType
+    def __init__(self, thread_id: _Optional[str] = ..., type: _Optional[_Union[AppType, str]] = ...) -> None: ...
+
+class GetAppScreenResponse(_message.Message):
+    __slots__ = ("base64",)
+    BASE64_FIELD_NUMBER: _ClassVar[int]
+    base64: str
+    def __init__(self, base64: _Optional[str] = ...) -> None: ...

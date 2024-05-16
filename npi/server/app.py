@@ -173,6 +173,12 @@ class Chat(api_pb2_grpc.AppServerServicer):
     ) -> Empty:
         return Empty()
 
+    async def GetAppScreen(
+            self,
+            request: api_pb2.GetAppScreenRequest,
+            _: grpc.ServicerContext,) -> api_pb2.GetAppScreenResponse:
+        return api_pb2.GetAppScreenResponse(base64=f'thread_id: {request.thread_id}, app_type: {request.type}')
+
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)

@@ -14,24 +14,34 @@ service AppServer {
       body: "*"
     };
   };
+
   rpc GetAppSchema(AppSchemaRequest) returns (AppSchemaResponse) {
     option (google.api.http) = {
       get: "/apps/{type}/schema"
 //      body: "*"
     };
   };
+
   rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
     option (google.api.http) = {
       post: "/apps/authorize"
       body: "*"
     };
   };
+
   rpc GoogleAuthCallback(AuthorizeRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/apps/google/auth/callback"
       body: "*"
     };
   };
+
+  rpc GetAppScreen(GetAppScreenRequest) returns (GetAppScreenResponse) {
+    option (google.api.http) = {
+      get: "/apps/getAppScreen/{thread_id}/{type}"
+    };
+  };
+
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       get: "/ping"
@@ -134,4 +144,14 @@ message ActionRequiredResponse {
   string action_id = 2;
   string message = 3;
   repeated string options = 4;
+}
+
+
+message GetAppScreenRequest {
+  string thread_id = 1;
+  AppType type = 2;
+}
+
+message GetAppScreenResponse {
+  string base64 = 1;
 }
