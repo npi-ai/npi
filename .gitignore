@@ -17,3 +17,5 @@ credentials/
 **/node_modules
 config/**.json
 config/**.yaml
+
+screenshots

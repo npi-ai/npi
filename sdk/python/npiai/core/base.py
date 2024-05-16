@@ -1,7 +1,7 @@
 import json
 import threading
 import traceback
-from typing import List
+from typing import List, Dict
 import grpc
 import uuid
 from abc import ABC, abstractmethod
@@ -20,42 +20,43 @@ from npiai.core import hitl
 
 
 class App(ABC):
-    __app_name: str
-    __app_type: api_pb2.AppType
-    __npi_endpoint: str
+    _app_name: str
+    _app_type: api_pb2.AppType
+    _npi_endpoint: str
+    _active_thread_id: str | None = None
     stub: api_pb2_grpc.AppServerStub
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-            self,
-            app_name: str,
-            app_type: api_pb2.AppType,
-            endpoint: str = "localhost:9140",
-            hitl_handler: hitl.HITLHandler = None,
-            npi_token: str = None,
-            insecure: bool = True,
+        self,
+        app_name: str,
+        app_type: api_pb2.AppType,
+        endpoint: str = "localhost:9140",
+        hitl_handler: hitl.HITLHandler = None,
+        npi_token: str = None,
+        insecure: bool = True,
     ):
-        self.__app_name = app_name
+        self._app_name = app_name
         if endpoint is None:
             endpoint = "localhost:9140"
-        self.__npi_endpoint = endpoint
-        self.__app_type = app_type
+        self._npi_endpoint = endpoint
+        self._app_type = app_type
         if insecure:
-            channel = grpc.insecure_channel(self.__npi_endpoint)
+            channel = grpc.insecure_channel(self._npi_endpoint)
         else:
-            channel = grpc.secure_channel(target=self.__npi_endpoint, credentials=grpc.ssl_channel_credentials())
+            channel = grpc.secure_channel(target=self._npi_endpoint, credentials=grpc.ssl_channel_credentials())
         self.stub = api_pb2_grpc.AppServerStub(channel)
         self.hitl_handler = hitl_handler
         self.__npi_token = npi_token
 
     def tool_name(self):
-        return self.__app_name
+        return self._app_name
 
     def schema(self):
         try:
             resp = self.stub.GetAppSchema(
                 request=api_pb2.AppSchemaRequest(
-                    type=self.__app_type
+                    type=self._app_type
                 ),
                 metadata=self.__get_metadata(),
             )
@@ -69,25 +70,28 @@ class App(ABC):
             request=api_pb2.Request(
                 code=api_pb2.RequestCode.CHAT,
                 chat_request=api_pb2.ChatRequest(
-                    type=self.__app_type,
+                    type=self._app_type,
                     instruction=msg
                 ),
             ),
             metadata=self.__get_metadata(),
         )
         while True:
+            self._active_thread_id = resp.thread_id
+
             match resp.code:
                 case api_pb2.ResponseCode.FINISHED:
+                    self._active_thread_id = None
                     return resp.chat_response.message
                 case api_pb2.ResponseCode.MESSAGE:
-                    logger.info(f'[{self.__app_name}]: Received message: {resp.chat_response.message}')
+                    logger.info(f'[{self._app_name}]: Received message: {resp.chat_response.message}')
                     resp = self.stub.Chat(
                         request=api_pb2.Request(
                             code=api_pb2.RequestCode.FETCH,
                             request_id=str(uuid.uuid4()),
                             thread_id=resp.thread_id,
                             chat_request=api_pb2.ChatRequest(
-                                type=self.__app_type,
+                                type=self._app_type,
                             )
                         ),
                         metadata=self.__get_metadata(),
@@ -99,7 +103,7 @@ class App(ABC):
                             request_id=str(uuid.uuid4()),
                             thread_id=resp.thread_id,
                             chat_request=api_pb2.ChatRequest(
-                                type=self.__app_type,
+                                type=self._app_type,
                             )
                         ),
                         metadata=self.__get_metadata(),
@@ -107,7 +111,9 @@ class App(ABC):
                 case api_pb2.ResponseCode.ACTION_REQUIRED:
                     resp = self.stub.Chat(request=self.__call_human(resp), metadata=self.__get_metadata())
                 case _:
-                    logger.error(f'[{self.__app_name}]: Error: failed to call function, unknown response code {resp.code}')
+                    logger.error(
+                        f'[{self._app_name}]: Error: failed to call function, unknown response code {resp.code}'
+                    )
                     raise Exception("Error: failed to call function")
 
     def hitl(self, handler: hitl.HITLHandler):
@@ -119,17 +125,17 @@ class App(ABC):
     def _authorize(self, credentials: dict[str, str]):
         self.stub.Authorize(
             request=api_pb2.AuthorizeRequest(
-                type=self.__app_type,
+                type=self._app_type,
                 credentials=credentials,
             ),
         )
-        logger.info(f'[{self.__app_name}]: Authorized')
+        logger.info(f'[{self._app_name}]: Authorized')
 
     def __call_human(self, resp: api_pb2.Response) -> api_pb2.Request:
         human_resp = self.hitl_handler.handle(
             hitl.convert_to_hitl_request(
                 req=resp.action_response,
-                app_name=self.__app_name
+                app_name=self._app_name
             )
         )
         if human_resp is hitl.ACTION_APPROVED:
@@ -151,6 +157,19 @@ class App(ABC):
                 ('x-npi-token', self.__npi_token))
 
 
+class BrowserApp(App):
+    def screenshot(self) -> str | None:
+        if not self._active_thread_id:
+            return None
+        resp: api_pb2.GetAppScreenResponse = self.stub.GetAppScreen(
+            request=api_pb2.GetAppScreenRequest(
+                type=self._app_type,
+                thread_id=self._active_thread_id,
+            )
+        )
+        return resp.base64
+
+
 class Agent:
     __agent_name: str
     __npi_endpoint: str
@@ -158,17 +177,17 @@ class Agent:
     __description: str
     __llm: OpenAI
     tool_choice: ChatCompletionToolChoiceOptionParam = "auto"
-    fn_map: dict = {}
+    fn_map: Dict[str, App] = {}
     hitl_handler: hitl.HITLHandler = None
 
     def __init__(
-            self,
-            agent_name: str,
-            description: str,
-            prompt: str,
-            endpoint: str = None,
-            llm: OpenAI = None,
-            hitl_handler: hitl.HITLHandler = None,
+        self,
+        agent_name: str,
+        description: str,
+        prompt: str,
+        endpoint: str = None,
+        llm: OpenAI = None,
+        hitl_handler: hitl.HITLHandler = None,
     ):
         self.__agent_name = agent_name
         self.__description = description
@@ -185,6 +204,10 @@ class Agent:
             app_name = app.tool_name()
             self.fn_map[app_name] = app
 
+    def authorize(self):
+        for app in self.fn_map.values():
+            app.authorize()
+
     def group(self, *agents: 'Agent'):
         for agent in agents:
             app_name = agent.__as_app().tool_name()
@@ -194,7 +217,6 @@ class Agent:
         self.hitl_handler = handler
 
     def run(self, msg: str) -> str:
-
         messages = [ChatCompletionSystemMessageParam(
             content=self.__prompt,
             role="system",

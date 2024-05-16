@@ -1,5 +1,8 @@
+from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
-from npi.core.thread import Thread, ThreadMessage
+
+if TYPE_CHECKING:
+    from npi.core.thread import Thread, ThreadMessage
 
 
 class Parameters(BaseModel):
@@ -18,18 +21,18 @@ class Parameters(BaseModel):
         """
     )
 
-    _thread: Thread
-    _message: ThreadMessage
+    _thread: 'Thread'
+    _message: 'ThreadMessage'
 
-    def __init__(self, _thread: Thread, _message: ThreadMessage, **args):
+    def __init__(self, _thread: 'Thread', _message: 'ThreadMessage', **args):
         super().__init__(**args)
         self._thread = _thread
         self._message = _message
 
-    def get_thread(self) -> Thread:
+    def get_thread(self) -> 'Thread':
         return self._thread
 
-    def get_message(self) -> ThreadMessage:
+    def get_message(self) -> 'ThreadMessage':
         return self._message
 
     # remove "title" property from pydantic json schema

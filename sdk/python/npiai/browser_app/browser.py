@@ -1,12 +1,12 @@
-from npiai.core.base import App
+from npiai.core.base import BrowserApp
 from npiai_proto import api_pb2
 
 
-class Browser(App):
+class Browser(BrowserApp):
 
-    def __init__(self, npi_endpoint: str = None):
+    def __init__(self, **kwargs):
         super().__init__(
             app_name="browser",
             app_type=api_pb2.WEB_BROWSER,
-            endpoint=npi_endpoint,
+            **kwargs,
         )

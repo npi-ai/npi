@@ -1,3 +1,5 @@
+import os
+
 from openai import OpenAI
 from npiai.core import Agent
 from npiai.tools.hitl.console import ConsoleHandler
@@ -14,7 +16,19 @@ def main():
         hitl_handler=ConsoleHandler()
     )
 
-    agent.use(GitHub(), Gmail())
+    with open('./credentials.json') as f:
+        google_creds = f.read()
+
+    agent.use(
+        GitHub(access_token=os.environ['GITHUB_ACCESS_TOKEN']),
+        Gmail(
+            secrets=google_creds,
+            # TODO: redirect uri
+            redirect_uri='',
+        )
+    )
+
+    agent.authorize()
 
     task = 'idiotWu/npi-test has a new issue, send an email to daofeng@npi.ai with the body of issue'
 

@@ -3,7 +3,7 @@
 from openai import OpenAI
 
 from npiai.core import Agent
-from npiai.core.hitl import ConsoleHITLHandler
+from npiai.tools.hitl import ConsoleHandler
 from npiai.app.google import Gmail, Calendar
 from npiai.app.human_feedback import ConsoleFeedback
 
@@ -54,10 +54,27 @@ def main():
         description='Schedule meetings with others using gmail and google calendar',
         prompt=PROMPT,
         llm=OpenAI(),
-        hitl_handler=ConsoleHITLHandler(),
+        hitl_handler=ConsoleHandler(),
     )
 
-    negotiator.use(Calendar(), Gmail(), ConsoleFeedback())
+    with open('./credentials.json') as f:
+        google_creds = f.read()
+
+    negotiator.use(
+        Calendar(
+            secrets=google_creds,
+            # TODO: redirect uri
+            redirect_uri='',
+        ),
+        Gmail(
+            secrets=google_creds,
+            # TODO: redirect uri
+            redirect_uri='',
+        ),
+        ConsoleFeedback()
+    )
+
+    negotiator.authorize()
 
     print('Negotiator: What\'s your task for me?')
     task = input('User: ')
