@@ -4,15 +4,17 @@ from typing_extensions import override
 
 
 class GitHub(App):
+    __access_token: str
 
-    def __init__(self, access_token: str, npi_endpoint: str = None):
+    def __init__(self, access_token: str, **kwargs):
         super().__init__(
             app_name="github",
             app_type=api_pb2.GITHUB,
-            endpoint=npi_endpoint,
+            **kwargs,
         )
-        self.access_token = access_token
+
+        self.__access_token = access_token
 
     @override
     def authorize(self):
-        super()._authorize(credentials={"access_token": self.access_token})
+        super()._authorize(credentials={"access_token": self.__access_token})

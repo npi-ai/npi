@@ -46,9 +46,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
                 raise Exception("unsupported application")
 
     async def Chat(
-            self,
-            request: api_pb2.Request,
-            _: grpc.ServicerContext,
+        self,
+        request: api_pb2.Request,
+        _: grpc.ServicerContext,
     ) -> api_pb2.Response:
         logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
         response = api_pb2.Response()
@@ -77,9 +77,9 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return response
 
     async def GetAppSchema(
-            self,
-            request: api_pb2.AppSchemaRequest,
-            _: grpc.ServicerContext,
+        self,
+        request: api_pb2.AppSchemaRequest,
+        _: grpc.ServicerContext,
     ) -> api_pb2.AppSchemaResponse:
         try:
             app = self.get_app(request.type)
@@ -109,55 +109,67 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return response
 
     async def Authorize(
-            self,
-            request: api_pb2.AuthorizeRequest,
-            _: grpc.ServicerContext,
+        self,
+        request: api_pb2.AuthorizeRequest,
+        _: grpc.ServicerContext,
     ) -> api_pb2.AuthorizeResponse:
         result = {}
         if config.is_authorized(request.type):
             return api_pb2.AuthorizeResponse(result=result)
         match request.type:
             case api_pb2.AppType.GOOGLE_GMAIL:
-                url = await auth.auth_google(auth.GoogleAuthRequest(
-                    secrets=request.credentials["secrets"],
-                    callback=request.credentials["callback"],
-                    app="gmail"),
+                url = await auth.auth_google(
+                    auth.GoogleAuthRequest(
+                        secrets=request.credentials["secrets"],
+                        callback=request.credentials["callback"],
+                        app="gmail"
+                    ),
                 )
                 result = url
             case api_pb2.AppType.GOOGLE_CALENDAR:
-                url = await auth.auth_google(auth.GoogleAuthRequest(
-                    secrets=request.credentials["secrets"],
-                    callback=request.credentials["callback"],
-                    app="calendar"),
+                url = await auth.auth_google(
+                    auth.GoogleAuthRequest(
+                        secrets=request.credentials["secrets"],
+                        callback=request.credentials["callback"],
+                        app="calendar"
+                    ),
                 )
                 result = url
             case api_pb2.AppType.TWITTER:
-                await auth.auth_twitter(auth.TwitterAuthRequest(
-                    username=request.credentials["username"],
-                    password=request.credentials["password"],
-                ))
+                await auth.auth_twitter(
+                    auth.TwitterAuthRequest(
+                        username=request.credentials["username"],
+                        password=request.credentials["password"],
+                    )
+                )
             case api_pb2.AppType.DISCORD:
-                await auth.auth_discord(auth.DiscordAuthRequest(
-                    access_token=request.credentials["access_token"],
-                ))
+                await auth.auth_discord(
+                    auth.DiscordAuthRequest(
+                        access_token=request.credentials["access_token"],
+                    )
+                )
             case api_pb2.AppType.GITHUB:
-                await auth.auth_github(auth.GithubAuthRequest(
-                    access_token=request.credentials["access_token"],
-                ))
+                await auth.auth_github(
+                    auth.GithubAuthRequest(
+                        access_token=request.credentials["access_token"],
+                    )
+                )
             case api_pb2.AppType.TWILIO:
-                await auth.auth_twilio(auth.TwilioAuthRequest(
-                    from_phone_number=request.credentials["from_phone_number"],
-                    account_sid=request.credentials["account_sid"],
-                    auth_token=request.credentials["auth_token"],
-                ))
+                await auth.auth_twilio(
+                    auth.TwilioAuthRequest(
+                        from_phone_number=request.credentials["from_phone_number"],
+                        account_sid=request.credentials["account_sid"],
+                        auth_token=request.credentials["auth_token"],
+                    )
+                )
             case _:
                 raise Exception("unsupported application")
         return api_pb2.AuthorizeResponse(result=result)
 
     async def GoogleAuthCallback(
-            self,
-            request: api_pb2.AuthorizeRequest,
-            _: grpc.ServicerContext,
+        self,
+        request: api_pb2.AuthorizeRequest,
+        _: grpc.ServicerContext,
     ) -> Empty:
         await auth.google_callback(
             state=request.credentials["state"],
@@ -167,17 +179,26 @@ class Chat(api_pb2_grpc.AppServerServicer):
         return Empty()
 
     async def Ping(
-            self,
-            request: Empty,
-            _: grpc.ServicerContext,
+        self,
+        request: Empty,
+        _: grpc.ServicerContext,
     ) -> Empty:
         return Empty()
 
     async def GetAppScreen(
-            self,
-            request: api_pb2.GetAppScreenRequest,
-            _: grpc.ServicerContext,) -> api_pb2.GetAppScreenResponse:
-        return api_pb2.GetAppScreenResponse(base64=f'thread_id: {request.thread_id}, app_type: {request.type}')
+        self,
+        request: api_pb2.GetAppScreenRequest,
+        _: grpc.ServicerContext,
+    ) -> api_pb2.GetAppScreenResponse:
+        thread = self.thread_manager.get_thread(request.thread_id)
+
+        if not thread:
+            logger.error(f"thread not found {request.thread_id}")
+            resp = api_pb2.GetAppScreenResponse()
+            resp.code = api_pb2.ResponseCode.FAILED
+            return resp
+
+        return api_pb2.GetAppScreenResponse(base64=await thread.refresh_screenshot())
 
     async def __fetch_thread(self, req: api_pb2.Request, resp: api_pb2.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
@@ -239,6 +260,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
         try:
             app = self.get_app(thread.app_type)
             await app.start(thread)
+            thread.set_active_app(app)
             result = await app.chat(thread.instruction, thread)
             thread.finish(result)
         except UnauthorizedError as e:

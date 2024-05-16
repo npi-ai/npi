@@ -1,7 +1,12 @@
+import os
+import time
+import base64
+import threading
+
 from openai import OpenAI
 
 from npiai.core import Agent
-from npiai.core.hitl import ConsoleHITLHandler
+from npiai.tools.hitl import ConsoleHandler
 from npiai.app.discord import Discord
 from npiai.browser_app.twitter import Twitter
 from npiai.app.human_feedback import ConsoleFeedback
@@ -28,20 +33,50 @@ Steps:
 
 
 def main():
-    negotiator = Agent(
+    crawler = Agent(
         agent_name='twitter_crawler',
         description='Retrieve data from Twitter and send messages to Discord',
         prompt=PROMPT,
         llm=OpenAI(),
-        hitl_handler=ConsoleHITLHandler(),
+        hitl_handler=ConsoleHandler(),
     )
 
-    negotiator.use(Twitter(), Discord(), ConsoleFeedback())
+    twitter = Twitter(
+        username=os.environ['TWITTER_USERNAME'],
+        password=os.environ['TWITTER_PASSWORD'],
+    )
+
+    crawler.use(
+        twitter,
+        Discord(access_token=os.environ['DISCORD_ACCESS_TOKEN']),
+        ConsoleFeedback(),
+    )
+
+    crawler.authorize()
+
+    running = True
+
+    def save_screenshot():
+        if os.path.exists('./screenshots'):
+            os.rmdir('./screenshots')
+        os.makedirs('./screenshots', exist_ok=True)
+        count = 0
+
+        while running:
+            screenshot = twitter.screenshot()
+            if screenshot:
+                with open(f'./screenshots/{count}.png', 'wb') as f:
+                    f.write(base64.b64decode(screenshot.split(',')[1]))
+                count += 1
+            time.sleep(1)
 
     print('Twitter Crawler: What\'s your task for me?')
     task = input('User: ')
     print('')
-    negotiator.run(task)
+    thread = threading.Thread(target=save_screenshot)
+    thread.start()
+    crawler.run(task)
+    running = False
 
 
 if __name__ == "__main__":

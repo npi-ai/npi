@@ -10,7 +10,7 @@ from openai.types.chat import (
     ChatCompletionMessage,
 )
 
-from npi.core import callback
+from npi.core import callback, App, BrowserApp
 
 from npiai_proto import api_pb2
 
@@ -79,6 +79,8 @@ class ThreadMessage:
 
 class Thread:
     """the abstraction of chat context """
+    __active_app: App | None = None
+    __last_screenshot: str | None = None
 
     def __init__(self, instruction: str, app_type: api_pb2.AppType) -> None:
         self.agent_id = 'default'
@@ -93,6 +95,30 @@ class Thread:
         self.__result: str = ''
         self.__is_failed = False
         self.__failed_msg: str = ''
+
+    def set_active_app(self, app: App | None):
+        self.__active_app = app
+
+    async def refresh_screenshot(self) -> str | None:
+        """
+        Refresh and return the latest screenshot of the running app.
+
+        Returns:
+            None if no screenshot is available or the screenshot stays unchanged.
+            Otherwise, return the latest screenshot.
+        """
+        if self.is_finished() or not isinstance(self.__active_app, BrowserApp):
+            # TODO: raise errors?
+            return None
+
+        screenshot = await self.__active_app.get_screenshot()
+
+        if screenshot == self.__last_screenshot:
+            return None
+
+        self.__last_screenshot = screenshot
+
+        return screenshot
 
     async def send_msg(self, cb: callback.Callable) -> None:
         """send a message to the thread"""
@@ -115,6 +141,8 @@ class Thread:
     def finish(self, msg: str):
         self.__result = msg
         self.__is_finished = True
+        self.__last_screenshot = None
+        self.set_active_app(None)
         self.q.task_done()
 
     def failed(self, msg: str):

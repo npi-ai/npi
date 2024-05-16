@@ -1,24 +1,44 @@
 from npiai.core.base import App
 from npiai_proto import api_pb2
+from typing_extensions import override
 
 
-class Calendar(App):
+class GoogleApp(App):
+    _secret: str
+    _auth_app_name: str
+    _redirect_uri: str
 
-    def __init__(self, npi_endpoint: str = None, npi_token: str = None):
+    @override
+    def authorize(self):
+        super()._authorize(
+            credentials={
+                "app": self._auth_app_name,
+                "secret": self._secret,
+            }
+        )
+
+
+class Calendar(GoogleApp):
+    def __init__(self, secret: str, redirect_uri: str, **kwargs):
         super().__init__(
             app_name="google_calendar",
             app_type=api_pb2.GOOGLE_CALENDAR,
-            endpoint=npi_endpoint,
-            npi_token=npi_token,
+            **kwargs,
         )
+
+        self._auth_app_name = "calendar"
+        self._secret = secret
+        self._redirect_uri = redirect_uri
 
 
 class Gmail(App):
-
-    def __init__(self, npi_endpoint: str = None, npi_token: str = None):
+    def __init__(self, secret: str, redirect_uri: str, **kwargs):
         super().__init__(
             app_name="gmail",
             app_type=api_pb2.GOOGLE_GMAIL,
-            endpoint=npi_endpoint,
-            npi_token=npi_token,
+            **kwargs,
         )
+
+        self._auth_app_name = "gmail"
+        self._secret = secret
+        self._redirect_uri = redirect_uri
