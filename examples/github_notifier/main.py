@@ -22,7 +22,7 @@ def main():
     agent.use(
         GitHub(access_token=os.environ['GITHUB_ACCESS_TOKEN']),
         Gmail(
-            secret=google_creds,
+            secrets=google_creds,
             # TODO: redirect uri
             redirect_uri='',
         )

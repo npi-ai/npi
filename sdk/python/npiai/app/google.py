@@ -4,7 +4,7 @@ from typing_extensions import override
 
 
 class GoogleApp(App):
-    _secret: str
+    _secrets: str
     _auth_app_name: str
     _redirect_uri: str
 
@@ -13,13 +13,14 @@ class GoogleApp(App):
         super()._authorize(
             credentials={
                 "app": self._auth_app_name,
-                "secret": self._secret,
+                "secrets": self._secrets,
+                "callback": self._redirect_uri,
             }
         )
 
 
 class Calendar(GoogleApp):
-    def __init__(self, secret: str, redirect_uri: str, **kwargs):
+    def __init__(self, secrets: str, redirect_uri: str, **kwargs):
         super().__init__(
             app_name="google_calendar",
             app_type=api_pb2.GOOGLE_CALENDAR,
@@ -27,12 +28,12 @@ class Calendar(GoogleApp):
         )
 
         self._auth_app_name = "calendar"
-        self._secret = secret
+        self._secrets = secrets
         self._redirect_uri = redirect_uri
 
 
 class Gmail(App):
-    def __init__(self, secret: str, redirect_uri: str, **kwargs):
+    def __init__(self, secrets: str, redirect_uri: str, **kwargs):
         super().__init__(
             app_name="gmail",
             app_type=api_pb2.GOOGLE_GMAIL,
@@ -40,5 +41,5 @@ class Gmail(App):
         )
 
         self._auth_app_name = "gmail"
-        self._secret = secret
+        self._secrets = secrets
         self._redirect_uri = redirect_uri

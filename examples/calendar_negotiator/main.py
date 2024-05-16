@@ -62,12 +62,12 @@ def main():
 
     negotiator.use(
         Calendar(
-            secret=google_creds,
+            secrets=google_creds,
             # TODO: redirect uri
             redirect_uri='',
         ),
         Gmail(
-            secret=google_creds,
+            secrets=google_creds,
             # TODO: redirect uri
             redirect_uri='',
         ),
