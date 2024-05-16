@@ -80,6 +80,53 @@
         ]
       }
     },
+    "/apps/getAppScreen/{threadId}/{type}": {
+      "get": {
+        "operationId": "AppServer_GetAppScreen",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetAppScreenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "APP_UNKNOWN",
+              "GOOGLE_GMAIL",
+              "GOOGLE_CALENDAR",
+              "GITHUB",
+              "SLACK",
+              "DISCORD",
+              "TWITTER",
+              "WEB_BROWSER",
+              "TWILIO"
+            ]
+          }
+        ],
+        "tags": [
+          "AppServer"
+        ]
+      }
+    },
     "/apps/google/auth/callback": {
       "post": {
         "operationId": "AppServer_GoogleAuthCallback",
@@ -287,6 +334,14 @@
       "type": "object",
       "properties": {
         "message": {
+          "type": "string"
+        }
+      }
+    },
+    "apiGetAppScreenResponse": {
+      "type": "object",
+      "properties": {
+        "base64": {
           "type": "string"
         }
       }

@@ -95,6 +95,26 @@ func (mr *MockAppServerClientMockRecorder) GetAppSchema(ctx, in interface{}, opt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSchema", reflect.TypeOf((*MockAppServerClient)(nil).GetAppSchema), varargs...)
 }
 
+// GetAppScreen mocks base method.
+func (m *MockAppServerClient) GetAppScreen(ctx context.Context, in *GetAppScreenRequest, opts ...grpc.CallOption) (*GetAppScreenResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetAppScreen", varargs...)
+	ret0, _ := ret[0].(*GetAppScreenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppScreen indicates an expected call of GetAppScreen.
+func (mr *MockAppServerClientMockRecorder) GetAppScreen(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppScreen", reflect.TypeOf((*MockAppServerClient)(nil).GetAppScreen), varargs...)
+}
+
 // GoogleAuthCallback mocks base method.
 func (m *MockAppServerClient) GoogleAuthCallback(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	m.ctrl.T.Helper()
@@ -201,6 +221,21 @@ func (m *MockAppServerServer) GetAppSchema(ctx context.Context, in *AppSchemaReq
 func (mr *MockAppServerServerMockRecorder) GetAppSchema(ctx, in interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSchema", reflect.TypeOf((*MockAppServerServer)(nil).GetAppSchema), ctx, in)
+}
+
+// GetAppScreen mocks base method.
+func (m *MockAppServerServer) GetAppScreen(ctx context.Context, in *GetAppScreenRequest) (*GetAppScreenResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppScreen", ctx, in)
+	ret0, _ := ret[0].(*GetAppScreenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppScreen indicates an expected call of GetAppScreen.
+func (mr *MockAppServerServerMockRecorder) GetAppScreen(ctx, in interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppScreen", reflect.TypeOf((*MockAppServerServer)(nil).GetAppScreen), ctx, in)
 }
 
 // GoogleAuthCallback mocks base method.
