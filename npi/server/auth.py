@@ -16,6 +16,7 @@ __SCOPE = {
 
 class GoogleAuthRequest(BaseModel):
     """request for google auth"""
+    callback: str
     secrets: str
     app: str
 
@@ -50,7 +51,7 @@ async def auth_google(req: GoogleAuthRequest):
     flow = InstalledAppFlow.from_client_config(
         client_config=secret_cfg,
         scopes=__SCOPE[req.app],
-        redirect_uri="http://localhost:19141/auth/google/callback",
+        redirect_uri=req.callback,
     )
     url, state = flow.authorization_url(
         access_type='offline',
@@ -63,7 +64,7 @@ async def auth_google(req: GoogleAuthRequest):
     return {'url': url}
 
 
-async def google_callback(state: str, code: str):
+async def google_callback(state: str, code: str, callback: str):
     if state not in STATE:
         raise ValueError(f"invalid state {state}")
 
@@ -71,7 +72,7 @@ async def google_callback(state: str, code: str):
     flow = Flow.from_client_config(
         client_config=cfg["secret"],
         scopes=__SCOPE[cfg["app"]],
-        redirect_uri="http://localhost:19141/auth/google/callback",
+        redirect_uri=callback,
         state=state,
     )
 

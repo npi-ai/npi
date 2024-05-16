@@ -62,22 +62,28 @@ func authGoogleCommand() *cobra.Command {
 			var resp *api.AuthorizeResponse
 			if args[0] == "gmail" {
 				resp, err = doAuthRequest(api.AppType_GOOGLE_GMAIL, map[string]string{
-					"secrets": string(data),
+					"secrets":  string(data),
+					"callback": "http://localhost:19141/auth/google/callback",
 				})
 			} else {
 				resp, err = doAuthRequest(api.AppType_GOOGLE_CALENDAR, map[string]string{
-					"secrets": string(data),
+					"secrets":  string(data),
+					"callback": "http://localhost:19141/auth/google/callback",
 				})
 			}
 			if err != nil {
-				color.Red("failed to authorize Google API: %v", err)
+				color.Red("failed to authorize Google: %v", err)
 				os.Exit(-1)
 			}
-
+			redirectUrl, exist := resp.Result["url"]
+			if !exist {
+				color.Green("authorization success")
+				os.Exit(0)
+			}
 			color.Green("please finish the authorization in the browser...")
 			errChan := make(chan error)
 			go server(context.Background(), errChan)
-			err = browser.OpenURL(resp.Result["url"])
+			err = browser.OpenURL(redirectUrl)
 			err = <-errChan
 			if err != nil {
 				color.Red("failed to authorization: %v", err)
@@ -105,8 +111,9 @@ func oauthCallback(ch chan error) func(w http.ResponseWriter, r *http.Request) {
 		defer conn.Close()
 		cli := api.NewAppServerClient(conn)
 		m := map[string]string{
-			"state": queryParams.Get("state"),
-			"code":  queryParams.Get("code"),
+			"state":    queryParams.Get("state"),
+			"code":     queryParams.Get("code"),
+			"callback": "http://localhost:19141/auth/google/callback",
 		}
 		_, err := cli.GoogleAuthCallback(getMetadata(context.Background()), &api.AuthorizeRequest{
 			Credentials: m,
