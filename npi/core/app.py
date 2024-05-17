@@ -3,7 +3,7 @@ import asyncio
 import json
 import inspect
 import functools
-from typing import Dict, List, Optional, Union, Type, cast, Callable, Awaitable, TYPE_CHECKING
+from typing import Dict, List, Optional, Union, Type, cast, Callable, Awaitable
 
 from pydantic import Field
 from openai import AsyncClient
@@ -17,12 +17,10 @@ from openai.types.chat import (
 from npi.config import config
 from npi.types import FunctionRegistration, Parameters, ToolFunction
 from npi.core import callback
+from npi.core.thread import Thread, ThreadMessage
 from npi.constants.openai import Role
 from npi.utils import logger
 from npiai_proto import api_pb2
-
-if TYPE_CHECKING:
-    from npi.core.thread import Thread, ThreadMessage
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
@@ -153,7 +151,10 @@ class App:
         self.fn_map = {}
         _register_tools(self)
 
-    async def start(self, thread: 'Thread' = None):
+    async def get_screenshot(self):
+        return ''
+
+    async def start(self, thread: Thread = None):
         """Start the app"""
         self._started = True
 
@@ -218,7 +219,7 @@ class App:
     async def chat(
         self,
         message: str,
-        thread: 'Thread' = None,
+        thread: Thread = None,
     ) -> str:
         """
         The chat function for the app
@@ -254,7 +255,7 @@ class App:
 
         return await self._call_llm(thread, msg)
 
-    async def _call_llm(self, thread: 'Thread', message: 'ThreadMessage') -> str:
+    async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         """
         Call llm with the given prompts
 

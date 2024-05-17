@@ -3,16 +3,19 @@ import datetime
 import uuid
 import json
 import asyncio
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 
 from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionMessage,
 )
 
-from npi.core import callback, App, BrowserApp
+from npi.core import callback
 
 from npiai_proto import api_pb2
+
+if TYPE_CHECKING:
+    from npi.core import App
 
 
 class ThreadMessage:
@@ -79,7 +82,7 @@ class ThreadMessage:
 
 class Thread:
     """the abstraction of chat context """
-    __active_app: App | None = None
+    __active_app: Union['App', None] = None
     __last_screenshot: str | None = None
 
     def __init__(self, instruction: str, app_type: api_pb2.AppType) -> None:
@@ -96,7 +99,7 @@ class Thread:
         self.__is_failed = False
         self.__failed_msg: str = ''
 
-    def set_active_app(self, app: App | None):
+    def set_active_app(self, app: Union['App', None]):
         self.__active_app = app
 
     async def refresh_screenshot(self) -> str | None:
@@ -107,7 +110,7 @@ class Thread:
             None if no screenshot is available or the screenshot stays unchanged.
             Otherwise, return the latest screenshot.
         """
-        if self.is_finished() or not isinstance(self.__active_app, BrowserApp):
+        if self.is_finished():
             # TODO: raise errors?
             return None
 

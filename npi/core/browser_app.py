@@ -1,5 +1,4 @@
 import base64
-from typing import TYPE_CHECKING
 from openai import Client
 from openai.types.chat import ChatCompletionToolChoiceOptionParam
 from playwright.async_api import ElementHandle
@@ -8,8 +7,7 @@ from npi.core.app import App
 from npiai_proto import api_pb2
 from .playwright_context import PlaywrightContext
 
-if TYPE_CHECKING:
-    from npi.core.thread import Thread
+from npi.core.thread import Thread
 
 
 class BrowserApp(App):
@@ -45,7 +43,7 @@ class BrowserApp(App):
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
 
-    async def start(self, thread: 'Thread' = None):
+    async def start(self, thread: Thread = None):
         """Start the Browser App"""
         if not self._started:
             await super().start(thread)
@@ -61,7 +59,7 @@ class BrowserApp(App):
     async def chat(
         self,
         message: str,
-        thread: 'Thread' = None,
+        thread: Thread = None,
     ) -> str:
         if not self._started:
             await self.start()
