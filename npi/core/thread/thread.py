@@ -110,7 +110,7 @@ class Thread:
             None if no screenshot is available or the screenshot stays unchanged.
             Otherwise, return the latest screenshot.
         """
-        if self.is_finished():
+        if not self.__active_app or self.is_finished():
             # TODO: raise errors?
             return None
 
