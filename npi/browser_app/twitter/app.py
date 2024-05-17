@@ -45,8 +45,8 @@ Steps:
 """
 
 __ROUTES__ = {
-    'login': 'https://twitter.com/',
-    'home': 'https://twitter.com/home'
+    'login': 'https://x.com/',
+    'home': 'https://x.com/home'
 }
 
 
