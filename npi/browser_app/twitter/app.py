@@ -146,20 +146,16 @@ class Twitter(BrowserApp):
         await self.playwright.page.get_by_label('Phone, email, or username').fill(self.creds.username)
         await self.playwright.page.get_by_role('button', name='Next').click()
 
-        # check if username(not email) is required
-        await self.playwright.page.wait_for_timeout(1000)
-        username_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
-        if await username_input.count() != 0:
-            username = await self._request_username(thread)
-            await username_input.fill(username)
-            await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
-
-            await self.playwright.page.wait_for_timeout(1000)
-            if await username_input.count() != 0:
-                raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
+        # check if additional credentials (i.e, username) is required
+        await self._check_additional_credentials(thread)
 
         await self.playwright.page.get_by_label('Password', exact=True).fill(self.creds.password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
+
+        # check again if additional credentials (i.e, phone number) is required
+        await self._check_additional_credentials(thread)
+
+        # now we should be directed to twitter home
         await self.playwright.page.wait_for_url(__ROUTES__['home'])
 
         # save state
@@ -169,15 +165,29 @@ class Twitter(BrowserApp):
 
         await thread.send_msg(callback.Callable('Logged in to Twitter'))
 
+    async def _check_additional_credentials(self, thread: Thread):
+        await self.playwright.page.wait_for_timeout(1000)
+        cred_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
+        if await cred_input.count() != 0:
+            label = self.playwright.page.locator('label:has(input[data-testid="ocfEnterTextTextInput"])')
+            cred_name = await label.text_content()
+            cred = await self._request_additional_credentials(thread, cred_name)
+            await cred_input.fill(cred)
+            await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
+
+            await self.playwright.page.wait_for_timeout(1000)
+            if await cred_input.count() != 0:
+                raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
+
     @staticmethod
-    async def _request_username(thread: Thread) -> str:
+    async def _request_additional_credentials(thread: Thread, cred_name: str) -> str:
         if thread is None:
             raise Exception('`thread` must be provided to request username')
 
         cb = callback.Callable(
             action=api_pb2.ActionRequiredResponse(
                 type=api_pb2.ActionType.INFORMATION,  # TODO(wenfeng) Add type of Form
-                message='Please enter your username (not email) to continue the login process.',
+                message=f'Please enter {cred_name} to continue the login process.',
             ),
         )
         cb.action.action_id = cb.id()
