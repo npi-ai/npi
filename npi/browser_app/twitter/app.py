@@ -182,7 +182,8 @@ class Twitter(BrowserApp):
         )
         cb.action.action_id = cb.id()
         await thread.send_msg(cb=cb)
-        return await cb.wait()
+        res = await cb.wait()
+        return res.result.action_result
 
     @npi_tool
     async def search(self, params: SearchParameters):
