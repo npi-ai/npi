@@ -279,7 +279,8 @@ class Navigator(BrowserApp):
         )
         cb.action.action_id = cb.id()
         await thread.send_msg(cb=cb)
-        return await cb.wait()
+        res = await cb.wait()
+        return res.result.action_result
 
     async def _run_action(self, thread: Thread, action: Action) -> Tuple[Union[str, None], dict]:
         """
