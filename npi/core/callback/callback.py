@@ -10,7 +10,7 @@ class ActionResult:
         self.result = result
 
     def is_approved(self):
-        return self.result.action_result == "approved"
+        return self.result.action_result != "denied"
 
     def has_message(self):
         pass
