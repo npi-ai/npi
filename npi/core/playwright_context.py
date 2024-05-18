@@ -28,6 +28,7 @@ class PlaywrightContext:
     context: BrowserContext
     page: Page
     headless: bool
+    ready: bool
 
     def __init__(
         self,
@@ -40,6 +41,7 @@ class PlaywrightContext:
             headless: Whether to run playwright in headless mode
         """
         self.headless = headless
+        self.ready = False
 
     async def start(self):
         """Start the Playwright browser"""
@@ -60,6 +62,8 @@ class PlaywrightContext:
         self.page = await self.context.new_page()
         self.page.on('filechooser', self.on_filechooser)
         self.page.on('popup', self.on_popup)
+
+        self.ready = True
 
     async def on_filechooser(self, chooser: FileChooser):
         """

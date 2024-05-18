@@ -104,6 +104,8 @@ class BrowserApp(App):
 
     async def get_screenshot(self):
         """Get the screenshot of the current page"""
+        if not self.playwright or self.playwright.page.url == 'about:blank':
+            return None
         screenshot = await self.playwright.page.screenshot(caret='initial')
         return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
 

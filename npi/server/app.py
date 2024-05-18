@@ -259,8 +259,8 @@ class Chat(api_pb2_grpc.AppServerServicer):
         app = None
         try:
             app = self.get_app(thread.app_type)
-            await app.start(thread)
             thread.set_active_app(app)
+            await app.start(thread)
             result = await app.chat(thread.instruction, thread)
             thread.finish(result)
         except UnauthorizedError as e:
@@ -274,6 +274,7 @@ class Chat(api_pb2_grpc.AppServerServicer):
             if app is not None:
                 # clean up
                 await app.dispose()
+            thread.set_active_app(None)
 
 
 _cleanup_coroutines = []
