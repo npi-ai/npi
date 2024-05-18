@@ -32,8 +32,8 @@ class HITLResponse:
         self.message = msg
 
 
-ACTION_APPROVED = HITLResponse(ActionResultCode.APPROVED)
-ACTION_DENIED = HITLResponse(ActionResultCode.DENIED)
+ACTION_APPROVED = HITLResponse(ActionResultCode.APPROVED, 'Action Approved')
+ACTION_DENIED = HITLResponse(ActionResultCode.DENIED, 'Action Denied')
 
 
 class HITLHandler(ABC):

@@ -138,17 +138,13 @@ class App(ABC):
                 app_name=self._app_name
             )
         )
-        if human_resp is hitl.ACTION_APPROVED:
-            result = "approved"
-        else:
-            result = "denied"
         return api_pb2.Request(
             code=api_pb2.RequestCode.ACTION_RESULT,
             request_id=str(uuid.uuid4()),
             thread_id=resp.thread_id,
             action_result_request=api_pb2.ActionResultRequest(
                 action_id=resp.action_response.action_id,
-                action_result=result,
+                action_result=human_resp.message,
             )
         )
 
