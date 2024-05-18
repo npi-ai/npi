@@ -4,15 +4,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/grpclog"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	gw "github.com/npi-ai/npi/proto/go/api" // Update
+	"github.com/rs/cors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/grpclog"
 )
 
 var (
@@ -27,10 +28,10 @@ func run() error {
 	defer cancel()
 	headerMatcher := func(key string) (string, bool) {
 		switch strings.ToUpper(key) {
-		case "X-NPI-TOKEN", "USER-AGENT", "ACCEPT":
+		case "X-NPI-TOKEN", "USER-AGENT", "ACCEPT", "ACCESS-CONTROL-ALLOW-ORIGIN'":
 			return key, true
 		default:
-			return key, false
+			return runtime.DefaultHeaderMatcher(key)
 		}
 	}
 	// Register gRPC server endpoint
@@ -38,6 +39,7 @@ func run() error {
 	mux := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(headerMatcher),
 	)
+
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	opts = append(opts, grpc.WithUnaryInterceptor(
 		func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -55,9 +57,27 @@ func run() error {
 		return err
 	}
 
+	withCors := cors.New(cors.Options{
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		AllowedMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
+		// "ACCEPT", "Authorization", "Content-Type", "USER-AGENT", "X-NPI-TOKEN"
+		AllowedHeaders: []string{"*"},
+		//ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		AllowedOrigins: []string{
+			"*",
+			//"http://localhost:5173",
+			//"https://npi-playground.vercel.app",
+			//"https://playground.npi.ai",
+			//"https://app.npi.ai",
+		},
+		MaxAge: 300,
+	}).Handler(mux)
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
 	fmt.Printf("Starting HTTP server on port 8081, endpoint: %s", *grpcServerEndpoint)
-	return http.ListenAndServe(":8081", mux)
+	return http.ListenAndServe(":8081", withCors)
 }
 
 func main() {
