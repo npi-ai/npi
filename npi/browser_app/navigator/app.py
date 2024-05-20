@@ -280,10 +280,10 @@ class Navigator(BrowserApp):
         return response_message.content
 
     @staticmethod
-    async def _human_feedback(thread: Thread, message: str) -> str:
+    async def _human_feedback(thread: Thread, message: str, action_type: api_pb2.ActionType) -> str:
         cb = callback.Callable(
             action=api_pb2.ActionRequiredResponse(
-                type=api_pb2.ActionType.INFORMATION,
+                type=action_type,
                 message=message,
             ),
         )
@@ -327,8 +327,18 @@ class Navigator(BrowserApp):
                 result = await self.scroll()
             case 'back-to-top':
                 result = await self.back_to_top()
-            case 'confirmation' | 'human-intervention':
-                result = await self._human_feedback(thread, action['description'])
+            case 'confirmation':
+                result = await self._human_feedback(
+                    thread=thread,
+                    message=action['description'],
+                    action_type=api_pb2.ActionType.CONFIRMATION,
+                )
+            case 'human-intervention':
+                result = await self._human_feedback(
+                    thread=thread,
+                    message=action['description'],
+                    action_type=api_pb2.ActionType.INFORMATION,
+                )
             case 'done':
                 result = None
             case _:
