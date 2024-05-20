@@ -142,11 +142,14 @@ def _parse_response(response: str) -> Union[Response, None]:
 
 
 class Navigator(BrowserApp):
+    max_steps: int
+
     def __init__(
         self,
         playwright: PlaywrightContext,
         llm=None,
         model: str = 'gpt-4-vision-preview',
+        max_steps: int = 42,
     ):
         super().__init__(
             name='navigator',
@@ -157,6 +160,7 @@ class Navigator(BrowserApp):
         )
 
         self.playwright = playwright
+        self.max_steps = max_steps
 
     async def generate_user_prompt(self, task: str, history: List[Response]):
         await self.clear_bboxes()
@@ -210,6 +214,8 @@ class Navigator(BrowserApp):
 
         history: List[Response] = []
 
+        step = 0
+
         while True:
             msg = thread.fork(message)
 
@@ -240,6 +246,10 @@ class Navigator(BrowserApp):
             response['action'].pop('id', None)
             response['action']['element'] = elem_json
             history.append(response)
+            step += 1
+
+            if step > self.max_steps:
+                return f'Maximum number of steps reached. Last response was: {response_str}'
 
     async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         """
