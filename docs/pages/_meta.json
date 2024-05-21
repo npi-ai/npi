@@ -7,6 +7,11 @@
   "browser-apps": "",
   "cli": "CLI Reference",
   "python": "Python SDK Reference",
+  "playground": {
+    "title": "Playground",
+    "type": "page",
+    "href": "https://try.npi.ai/"
+  },
   "blog": {
     "title": "Blog",
     "type": "page",
