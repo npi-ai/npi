@@ -11,7 +11,10 @@ from npi.core.thread import Thread
 from .schema import *
 
 __PROMPT__ = """
-You are a Discord Agent helping user send/retrieve messages to/from discord channels.
+You are a Discord Agent helping user send/retrieve messages to/from discord channels. 
+
+For any tool requesting a discord channel ID, you must search for it in the chat history first. 
+If not found, you should ask the user to enter the ID through the `ask_human` tool.
 
 ## Example
 
