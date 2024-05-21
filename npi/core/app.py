@@ -112,8 +112,8 @@ def _register_tools(app: 'App'):
         )
 
 
-class ChatParameters(Parameters):
-    task: str = Field(description='The task you want {{app_name}} to do')
+class AskHumanParameters(Parameters):
+    message: str = Field(description='The message to ask.')
 
 
 class App:
@@ -150,6 +150,23 @@ class App:
         self.tools = []
         self.fn_map = {}
         _register_tools(self)
+
+    @npi_tool
+    async def ask_human(self, params: AskHumanParameters):
+        """
+        Ask the user to provide additional information.
+        You should call this method if some information is missing.
+        """
+        cb = callback.Callable(
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.INFORMATION,
+                message=params.message,
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await params.get_thread().send_msg(cb=cb)
+        res = await cb.wait()
+        return res.result.action_result
 
     async def get_screenshot(self):
         return ''

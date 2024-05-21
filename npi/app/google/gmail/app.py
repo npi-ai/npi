@@ -1,7 +1,6 @@
 import asyncio
 import json
 
-import loguru
 from googleapiclient.errors import HttpError
 from markdown import markdown
 from npiai_proto import api_pb2
@@ -11,6 +10,7 @@ from npi.config import config
 from npi.error.auth import UnauthorizedError
 from npi.app.google import GoogleApp
 from npi.core.app import npi_tool, callback
+from npi.utils import logger
 from .client import GmailClientWrapper
 from .schema import *
 
@@ -204,7 +204,7 @@ class Gmail(GoogleApp):
         )
         cb.action.action_id = cb.id()
         await params.get_thread().send_msg(cb=cb)  # TODO(wenfeng) how to save state and then recover?
-        loguru.logger.info(f"Waiting for user approving...")
+        logger.info(f"Waiting for user approving...")
         response = await cb.wait()  # TODO(wenfeng) return hangup and recovery later
         if not response.is_approved():
             if response.has_message():
