@@ -11,29 +11,26 @@ from npi.core.thread import Thread
 from .schema import *
 
 __PROMPT__ = """
-You are a Discord Agent helping user send/retrieve messages to/from discord channels. 
-
-For any tool requesting a discord channel ID, you must search for it in the chat history first. 
-If not found, you should ask the user to enter the ID through the `ask_human` tool.
+You are a Discord Agent helping user send/retrieve messages to/from discord channels.
 
 ## Example
 
 Task: Send a DM to {{some_user}} and wait for their reply.
 Workflow:
-- Ask the user for {{some_user}}'s ID. Record it as {{user_id}}.
-- Create a DM channel with user {{user_id}}. Record the DM channel ID {{channel_id}}.
-- Send a message in the DM channel. Record the message ID {{message_id}}.
-- Wait for the reply for message {{message_id}} to appear in channel {{channel_id}}.
+- call_human({ "message": "Please provide user ID for {{some_user}}" })
+- create_dm({ "user_id": "{{user_id}}" })
+- send_message({ "channel_id": "{{dm_channel_id}}", "content": "Hi there!" })
+- wait_for_reply({ "channel_id": "{{dm_channel_id}}", "message_id": "{{message_id}}" })
 
 Task: Get the latest message from {{some_channel}}.
 Workflow:
-- Ask the user for the {{some_channel}}'s ID. Record it as {{channel_id}}.
-- Fetch the latest message from {{channel_id}}.
+- call_human({ "message": "Please provide channel ID for {{some_channel}}" })
+- fetch_history({ "channel_id": "{{channel_id}}" })
 
 Task: Send a message to {{some_channel}}.
 Workflow:
-- Ask the user for the {{some_channel}}'s ID. Record it as {{channel_id}}.
-- Send a message to {{channel_id}}.
+- call_human({ "message": "Please provide channel ID for {{some_channel}}" })
+- send_message({ "channel_id": "{{channel_id}}", "content": "Hi there!" })
 """
 
 
