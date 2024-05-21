@@ -1,5 +1,3 @@
-from markdownify import markdownify
-
 from npi.core import BrowserApp, npi_tool
 from npi.browser_app.navigator import Navigator
 from .schema import *
@@ -28,9 +26,3 @@ class GeneralBrowserAgent(BrowserApp):
         # self.page.wait_for_url(params.url)
 
         return f'Opened {await self.get_page_url()}, page title: {await self.get_page_title()}'
-
-    @npi_tool
-    async def get_text(self):
-        """Get the text content (as markdown) of the current page"""
-        html = await self.playwright.page.evaluate('() => document.body.innerHTML')
-        return markdownify(html)

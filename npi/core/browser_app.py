@@ -2,8 +2,9 @@ import base64
 from openai import Client
 from openai.types.chat import ChatCompletionToolChoiceOptionParam
 from playwright.async_api import ElementHandle
+from markdownify import markdownify
 
-from npi.core.app import App
+from npi.core.app import App, npi_tool
 from npiai_proto import api_pb2
 from .playwright_context import PlaywrightContext
 
@@ -42,6 +43,12 @@ class BrowserApp(App):
         super().__init__(name, description, llm, system_role, model, tool_choice)
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
+
+    @npi_tool
+    async def get_text(self):
+        """Get the text content (as markdown) of the current page"""
+        html = await self.playwright.page.evaluate('() => document.body.innerHTML')
+        return markdownify(html)
 
     async def start(self, thread: Thread = None):
         """Start the Browser App"""
@@ -104,7 +111,7 @@ class BrowserApp(App):
 
     async def get_screenshot(self):
         """Get the screenshot of the current page"""
-        if not self.playwright or self.playwright.page.url == 'about:blank':
+        if not self.playwright or not self.playwright.ready or self.playwright.page.url == 'about:blank':
             return None
         screenshot = await self.playwright.page.screenshot(caret='initial')
         return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
