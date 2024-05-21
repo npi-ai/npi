@@ -116,6 +116,10 @@ class AskHumanParameters(Parameters):
     message: str = Field(description='The message to ask.')
 
 
+class ConfirmActionParameters(Parameters):
+    action: str = Field(description='The action to confirm.')
+
+
 class App:
     """The basic interface for the natural language programming interface"""
 
@@ -161,6 +165,23 @@ class App:
             action=api_pb2.ActionRequiredResponse(
                 type=api_pb2.ActionType.INFORMATION,
                 message=params.message,
+            ),
+        )
+        cb.action.action_id = cb.id()
+        await params.get_thread().send_msg(cb=cb)
+        res = await cb.wait()
+        return res.result.action_result
+
+    @npi_tool
+    async def confirm_action(self, params: ConfirmActionParameters):
+        """
+        Ask the user to confirm your action.
+        You should call this method if you are preforming some critical actions such as placing an order.
+        """
+        cb = callback.Callable(
+            action=api_pb2.ActionRequiredResponse(
+                type=api_pb2.ActionType.CONFIRMATION,
+                message=params.action,
             ),
         )
         cb.action.action_id = cb.id()
