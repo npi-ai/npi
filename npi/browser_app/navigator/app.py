@@ -182,6 +182,12 @@ class Navigator(BrowserApp):
 
         annotated_screenshot = await self.get_screenshot()
 
+        if not raw_screenshot or not annotated_screenshot:
+            return {
+                'role': 'user',
+                'content': user_prompt,
+            }
+
         return {
             'role': 'user',
             'content': [

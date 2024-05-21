@@ -21,7 +21,7 @@ class BrowserApp(App):
         description: str,
         llm: Client = None,
         system_role: str = None,
-        model: str = "gpt-4-vision-preview",
+        model: str = "gpt-4o",
         tool_choice: ChatCompletionToolChoiceOptionParam = "auto",
         playwright: PlaywrightContext = None,
         use_screenshot: bool = True,
@@ -74,10 +74,13 @@ class BrowserApp(App):
         if not self.use_screenshot:
             return await super().chat(message, thread)
 
+        screenshot = await self.get_screenshot()
+
+        if not screenshot:
+            return await super().chat(message, thread)
+
         if thread is None:
             thread = Thread('', api_pb2.APP_UNKNOWN)
-
-        screenshot = await self.get_screenshot()
 
         msg = thread.fork(message)
 
