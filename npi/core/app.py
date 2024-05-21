@@ -356,13 +356,16 @@ class App:
                     else:
                         return await fn_reg.fn()
 
-                if args.get('npi_watch', 0) > 0:
-                    logger.debug(f'[{self.name}]: watching function `{fn_name}`, interval: {args["npi_watch"]}s')
-                    res = await self._watch_tool(_exec_tool, args['npi_watch'])
-                else:
-                    res = await _exec_tool()
-
-                logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
+                try:
+                    if args.get('npi_watch', 0) > 0:
+                        logger.debug(f'[{self.name}]: watching function `{fn_name}`, interval: {args["npi_watch"]}s')
+                        res = await self._watch_tool(_exec_tool, args['npi_watch'])
+                    else:
+                        res = await _exec_tool()
+                    logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
+                except Exception as e:
+                    logger.error(e)
+                    res = f'Error: {e}'
 
                 message.append(
                     {
