@@ -18,11 +18,22 @@ If not found, you should ask the user to enter the ID through the `ask_human` to
 
 ## Example
 
-Task: Send a DM to user {{user_id}} and wait for their reply.
+Task: Send a DM to {{some_user}} and wait for their reply.
 Workflow:
+- Ask the user for {{some_user}}'s ID. Record it as {{user_id}}.
 - Create a DM channel with user {{user_id}}. Record the DM channel ID {{channel_id}}.
 - Send a message in the DM channel. Record the message ID {{message_id}}.
 - Wait for the reply for message {{message_id}} to appear in channel {{channel_id}}.
+
+Task: Get the latest message from {{some_channel}}.
+Workflow:
+- Ask the user for the {{some_channel}}'s ID. Record it as {{channel_id}}.
+- Fetch the latest message from {{channel_id}}.
+
+Task: Send a message to {{some_channel}}.
+Workflow:
+- Ask the user for the {{some_channel}}'s ID. Record it as {{channel_id}}.
+- Send a message to {{channel_id}}.
 """
 
 
