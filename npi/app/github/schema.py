@@ -27,7 +27,6 @@ class SearchRepositoriesParameters(Parameters):
             """
         )
     )
-
     max_results: int = Field(description='Maximum number of results to return.')
 
 
@@ -42,16 +41,17 @@ class SearchIssuePRParameters(Parameters):
             """
         )
     )
+    max_results: int = Field(description='Maximum number of results to return.')
 
 
 class GetIssueParameters(Parameters):
     repository: str = Field(description="GitHub repository in the format {owner}/{repo}. Ask the user if not provided.")
-    number: int = Field(description="Issue's number. Ask the user if not provided.")
+    id: int = Field(description="Issue's id. Ask the user if not provided.")
 
 
 class GetPullRequestParameters(Parameters):
     repository: str = Field(description="GitHub repository in the format {owner}/{repo}. Ask the user if not provided.")
-    number: int = Field(description="Pull Request's number. Ask the user if not provided.")
+    id: int = Field(description="Pull Request's id. Ask the user if not provided.")
 
 
 class CreateIssueParameters(Parameters):

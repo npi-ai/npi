@@ -12,6 +12,25 @@ from npi.config import config
 from npi.error.auth import UnauthorizedError
 from .schema import *
 
+__PROMPT__ = """
+You are a GitHub Agent helping users to manage their issues and pull requests.
+
+## Example
+
+Task: Get the latest issue from npi-ai/npi
+Steps:
+- get_issue_pr({ "query": "repo:npi-ai/npi is:issue", "max_results": 1 })
+
+Task: Star and fork npi-ai/npi.
+Steps:
+- star({ "repo": "npi-ai/npi" })
+- fork({ "repo": "npi-ai/npi" })
+
+Task: Leave a comment in issue #42 from npi-ai/npi.
+Steps:
+- add_issue_comment({ "repo": "npi-ai/npi", id: 42, "body": "{{issue_comment}}" })
+"""
+
 _T = TypeVar('_T')
 
 
@@ -31,9 +50,9 @@ class GitHub(App):
 
         super().__init__(
             name='github',
-            description='Manage GitHub issues and pull requests using English, e.g., github("reply to the latest '
+            description='Manage GitHub issues and pull requests, e.g., github("reply to the latest '
                         'issue in npi/npi")',
-            system_role='You are a GitHub Agent helping users to manage their issues and pull requests',
+            system_role=__PROMPT__,
             llm=llm,
         )
 
@@ -128,7 +147,7 @@ class GitHub(App):
 
     @npi_tool
     def watch(self, params: WatchParameters):
-        """Watch a repository on GitHub"""
+        """Subscribe to notifications (a.k.a. watch) for activity in a repository on GitHub"""
         repo = self.github_client.get_repo(params.repo)
         user = self.github_client.get_user()
         user.add_to_watched(repo)
@@ -165,18 +184,23 @@ class GitHub(App):
         if res.totalCount == 0:
             return 'No results found'
 
-        return json.dumps([self._issue_pr_to_json(item) for item in res], ensure_ascii=False)
+        results = []
+
+        for item in res[:params.max_results]:
+            results.append(self._issue_pr_to_json(item))
+
+        return json.dumps(results, ensure_ascii=False)
 
     @npi_tool
     def get_issue(self, params: GetIssueParameters):
         """Get an issue from the given repository"""
-        issue = self._get_issue(repo_name=params.repository, number=params.number)
+        issue = self._get_issue(repo_name=params.repository, number=params.id)
         return json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
 
     @npi_tool
     def get_pull_request(self, params: GetPullRequestParameters):
         """Get a pull request from the given repository"""
-        pr = self._get_pull_request(repo_name=params.repository, number=params.number)
+        pr = self._get_pull_request(repo_name=params.repository, number=params.id)
         return json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
 
     @npi_tool
@@ -215,7 +239,7 @@ class GitHub(App):
     @npi_tool
     def add_issue_comment(self, params: AddIssueCommentParameters):
         """Add a comment to the target issue"""
-        issue = self._get_issue(repo_name=params.repository, number=params.number)
+        issue = self._get_issue(repo_name=params.repository, number=params.id)
         comment = issue.create_comment(params.body)
 
         return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
@@ -223,7 +247,7 @@ class GitHub(App):
     @npi_tool
     def add_pull_request_comment(self, params: AddPullRequestCommentParameters):
         """Add a comment to the target pull request"""
-        pr = self._get_pull_request(repo_name=params.repository, number=params.number)
+        pr = self._get_pull_request(repo_name=params.repository, number=params.id)
         comment = pr.create_issue_comment(params.body)
 
         return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
@@ -231,7 +255,7 @@ class GitHub(App):
     @npi_tool
     def edit_issue(self, params: EditIssueParameters):
         """Edit an existing issue. You can also close or reopen an issue by specifying the state parameter."""
-        issue = self._get_issue(repo_name=params.repository, number=params.number)
+        issue = self._get_issue(repo_name=params.repository, number=params.id)
 
         issue.edit(
             title=_default_not_set(params.title),
@@ -246,7 +270,7 @@ class GitHub(App):
     @npi_tool
     def edit_pull_request(self, params: EditPullRequestParameters):
         """Edit an existing pull request. You can also close or reopen a pull request by specifying the state parameter."""
-        pr = self._get_pull_request(repo_name=params.repository, number=params.number)
+        pr = self._get_pull_request(repo_name=params.repository, number=params.id)
 
         pr.edit(
             title=_default_not_set(params.title),
@@ -256,9 +280,9 @@ class GitHub(App):
         )
 
         if params.labels:
-            pr.add_to_labels(params.labels)
+            pr.add_to_labels(*params.labels)
 
         if params.assignees:
-            pr.add_to_assignees(params.assignees)
+            pr.add_to_assignees(*params.assignees)
 
         return 'Pull Request updated to:\n' + json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
