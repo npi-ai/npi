@@ -32,7 +32,7 @@ class GoogleCalendar(GoogleApp):
         if creds is None:
             raise UnauthorizedError(
                 "Google Calendar credentials not found, please use `npi auth google calendar` first"
-                )
+            )
         super().__init__(
             name='google_calendar',
             description='a function that can invoke natural language(English only) instruction to interact with '
@@ -50,12 +50,12 @@ class GoogleCalendar(GoogleApp):
         )
 
     @npi_tool
-    def __get_today(self):
+    def get_today(self):
         """Get today's date"""
         return datetime.date.today().strftime('%a, %Y-%m-%d')
 
     @npi_tool
-    def __get_timezone(self):
+    def get_timezone(self):
         """Get the user's timezone"""
         res = self.service.calendars().get(  # pylint: disable=maybe-no-member
             calendarId='primary'
@@ -64,7 +64,7 @@ class GoogleCalendar(GoogleApp):
         return res.get('timeZone')
 
     @npi_tool
-    async def __get_user_email(self, params: GetUserEmailParameters):
+    async def get_user_email(self, params: GetUserEmailParameters):
         """Get the user's email address"""
 
         cb = callback.Callable(
@@ -80,7 +80,7 @@ class GoogleCalendar(GoogleApp):
         return result.result.action_result
 
     @npi_tool
-    def __retrieve_events(self, params: RetrieveEventsParameters) -> str:
+    def retrieve_events(self, params: RetrieveEventsParameters) -> str:
         """Retrieve events from Google Calendar"""
         calendar_id = params.calendar_id
         time_min = params.time_min
@@ -118,7 +118,7 @@ class GoogleCalendar(GoogleApp):
             raise error
 
     @npi_tool
-    def __create_event(self, params: CreateEventParameters) -> str:
+    def create_event(self, params: CreateEventParameters) -> str:
         """Create and add an event to Google Calendar"""
         summary = params.summary
         description = params.description
