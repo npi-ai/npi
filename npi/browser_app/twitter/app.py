@@ -198,7 +198,7 @@ class Twitter(BrowserApp):
     @npi_tool
     async def search(self, params: SearchParameters):
         """Search Twitter for tweets or users matching the given query."""
-        await self.playwright.page.goto('https://twitter.com/explore')
+        await self.playwright.page.goto('https://x.com/explore')
         search_input = self.playwright.page.get_by_test_id('SearchBox_Search_Input')
         await search_input.fill(params.query)
         await search_input.press('Enter')
@@ -213,14 +213,14 @@ class Twitter(BrowserApp):
     async def goto_profile(self, params: GotoProfileParameters):
         """Goto Twitter user's profile page."""
         username = params.username.replace('@', '')
-        await self.playwright.page.goto(f'https://twitter.com/{username}')
+        await self.playwright.page.goto(f'https://x.com/{username}')
 
         return f'The profile page for user {params.username} is opened. Current page: {await self.get_page_title()}'
 
     @npi_tool
     async def goto_notifications(self):
         """Goto Twitter user's notifications page."""
-        await self.playwright.page.goto('https://twitter.com/notifications/mentions')
+        await self.playwright.page.goto('https://x.com/notifications/mentions')
 
         return f'The notifications page is opened. Current page: {await self.get_page_title()}'
 
@@ -305,7 +305,7 @@ class Twitter(BrowserApp):
                 link = await tweet.locator('a[href*="/status/"]').first.get_attribute('href')
                 results.append(
                     {
-                        'link': f'https://twitter.com{link}',
+                        'link': f'https://x.com{link}',
                         'content': html_to_md(await tweet.inner_html()),
                     }
                 )
