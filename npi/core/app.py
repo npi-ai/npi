@@ -366,6 +366,7 @@ class App:
                 except Exception as e:
                     logger.error(e)
                     res = f'Error: {e}'
+                    await thread.send_msg(callback.Callable(f'Error Occurred: {e}'))
 
                 message.append(
                     {
