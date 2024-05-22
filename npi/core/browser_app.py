@@ -2,13 +2,19 @@ import base64
 from openai import Client
 from openai.types.chat import ChatCompletionToolChoiceOptionParam
 from playwright.async_api import ElementHandle
-from markdownify import markdownify
+from markdownify import MarkdownConverter
 
 from npi.core.app import App, npi_tool
 from npiai_proto import api_pb2
 from .playwright_context import PlaywrightContext
 
 from npi.core.thread import Thread
+
+
+class MdConverter(MarkdownConverter):
+    # skip <noscript> tags
+    def convert_noscript(self, _el, _text, _convert_as_inline):
+        return ''
 
 
 class BrowserApp(App):
@@ -48,7 +54,7 @@ class BrowserApp(App):
     async def get_text(self):
         """Get the text content (as markdown) of the current page"""
         html = await self.playwright.page.evaluate('() => document.body.innerHTML')
-        return markdownify(html)
+        return MdConverter().convert(html)
 
     async def start(self, thread: Thread = None):
         """Start the Browser App"""
