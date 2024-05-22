@@ -53,6 +53,7 @@ class PlaywrightContext:
 
         self.context = await self.browser.new_context(
             locale='en-US',
+            bypass_csp=True,
             **self.playwright.devices['Desktop Edge'],
         )
         # self.context.set_default_timeout(3000)
