@@ -263,7 +263,7 @@ class Twitter(BrowserApp):
 
         # match unvisited tweets only
         tweets = self.playwright.page.locator('[data-testid="tweet"]:not([data-visited])')
-        await tweets.first.wait_for(state='attached', timeout=10_000)
+        await tweets.first.wait_for(state='attached', timeout=180_000)
 
         logger.debug(f'{await tweets.count()} tweets found.')
 
