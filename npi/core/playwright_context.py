@@ -4,7 +4,7 @@ from urllib.request import urlretrieve
 
 from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page, FileChooser
 
-__BROWSER_UTILS_VERSION__ = '0.0.1'
+__BROWSER_UTILS_VERSION__ = '0.0.2'
 
 
 def _prepare_browser_utils():
