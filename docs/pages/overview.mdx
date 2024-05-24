@@ -19,9 +19,9 @@ Within NPi, an Agent refers to a programmed entity designed to fulfill tasks bas
 ```python filename="examples/calendar_negotiator"
 from openai import OpenAI
 
-from npiai.core import Agent
-from npiai.app.google import Gmail, Calendar
-from npiai.app.human_feedback import ConsoleFeedback
+from npiai.deprecated.core import Agent
+from npiai.deprecated.app.google import Gmail, Calendar
+from npiai.deprecated.app.human_feedback import ConsoleFeedback
 
 PROMPT = """ YOUR PROMPT HERE """
 

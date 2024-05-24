@@ -1,4 +1,4 @@
-from npiai.core.base import App
+from npiai.deprecated.core import App
 from npiai_proto import api_pb2
 from typing_extensions import override
 

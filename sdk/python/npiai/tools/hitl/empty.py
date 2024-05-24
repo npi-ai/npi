@@ -1,5 +1,5 @@
-from npiai.core.hitl import (
-    HITLHandler, HITLRequest, HITLResponse, ActionRequestCode, ActionResultCode, ACTION_APPROVED, ACTION_DENIED)
+from npiai.deprecated.core.hitl import (
+    HITLHandler, HITLRequest, HITLResponse, ActionRequestCode, ActionResultCode, ACTION_DENIED)
 
 from npiai_proto import api_pb2
 

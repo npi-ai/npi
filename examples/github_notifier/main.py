@@ -1,10 +1,10 @@
 import os
 
 from openai import OpenAI
-from npiai.core import Agent
+from npiai.deprecated.core import Agent
 from npiai.tools.hitl.console import ConsoleHandler
-from npiai.app.github import GitHub
-from npiai.app.google import Gmail
+from npiai.deprecated.app import GitHub
+from npiai.deprecated.app.google import Gmail
 
 
 def main():

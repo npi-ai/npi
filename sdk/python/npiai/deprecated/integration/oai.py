@@ -1,7 +1,7 @@
 from typing_extensions import override
 
 from openai import AssistantEventHandler, Client
-from npiai.core.toolset import ToolSet
+from npiai.deprecated.core import ToolSet
 
 
 class EventHandler(AssistantEventHandler):

@@ -12,6 +12,7 @@ npiai-proto = {path = "../../proto/python"}
 termcolor = "^2.4.0"
 loguru = "^0.7.2"
 twilio = "^9.0.5"
+litellm = "^1.38.1"
 
 
 [build-system]

@@ -1,5 +1,5 @@
-from npiai.core.base import App
-from npiai.core.hitl import HITLHandler
+from npiai.deprecated.core.base import App
+from npiai.deprecated.core.hitl import HITLHandler
 from openai import Client
 
 from npiai.tools.hitl import EmptyHandler

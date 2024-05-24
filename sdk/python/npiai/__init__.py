@@ -1,4 +1,3 @@
-from .app import Calendar, Gmail, ConsoleFeedback
-from .core.base import App, Agent
+from .client import Client
 
-__all__ = ['Calendar', 'Gmail', 'ConsoleFeedback', 'App', 'Agent']
+__all__ = ['Client']
