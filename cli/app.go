@@ -119,7 +119,7 @@ func twilioCommand() *cobra.Command {
 func doRequest(app api.AppType, instruction string) {
 	var opts []grpc.DialOption
 
-	if cfg.Insecure {
+	if !cfg.Secure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")))

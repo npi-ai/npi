@@ -14,9 +14,10 @@ import (
 )
 
 type CMDConfig struct {
-	NPIServer string `yaml:"endpoint"`
-	APIKey    string `yaml:"api-key"`
-	Insecure  bool   `yaml:"insecure"`
+	NPIServer            string `yaml:"endpoint"`
+	APIKey               string `yaml:"api-key"`
+	Secure               bool   `yaml:"secure"`
+	UseProvisionedSecret bool   `yaml:"use-provision"`
 }
 
 func (c *CMDConfig) GetGRPCEndpoint() string {
@@ -32,8 +33,8 @@ func (c *CMDConfig) merge(fs *pflag.FlagSet, i CMDConfig) {
 		c.APIKey = i.APIKey
 	}
 
-	if !fs.Changed("insecure") {
-		c.Insecure = i.Insecure
+	if !fs.Changed("secure") {
+		c.Secure = i.Secure
 	}
 }
 

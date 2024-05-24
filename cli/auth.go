@@ -22,6 +22,7 @@ func authCommand() *cobra.Command {
 		Use:   "auth",
 		Short: "authorize target applications",
 	}
+	cmd.PersistentFlags().BoolVar(&cfg.UseProvisionedSecret, "use-provision", false, "if use NPi Playground provisioned secret")
 	cmd.AddCommand(authGoogleCommand())
 	cmd.AddCommand(authGitHubCommand())
 	cmd.AddCommand(authDiscordCommand())
@@ -39,37 +40,39 @@ func authGoogleCommand() *cobra.Command {
 		Use:   "google [app_name]",
 		Short: "authorize Google API: gmail, calendar",
 		Run: func(cmd *cobra.Command, args []string) {
-			if googleSecretFile == "" {
-				_ = cmd.Help()
-				return
-			}
-			f, err := os.Open(googleSecretFile)
-			if err != nil {
-				color.Red("failed to open Google secret file: %v", err)
-				os.Exit(-1)
-			}
-			defer f.Close()
-			data, err := io.ReadAll(f)
-			if err != nil {
-				color.Red("failed to read Google secret file: %v", err)
-				os.Exit(-1)
-			}
-
 			if len(args) == 0 {
 				_ = cmd.Help()
 				return
 			}
 			var resp *api.AuthorizeResponse
-			if args[0] == "gmail" {
-				resp, err = doAuthRequest(api.AppType_GOOGLE_GMAIL, map[string]string{
-					"secrets":  string(data),
-					"callback": "http://localhost:19141/auth/google/callback",
-				})
+			var err error
+			cred := map[string]string{
+				"callback": "http://localhost:19141/auth/google/callback",
+			}
+			if !cfg.UseProvisionedSecret {
+				if googleSecretFile == "" {
+					_ = cmd.Help()
+					return
+				}
+				f, err := os.Open(googleSecretFile)
+				if err != nil {
+					color.Red("failed to open Google secret file: %v", err)
+					os.Exit(-1)
+				}
+				defer f.Close()
+				data, err := io.ReadAll(f)
+				if err != nil {
+					color.Red("failed to read Google secret file: %v", err)
+					os.Exit(-1)
+				}
+				cred["secrets"] = string(data)
 			} else {
-				resp, err = doAuthRequest(api.AppType_GOOGLE_CALENDAR, map[string]string{
-					"secrets":  string(data),
-					"callback": "http://localhost:19141/auth/google/callback",
-				})
+				cred["npi-provisioned-config"] = "true"
+			}
+			if args[0] == "gmail" {
+				resp, err = doAuthRequest(api.AppType_GOOGLE_GMAIL, cred)
+			} else {
+				resp, err = doAuthRequest(api.AppType_GOOGLE_CALENDAR, cred)
 			}
 			if err != nil {
 				color.Red("failed to authorize Google: %v", err)
@@ -264,7 +267,7 @@ func doAuthRequest(app api.AppType, params map[string]string) (*api.AuthorizeRes
 
 func getGRPCConn() *grpc.ClientConn {
 	var opts []grpc.DialOption
-	if cfg.Insecure {
+	if !cfg.Secure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")))

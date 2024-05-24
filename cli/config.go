@@ -42,7 +42,7 @@ func setCommand() *cobra.Command {
 					color.Red("failed to parse boolean value: %v", err)
 					return
 				}
-				cmdCfg.Insecure = v
+				cmdCfg.Secure = v
 			default:
 				color.Red("unknown key: %s", args[0])
 			}
@@ -72,7 +72,7 @@ func getCommand() *cobra.Command {
 			case "endpoint":
 				color.Green("endpoint = %s", cmdCfg.GetGRPCEndpoint())
 			case "insecure":
-				color.Green("insecure = %v", cmdCfg.Insecure)
+				color.Green("insecure = %v", cmdCfg.Secure)
 			default:
 				color.Red("unknown key: %s", args[0])
 			}
@@ -100,7 +100,7 @@ func loadCfg() *CMDConfig {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &CMDConfig{
-				Insecure: true,
+				Secure: false,
 			}
 		}
 		color.Red("failed to open config file: %v", err)
