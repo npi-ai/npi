@@ -4,7 +4,7 @@ import time
 from twilio.rest import Client
 import loguru
 
-from npiai.core.hitl import (
+from npiai.deprecated.core.hitl import (
     HITLHandler, HITLRequest, HITLResponse, ActionRequestCode, ACTION_APPROVED, ACTION_DENIED)
 
 from npiai_proto import api_pb2

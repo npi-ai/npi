@@ -1,5 +1,5 @@
-from npiai.app.google import Gmail
-from npiai.core.hitl import ConsoleHITLHandler
+from npiai.deprecated.app.google import Gmail
+from npiai.deprecated.core.hitl import ConsoleHITLHandler
 
 if __name__ == '__main__':
     gmail = Gmail()

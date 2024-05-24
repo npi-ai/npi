@@ -1,9 +1,9 @@
 
 from openai import OpenAI
-from npiai.app import Gmail, GitHub
+from npiai.deprecated.app import GitHub
 from npiai.tools.hitl.console import ConsoleHandler
-from npiai.core.toolset import ToolSet
-from npiai.integration.oai import EventHandler
+from npiai.deprecated.core import ToolSet
+from npiai.deprecated.integration.oai import EventHandler
 
 
 if __name__ == "__main__":

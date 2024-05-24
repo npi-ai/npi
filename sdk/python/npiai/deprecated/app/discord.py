@@ -1,15 +1,15 @@
-from npiai.core.base import App
+from npiai.deprecated.core import App
 from npiai_proto import api_pb2
 from typing_extensions import override
 
 
-class GitHub(App):
+class Discord(App):
     __access_token: str
 
     def __init__(self, access_token: str, **kwargs):
         super().__init__(
-            app_name="github",
-            app_type=api_pb2.GITHUB,
+            app_name="discord",
+            app_type=api_pb2.DISCORD,
             **kwargs,
         )
 

@@ -2,10 +2,10 @@
 
 from openai import OpenAI
 
-from npiai.core import Agent
+from npiai.deprecated.core import Agent
 from npiai.tools.hitl import ConsoleHandler
-from npiai.app.google import Gmail, Calendar
-from npiai.app.human_feedback import ConsoleFeedback
+from npiai.deprecated.app.google import Gmail, Calendar
+from npiai.deprecated.app.human_feedback import ConsoleFeedback
 
 PROMPT = """
 Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.

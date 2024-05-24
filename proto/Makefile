@@ -21,7 +21,7 @@ generate-py:
  		 --python_out=${NPI_PROTO_ROOT}/python/npiai_proto \
  		 --pyi_out=${NPI_PROTO_ROOT}/python/npiai_proto \
  		 --grpc_python_out=${NPI_PROTO_ROOT}/python/npiai_proto \
- 		 api.proto
+ 		 api.proto controller.proto
 
 # https://github.com/grpc/grpc-web
 generate-js:

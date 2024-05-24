@@ -5,11 +5,11 @@ import threading
 
 from openai import OpenAI
 
-from npiai.core import Agent
+from npiai.deprecated.core import Agent
 from npiai.tools.hitl import ConsoleHandler
-from npiai.app.discord import Discord
-from npiai.browser_app.twitter import Twitter
-from npiai.app.human_feedback import ConsoleFeedback
+from npiai.deprecated.app import Discord
+from npiai.deprecated.browser_app import Twitter
+from npiai.deprecated.app.human_feedback import ConsoleFeedback
 
 PROMPT = """
 You are a Twitter Crawler capable of retrieving data from Twitter and sending messages to Discord.

@@ -4,7 +4,7 @@ import traceback
 from typing import List, Dict
 import grpc
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from openai import OpenAI
 from openai.types.chat import (
@@ -16,7 +16,7 @@ from openai.types.chat import (
 
 from npiai_proto import api_pb2_grpc, api_pb2
 from npiai.utils import logger
-from npiai.core import hitl
+from npiai.deprecated.core import hitl
 
 
 class App(ABC):
