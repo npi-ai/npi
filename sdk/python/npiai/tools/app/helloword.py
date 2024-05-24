@@ -8,6 +8,7 @@ class HelloWorld(Tool):
                  llm: LLM,
                  agent_mode: bool,
                  server_mode: bool,
+                 model: str,
                  server_endpoint: str = "localhost:9140",
                  run_port: int = 19410,
                  ):

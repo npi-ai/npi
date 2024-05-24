@@ -8,11 +8,10 @@ from litellm import acompletion, ModelResponse, CustomStreamWrapper
 
 class Provider(Enum):
     OpenAI = 1
-    Llama3 = 2
-    Claude3 = 3
-    Anthropic = 4
-    Groq = 5
-    AzureOpenAI = 6
+    Llama = 2
+    Anthropic = 3
+    Groq = 4
+    AzureOpenAI = 5
 
 
 class LLM:
@@ -20,6 +19,9 @@ class LLM:
         self.model = model
         self.api_key = api_key
         self.provider = provider
+
+    def default_model(self) -> str:
+        return self.model
 
     def get_provider(self) -> Provider:
         return self.provider

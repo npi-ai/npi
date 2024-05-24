@@ -14,7 +14,6 @@ from npiai_proto.controller_pb2 import (
 
 
 def function(name: str, method: str):
-
     pass
 
 
@@ -98,3 +97,16 @@ class Tool:
 
     def __str__(self):
         return f"Tool: {self.name}"
+
+
+def group(tools: List[Tool],
+          name: str = "",
+          agent_mode: bool = False,
+          version: str = "",
+          description: str = "",
+          author: str = "",
+          server_mode: bool = False,
+          server_endpoint: str = "localhost:9140",
+          run_port: int = 19410,
+          ) -> Tool:
+    pass
