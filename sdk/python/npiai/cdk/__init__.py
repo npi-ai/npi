@@ -1,3 +1,3 @@
-from .tool import Tool, function
+from .tool import Tool, function, group
 
-__all__ = ['Tool', 'function']
+__all__ = ['Tool', 'function', 'group']
