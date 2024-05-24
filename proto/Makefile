@@ -10,7 +10,7 @@ generate-go:
 	  --go-grpc_opt=paths=source_relative,require_unimplemented_servers=false \
 	  --go-grpc-mock_out=${NPI_PROTO_ROOT}/go/api \
 	  --go-grpc-mock_opt=paths=source_relative \
-	  	api.proto
+	  	api.proto controller.proto
 
 
 generate-py:
