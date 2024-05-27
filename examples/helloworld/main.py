@@ -1,11 +1,11 @@
-from npiai import Client, group
+from npiai import NPI, group
 from npiai import OpenAI as OpenAIWrapper
 from openai import OpenAI
 
 if __name__ == '__main__':
     # 1. Function Mode
     llm = OpenAIWrapper(api_key="abcd", model="gpt-4o")
-    client = Client(llm=llm)
+    client = NPI(llm=llm)
 
     gh = client.GitHub()
     oai = OpenAI()

@@ -1,44 +1,24 @@
-from typing import List
+from npiai import app, NPI
 
-from npi.v1 import App
-from npi.v1.types import Shot
+npi = NPI()
 
 
-def hello_world() -> App:
-    app = App(
-        name='time',
-        description='a function package to get current date and timezone',
-        provider='npiai',
-    )
-
-    @app.npi_tool(
-        few_shots=[
-            Shot(
-                instruction='get current date',
-                calling='get_today()',
-                output='2024-05-18',
-            )
-        ]
-    )
-    def get_today():
-        """Get today's date."""
-        import datetime
-        return datetime.datetime.now().strftime("%Y-%m-%d")
-
-    @app.npi_tool
-    def get_timezone(test: str, cases: List[str]):
-        """
-        Get the timezone name.
-
-        Args:
-            test: String parameter test.
-            cases: List of string parameters.
-        """
-        print(cases)
-        return test + ", America/New_York"
-
-    return app
+@npi.function(description='demo')
+def test():
+    return 'Hello NPi!'
 
 
 if __name__ == "__main__":
-    hello_world().export_tools('.cache/function.yml')
+    print(npi.run(fn_name='test'))
+
+    hw = app.time.create()
+    print(hw.name())  # => time
+    npi.add(hw)
+    print(npi.run(fn_name='time/get_timezone', params={
+        'test': 'Shanghai',
+        'cases': ['case1', 'case2'],
+    }))
+
+    npi.add(hw)
+
+    npi.server(port=19410)
