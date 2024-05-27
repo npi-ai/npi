@@ -31,6 +31,7 @@ slack-sdk = "^3.27.1"
 twilio = "^9.0.5"
 types-protobuf = "^5.26.0.20240422"
 litellm = "^1.38.1"
+docstring-parser = "^0.16"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^69.2.0"

@@ -1,13 +1,7 @@
 from typing import List
 
-from pydantic import Field
 from npi.v1 import App
-from npi.v1.types import Parameters, Shot
-
-
-class GetTimezoneParameters(Parameters):
-    test: str = Field(description="string parameter")
-    cases: List[str] = Field(description="list of strings parameter")
+from npi.v1.types import Shot
 
 
 def hello_world() -> App:
@@ -32,9 +26,16 @@ def hello_world() -> App:
         return datetime.datetime.now().strftime("%Y-%m-%d")
 
     @app.npi_tool
-    def get_timezone(params: GetTimezoneParameters):
-        """Get the timezone name."""
-        return params.test + ", America/New_York"
+    def get_timezone(test: str, cases: List[str]):
+        """
+        Get the timezone name.
+
+        Args:
+            test: String parameter test.
+            cases: List of string parameters.
+        """
+        print(cases)
+        return test + ", America/New_York"
 
     return app
 

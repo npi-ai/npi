@@ -4,9 +4,11 @@ import inspect
 import ast
 import re
 from textwrap import dedent
-from typing import Optional, Type, List, Callable
+from pydantic import BaseModel, Field, create_model
+from typing import Optional, Type, List, Callable, Dict, Any
 
 import yaml
+import docstring_parser
 
 from npi.v1.types import Parameters, ToolFunction, Shot, FunctionRegistration
 
@@ -55,6 +57,34 @@ def extract_code(fn: Callable) -> str:
     return ast.unparse(tree)
 
 
+def sanitize_schema(model: BaseModel) -> Dict[str, Any]:
+    schema = model.model_json_schema()
+
+    # remove unnecessary title
+    schema.pop('title', None)
+
+    for prop in schema.get('properties', {}).values():
+        prop.pop('title', None)
+
+        # use a more compact format for optional fields
+        if 'anyOf' in prop and len(prop['anyOf']) == 2 and prop['anyOf'][1]['type'] == 'null':
+            # copy the first type definition to props
+            t = prop['anyOf'][0]
+            for k, v in t.items():
+                prop[k] = v
+
+            prop.pop('anyOf', None)
+
+            if prop.get('default') is None:
+                prop.pop('default', None)
+
+    # remove empty properties
+    if len(schema.get('properties', {})) == 0:
+        schema.pop('properties', None)
+
+    return schema
+
+
 class App:
     name: str
     description: str
@@ -72,7 +102,7 @@ class App:
         tool_fn: ToolFunction = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        Params: Optional[Type[Parameters]] = None,
+        schema: Dict[str, Any] = None,
         few_shots: Optional[List[Shot]] = None
     ):
         """
@@ -82,7 +112,7 @@ class App:
             tool_fn: Tool function. This value will be set automatically.
             name: Tool name. The tool function name will be used if not given.
             description: Tool description. This value will be inferred from the tool's docstring if not given.
-            Params: Tool parameters factory. This value will be inferred from the tool's type hints if not given.
+            schema: Tool parameters schema. This value will be inferred from the tool's type hints if not given.
             few_shots: Predefined working examples.
 
         Returns:
@@ -91,30 +121,33 @@ class App:
 
         def decorator(fn: ToolFunction):
             params = list(inspect.signature(fn).parameters.values())
-            params_count = len(params)
-
-            if params_count > 1:
-                raise TypeError(
-                    f'Tool function `{fn.__name__}` should have at most 1 parameter, got {params_count}'
-                )
-
-            ParamsClass: Type[Parameters] | None = Params
-
-            if params_count == 1:
-                # this method is likely to receive a Parameter object
-                ParamsClass = Params or params[0].annotation
-
-                if not ParamsClass or not issubclass(ParamsClass, Parameters):
-                    raise TypeError(
-                        f'Tool function `{fn.__name__}`\'s parameter should have type {type(Parameters)}, got {type(ParamsClass)}'
-                    )
-
-            tool_desc = description or fn.__doc__
+            docstr = docstring_parser.parse(inspect.getdoc(fn))
+            tool_name = name or fn.__name__
+            tool_desc = description or docstr.description
 
             if not tool_desc:
                 raise ValueError(
                     f'Unable to get the description of tool function `{fn}`'
                 )
+
+            tool_schema = schema
+
+            if len(params) > 0:
+                # get parameter descriptions
+                param_descriptions = {}
+                for p in docstr.params:
+                    param_descriptions[p.arg_name] = p.description
+
+                # get parameter field definitions
+                param_fields = {}
+                for p in params:
+                    param_fields[p.name] = (p.annotation, Field(
+                        default=p.default if p.default is not inspect.Parameter.empty else ...,
+                        description=param_descriptions.get(p.name, ''),
+                    ))
+
+                model = create_model(f'{tool_name}_model', **param_fields)
+                tool_schema = sanitize_schema(model)
 
             # wrap fn in an async wrapper
             @functools.wraps(fn)
@@ -124,15 +157,13 @@ class App:
                     return await res
                 return res
 
-            tool_name = name or fn.__name__
-
             self.tools.append(
                 FunctionRegistration(
                     fn=tool_wrapper,
                     name=tool_name,
                     description=tool_desc.strip(),
                     code=extract_code(fn),
-                    Params=ParamsClass,
+                    schema=tool_schema,
                     few_shots=few_shots,
                 )
             )
