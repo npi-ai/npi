@@ -1,8 +1,10 @@
 import asyncio
 import functools
 import inspect
+import ast
+import re
 from textwrap import dedent
-from typing import Optional, Type, List
+from typing import Optional, Type, List, Callable
 
 import yaml
 
@@ -21,6 +23,36 @@ def str_presenter(dumper, data):
 
 yaml.add_representer(str, str_presenter)
 yaml.representer.SafeRepresenter.add_representer(str, str_presenter)  # to use with safe_dum
+
+
+def extract_code(fn: Callable) -> str:
+    expr = dedent(inspect.getsource(fn))
+    doc = inspect.getdoc(fn)
+
+    # remove docstring
+    if doc:
+        expr = re.sub(r'(?P<quotes>[\'"]{3})\s*' + doc + r'\s*(?P=quotes)', '', expr)
+
+    tree = ast.parse(expr)
+
+    ast_fn = tree.body[0]
+
+    # remove @npi_tool decorator from code
+    # TODO: ast tree traversal
+    if isinstance(ast_fn, ast.FunctionDef):
+        for i, decorator in enumerate(ast_fn.decorator_list):
+            attr = None
+
+            if isinstance(decorator, ast.Attribute):
+                attr = decorator
+            elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                attr = decorator.func
+
+            if attr and attr.attr == 'npi_tool':
+                ast_fn.decorator_list.pop(i)
+                break
+
+    return ast.unparse(tree)
 
 
 class App:
@@ -99,7 +131,7 @@ class App:
                     fn=tool_wrapper,
                     name=tool_name,
                     description=tool_desc.strip(),
-                    code=dedent(inspect.getsource(fn)),
+                    code=extract_code(fn),
                     Params=ParamsClass,
                     few_shots=few_shots,
                 )
