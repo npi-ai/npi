@@ -138,7 +138,9 @@ class NPi:
 
     async def _exec(self, fn_name: str, args: Dict[str, Any] = None) -> str:
         if fn_name not in self._fn_map:
-            raise RuntimeError("function not found")
+            raise RuntimeError(
+                f'[{self.name}]: function `{fn_name}` not found. Available functions: {self._fn_map.keys()}'
+            )
 
         tool = self._fn_map[fn_name]
 
@@ -323,8 +325,10 @@ class NPi:
     def chat(self, msg: str) -> str:
         pass
 
-    async def debug(self, fn_name: str, args: Dict[str, Any] = None) -> str:
+    async def debug(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
+        if toolset:
+            fn_name = f'{toolset}__{fn_name}'
         return await self._exec(fn_name, args)
 
-    def debug_sync(self, fn_name: str, args: Dict[str, Any] = None) -> str:
-        return asyncio.run(self.debug(fn_name, args))
+    def debug_sync(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
+        return asyncio.run(self.debug(toolset, fn_name, args))
