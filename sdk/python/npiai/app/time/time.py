@@ -3,6 +3,9 @@ from typing import List
 from npiai.types import Shot
 from npiai import NPI
 
+from fastapi import FastAPI
+
+app = FastAPI()
 
 def create() -> NPI:
     app = NPI(
@@ -21,7 +24,14 @@ def create() -> NPI:
         ]
     )
     def get_today():
-        """Get today's date."""
+        """
+        Get today's date.
+
+        FewShots:
+        - instruction: Get today's date.
+          calling: get_today()
+          output: 2024-05-18
+        """
         import datetime
         return datetime.datetime.now().strftime("%Y-%m-%d")
 
@@ -29,11 +39,6 @@ def create() -> NPI:
     def get_timezone(test: str, cases: List[str]):
         """
         Get the timezone name.
-
-        FewShots:
-        - instruction: Get the timezone name.
-          calling: get_timezone('test', ['case1', 'case2'])
-          output: test, America/New_York
 
         Args:
             test: String parameter test.

@@ -9,6 +9,7 @@ from typing import Optional, List, Callable, Dict, Any
 
 import yaml
 import docstring_parser
+from openai.types.chat import ChatCompletionMessageToolCall
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
 
@@ -221,7 +222,7 @@ class NPI:
     def server(self, port: int):
         pass
 
-    def call(self):
+    def call(self, messages: Optional[List[ChatCompletionMessageToolCall]] = None):
         pass
 
     async def async_call(self):
@@ -233,13 +234,13 @@ class NPI:
                 self._tool_map[f'{tool.name()}/{key}'] = tool._tool_map[key]
                 self._tools.append(tool._tool_map[key])
 
-    def gpt_schema(self):
+    def tools(self):
         pass
 
     def chat(self, msg: str) -> str:
         pass
 
-    def run(self, fn_name: str, params: Dict[str, Any] = {}):
+    def debug(self, fn_name: str, params: Dict[str, Any] = {}):
         if fn_name not in self._tool_map:
             raise RuntimeError("function not found")
 
