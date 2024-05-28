@@ -8,10 +8,10 @@ from pydantic import BaseModel, Field, create_model
 from typing import Optional, List, Callable, Dict, Any
 
 import yaml
-import docstring_parser
 from openai.types.chat import ChatCompletionMessageToolCall
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
+from npiai.utils import parse_docstring
 
 
 def str_presenter(dumper, data):
@@ -143,9 +143,7 @@ class NPI:
 
         def decorator(fn: ToolFunction):
             params = list(inspect.signature(fn).parameters.values())
-            docstr = docstring_parser.parse(
-                re.sub('few shots:', 'Examples:', inspect.getdoc(fn), flags=re.IGNORECASE),
-            )
+            docstr = parse_docstring(inspect.getdoc(fn))
             tool_name = name or fn.__name__
             tool_desc = description or docstr.description
 
@@ -176,22 +174,23 @@ class NPI:
 
             # parse examples
             tool_few_shots = few_shots
+            doc_shots = [m for m in docstr.meta if m.args == ['few_shots']]
 
-            if not tool_few_shots and len(docstr.examples) > 0:
+            if not tool_few_shots and len(doc_shots) > 0:
                 tool_few_shots = []
 
-                for ex in docstr.examples:
-                    items = re.findall(r'^\s*- ', ex.description, re.MULTILINE)
+                for shot in doc_shots:
+                    items = re.findall(r'^\s*- ', shot.description, re.MULTILINE)
                     if len(items) == 1:
                         # remove leading '- ' to avoid indentation issues
-                        ex_data = yaml.safe_load(re.sub(r'^\s*- ', '', ex.description))
+                        shot_data = yaml.safe_load(re.sub(r'^\s*- ', '', shot.description))
                     else:
-                        ex_data = yaml.safe_load(ex.description)
+                        shot_data = yaml.safe_load(shot.description)
 
-                    if not isinstance(ex_data, list):
-                        ex_data = [ex_data]
+                    if not isinstance(shot_data, list):
+                        shot_data = [shot_data]
 
-                    for d in ex_data:
+                    for d in shot_data:
                         tool_few_shots.append(Shot(**d))
 
             # wrap fn in an async wrapper
