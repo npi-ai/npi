@@ -277,7 +277,7 @@ class NPi:
         for tool in tools:
             for fn_reg in tool.functions:
                 data = asdict(fn_reg)
-                data['name'] = f'{tool.name}/{fn_reg.name}'
+                data['name'] = f'{tool.name}__{fn_reg.name}'
                 scoped_fn_reg = FunctionRegistration(**data)
                 self._register_function(scoped_fn_reg)
 

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     npi.add(time_tools)
     print(
         npi.debug(
-            fn_name='time/get_timezone',
+            fn_name='time__get_timezone',
             params={
                 'test': 'Shanghai',
                 'cases': ['case1', 'case2'],
@@ -28,12 +28,8 @@ if __name__ == "__main__":
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     messages = [
         {
-            "role": "system",
-            "content": "Hello, how can I help you today?",
-        },
-        {
             "role": "user",
-            "content": "Hello",
+            "content": "What day is it today?",
         }
     ]
     response = client.chat.completions.create(
@@ -50,4 +46,4 @@ if __name__ == "__main__":
     tool_calls = response_message.tool_calls
 
     for tool_call in tool_calls:
-        npi.call(tool_call)
+        res = npi.call(tool_call)
