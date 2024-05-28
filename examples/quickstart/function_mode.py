@@ -16,9 +16,9 @@ if __name__ == "__main__":
     print(time_tools.name)  # => time
     npi.add(time_tools)
     print(
-        npi.debug(
+        npi.debug_sync(
             fn_name='time__get_timezone',
-            params={
+            args={
                 'test': 'Shanghai',
                 'cases': ['case1', 'case2'],
             },
@@ -43,7 +43,4 @@ if __name__ == "__main__":
 
     messages.append(response_message)
 
-    tool_calls = response_message.tool_calls
-
-    for tool_call in tool_calls:
-        res = npi.call(tool_call)
+    print(npi.call_sync(response_message.tool_calls))
