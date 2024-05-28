@@ -11,7 +11,7 @@ import yaml
 import docstring_parser
 from openai.types.chat import ChatCompletionMessageToolCall
 
-from npiai.types import ToolFunction, Shot, FunctionRegistration
+from npiai.types import ToolFunction, Example, FunctionRegistration
 
 
 def str_presenter(dumper, data):
@@ -51,7 +51,7 @@ def extract_code(fn: Callable) -> str:
             elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                 attr = decorator.func
 
-            if attr and attr.attr == 'npi_tool':
+            if attr and attr.attr == 'function':
                 ast_fn.decorator_list.pop(i)
                 break
 
@@ -87,34 +87,45 @@ def sanitize_schema(model: BaseModel) -> Dict[str, Any]:
 
 
 class NPI:
+    name: str
+    description: str
+    model: str
+    provider: str
+    version: str
+    endpoint: str
 
-    def __init__(self,
-                 name: str = 'default',
-                 description: str = '',
-                 model: str | None = None,
-                 provider: str | None = None,
-                 version: str | None = None,
-                 endpoint: str | None = None):
-        self._name = name
-        self._description = description
-        self._model = model
+    _tools: List[FunctionRegistration]
+    _tool_map: Dict[str, FunctionRegistration]
+
+    def __init__(
+        self,
+        name: str = 'default',
+        description: str = '',
+        model: str | None = None,
+        provider: str | None = None,
+        version: str | None = None,
+        endpoint: str | None = None
+    ):
+        self.name = name
+        self.description = description
+        self.model = model
         if provider is None:
             self.provider = 'private'
         else:
             self.provider = provider
 
-        self._version = version
-        self._endpoint = endpoint
-        self._tools: List[FunctionRegistration] = []
-        self._tool_map: Dict[str, FunctionRegistration] = {}
+        self.version = version
+        self.endpoint = endpoint
+        self._tools = []
+        self._tool_map = {}
 
     def function(
-            self,
-            tool_fn: ToolFunction = None,
-            name: Optional[str] = None,
-            description: Optional[str] = None,
-            schema: Dict[str, Any] = None,
-            few_shots: Optional[List[Shot]] = None
+        self,
+        tool_fn: ToolFunction = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        schema: Dict[str, Any] = None,
+        examples: Optional[List[Example]] = None
     ):
         """
         NPi Tool decorator for functions
@@ -124,7 +135,7 @@ class NPI:
             name: Tool name. The tool function name will be used if not given.
             description: Tool description. This value will be inferred from the tool's docstring if not given.
             schema: Tool parameters schema. This value will be inferred from the tool's type hints if not given.
-            few_shots: Predefined working examples.
+            examples: Predefined working examples.
 
         Returns:
             Wrapped tool function that will be registered on the app class
@@ -141,9 +152,10 @@ class NPI:
                     f'Unable to get the description of tool function `{fn}`'
                 )
 
+            # parse schema
             tool_schema = schema
 
-            if len(params) > 0:
+            if not tool_schema and len(params) > 0:
                 # get parameter descriptions
                 param_descriptions = {}
                 for p in docstr.params:
@@ -160,6 +172,26 @@ class NPI:
                 model = create_model(f'{tool_name}_model', **param_fields)
                 tool_schema = sanitize_schema(model)
 
+            # parse examples
+            tool_examples = examples
+
+            if not tool_examples and len(docstr.examples) > 0:
+                tool_examples = []
+
+                for ex in docstr.examples:
+                    items = re.findall(r'^\s*- ', ex.description, re.MULTILINE)
+                    if len(items) == 1:
+                        # remove leading '- ' to avoid indentation issues
+                        ex_data = yaml.safe_load(re.sub(r'^\s*- ', '', ex.description))
+                    else:
+                        ex_data = yaml.safe_load(ex.description)
+
+                    if not isinstance(ex_data, list):
+                        ex_data = [ex_data]
+
+                    for d in ex_data:
+                        tool_examples.append(Example(**d))
+
             # wrap fn in an async wrapper
             @functools.wraps(fn)
             async def tool_wrapper(*args, **kwargs):
@@ -168,39 +200,36 @@ class NPI:
                     return await res
                 return res
 
-            fnr = FunctionRegistration(
+            fn_reg = FunctionRegistration(
                 fn=tool_wrapper,
                 name=tool_name,
                 description=tool_desc.strip(),
                 code=extract_code(fn),
                 schema=tool_schema,
-                few_shots=few_shots,
+                examples=tool_examples,
             )
-            self._tools.append(fnr)
-            self._tool_map[tool_name] = fnr
+
+            self._tools.append(fn_reg)
+            self._tool_map[tool_name] = fn_reg
 
             return tool_wrapper
 
-        # called as `@app.npi_tool`
+        # called as `@npi.function`
         if callable(tool_fn):
             return decorator(tool_fn)
 
-        # called as `@app.npi_tool(...)`
+        # called as `@npi.function(...)`
         return decorator
-
-    def name(self) -> str:
-        return self._name
 
     def export(self, filename: str):
         """
         Find the wrapped tool functions and export them as yaml
         """
-
         data = {
             'kind': 'Function',
             'metadata': {
                 'name': self.name,
-                'description': self._description,
+                'description': self.description,
                 'provider': self.provider,
             },
             'spec': {
@@ -231,7 +260,7 @@ class NPI:
     def add(self, *tools: 'NPI'):
         for tool in tools:
             for key in tool._tool_map.keys():
-                self._tool_map[f'{tool.name()}/{key}'] = tool._tool_map[key]
+                self._tool_map[f'{tool.name}/{key}'] = tool._tool_map[key]
                 self._tools.append(tool._tool_map[key])
 
     def tools(self):
@@ -240,12 +269,12 @@ class NPI:
     def chat(self, msg: str) -> str:
         pass
 
-    def debug(self, fn_name: str, params: Dict[str, Any] = {}):
+    def debug(self, fn_name: str, params: Dict[str, Any] = None):
         if fn_name not in self._tool_map:
             raise RuntimeError("function not found")
 
         tool = self._tool_map[fn_name]
-        res = tool.fn(**params)
+        res = tool.fn(**params) if params else tool.fn()
         if asyncio.iscoroutine(res):
             return asyncio.run(res)
         return res
