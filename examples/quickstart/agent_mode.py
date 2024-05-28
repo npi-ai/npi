@@ -1,11 +1,11 @@
 import os
 
-from npiai import NPI
+from npiai import NPi
 from npiai.app import time
 
 
-def create_test_package() -> NPI:
-    testpkg = NPI(
+def create_test_package() -> NPi:
+    testpkg = NPi(
         name='test-pkg',
         description='a function package to get current date and timezone',
         provider='npiai',
@@ -24,7 +24,7 @@ def create_test_package() -> NPI:
 
 if __name__ == '__main__':
     os.environ['OPENAI_API_KEY'] = 'abcdefg'
-    npi = NPI(model="gpt-4o")
+    npi = NPi(model="gpt-4o")
 
     npi.add(create_test_package())
 

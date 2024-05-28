@@ -1,10 +1,10 @@
 from typing import List
 
-from npiai import NPI
+from npiai import NPi
 
 
-def create() -> NPI:
-    app = NPI(
+def create() -> NPi:
+    app = NPi(
         name='time',
         description='a function package to get current date and timezone',
         provider='npiai',
