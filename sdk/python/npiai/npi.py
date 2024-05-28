@@ -3,6 +3,7 @@ import functools
 import inspect
 import ast
 import json
+import os
 import re
 from dataclasses import asdict
 from textwrap import dedent
@@ -10,10 +11,18 @@ from pydantic import BaseModel, Field, create_model
 from typing import Optional, List, Callable, Dict, Any
 
 import yaml
-from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam, ChatCompletionToolMessageParam
+from openai.types.chat import (
+    ChatCompletionMessageToolCall,
+    ChatCompletionToolParam,
+    ChatCompletionToolMessageParam,
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
 from npiai.utils import parse_docstring, logger
+from npiai.llm import LLM, OpenAI
 
 
 def str_presenter(dumper, data):
@@ -91,7 +100,7 @@ def sanitize_schema(model: BaseModel) -> Dict[str, Any]:
 class NPi:
     name: str
     description: str
-    model: str
+    llm: LLM
     provider: str
     version: str
     endpoint: str
@@ -112,14 +121,14 @@ class NPi:
         self,
         name: str = 'default',
         description: str = '',
-        model: str | None = None,
+        llm: LLM | None = None,
         provider: str | None = None,
         version: str | None = None,
         endpoint: str | None = None
     ):
         self.name = name
         self.description = description
-        self.model = model
+        self.llm = llm or OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), model='gpt-4o')
         if provider is None:
             self.provider = 'private'
         else:
@@ -278,6 +287,14 @@ class NPi:
         with open(filename, 'w') as f:
             yaml.dump(data, f)
 
+    def add(self, *tools: 'NPi'):
+        for tool in tools:
+            for fn_reg in tool.functions:
+                data = asdict(fn_reg)
+                data['name'] = f'{tool.name}__{fn_reg.name}'
+                scoped_fn_reg = FunctionRegistration(**data)
+                self._register_function(scoped_fn_reg)
+
     def server(self, port: int):
         pass
 
@@ -314,16 +331,45 @@ class NPi:
     def call_sync(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
         return asyncio.run(self.call(tool_calls))
 
-    def add(self, *tools: 'NPi'):
-        for tool in tools:
-            for fn_reg in tool.functions:
-                data = asdict(fn_reg)
-                data['name'] = f'{tool.name}__{fn_reg.name}'
-                scoped_fn_reg = FunctionRegistration(**data)
-                self._register_function(scoped_fn_reg)
+    async def chat(self, msg: str) -> str:
+        messages: List[ChatCompletionMessageParam] = [
+            ChatCompletionSystemMessageParam(
+                role='system',
+                content=self.description,
+            ),
+            ChatCompletionUserMessageParam(
+                role='user',
+                content=msg,
+            ),
+        ]
 
-    def chat(self, msg: str) -> str:
-        pass
+        while True:
+            response = await self.llm.completion(
+                messages=messages,
+                tools=self.tools,
+                tool_choice='auto',
+                max_tokens=4096,
+            )
+
+            response_message = response.choices[0].message
+
+            messages.append(response_message)
+
+            if response_message.content:
+                logger.info(response_message.content)
+
+            tool_calls = response_message.get('tool_calls', None)
+
+            if tool_calls is None:
+                break
+
+            results = await self.call(tool_calls)
+            messages.extend(results)
+
+        return response_message.content
+
+    def chat_sync(self, msg: str) -> str:
+        return asyncio.run(self.chat(msg))
 
     async def debug(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         if toolset:

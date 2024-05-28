@@ -1,8 +1,7 @@
 from enum import Enum
 from typing import List, Union
 import os
-
-from litellm import completion as cp
+import asyncio
 from litellm import acompletion, ModelResponse, CustomStreamWrapper
 
 
@@ -26,22 +25,22 @@ class LLM:
     def get_provider(self) -> Provider:
         return self.provider
 
-    def completion(self, messages: List) -> Union[ModelResponse, CustomStreamWrapper]:
-        return cp(model=self.model, api_key=self.api_key, messages=messages)
+    # TODO: kwargs typings
+    async def completion(self, **kwargs) -> Union[ModelResponse, CustomStreamWrapper]:
+        return await acompletion(model=self.model, api_key=self.api_key, **kwargs)
 
-    async def async_completion(self, messages: List) -> Union[ModelResponse, CustomStreamWrapper]:
-        resp = await acompletion(model=self.model, api_key=self.api_key, messages=messages)
-        return resp
+    def completion_sync(self, **kwargs) -> Union[ModelResponse, CustomStreamWrapper]:
+        return asyncio.run(self.completion(**kwargs))
 
 
 class OpenAI(LLM):
     def __init__(self, api_key: str, model: str):
-        super().__init__(model, api_key, Provider.OpenAI)
+        super().__init__(api_key=api_key, model=model, provider=Provider.OpenAI)
 
 
 class Anthropic(LLM):
     def __init__(self, api_key: str, model: str):
-        super().__init__(model, api_key, Provider.Anthropic)
+        super().__init__(api_key=api_key, model=model, provider=Provider.Anthropic)
 
 
 class AzureOpenAI(LLM):

@@ -23,13 +23,19 @@ def create_test_package() -> NPi:
 
 
 if __name__ == '__main__':
-    os.environ['OPENAI_API_KEY'] = 'abcdefg'
-    npi = NPi(model="gpt-4o")
+    npi = NPi()
+    test_pkg = create_test_package()
 
-    npi.add(create_test_package())
+    npi.add(test_pkg)
 
-    print(npi.debug(fn_name='test-pkg/test2'))
+    print(
+        npi.debug_sync(
+            toolset=test_pkg.name,
+            fn_name='test2'
+        )
+    )
 
     npi.add(time.create())
     # agent mode, use npi as an agent
-    npi.chat("hi, what's the date today?")
+    res = npi.chat_sync('What day is it today?')
+    print(res)
