@@ -17,7 +17,8 @@ if __name__ == "__main__":
     npi.add(time_tools)
     print(
         npi.debug_sync(
-            fn_name='time__get_timezone',
+            toolset=time_tools.name,
+            fn_name='get_timezone',
             args={
                 'test': 'Shanghai',
                 'cases': ['case1', 'case2'],
