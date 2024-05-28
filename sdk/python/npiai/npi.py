@@ -252,7 +252,7 @@ class NPI:
     def server(self, port: int):
         pass
 
-    def call(self, messages: Optional[List[ChatCompletionMessageToolCall]] = None):
+    def call(self, messages: List[ChatCompletionMessageToolCall]):
         pass
 
     async def async_call(self):
