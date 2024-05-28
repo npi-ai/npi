@@ -11,7 +11,7 @@ import yaml
 import docstring_parser
 from openai.types.chat import ChatCompletionMessageToolCall
 
-from npiai.types import ToolFunction, Example, FunctionRegistration
+from npiai.types import ToolFunction, Shot, FunctionRegistration
 
 
 def str_presenter(dumper, data):
@@ -125,7 +125,7 @@ class NPI:
         name: Optional[str] = None,
         description: Optional[str] = None,
         schema: Dict[str, Any] = None,
-        examples: Optional[List[Example]] = None
+        few_shots: Optional[List[Shot]] = None
     ):
         """
         NPi Tool decorator for functions
@@ -135,7 +135,7 @@ class NPI:
             name: Tool name. The tool function name will be used if not given.
             description: Tool description. This value will be inferred from the tool's docstring if not given.
             schema: Tool parameters schema. This value will be inferred from the tool's type hints if not given.
-            examples: Predefined working examples.
+            few_shots: Predefined working examples.
 
         Returns:
             Wrapped tool function that will be registered on the app class
@@ -143,7 +143,9 @@ class NPI:
 
         def decorator(fn: ToolFunction):
             params = list(inspect.signature(fn).parameters.values())
-            docstr = docstring_parser.parse(inspect.getdoc(fn))
+            docstr = docstring_parser.parse(
+                re.sub('few shots:', 'Examples:', inspect.getdoc(fn), flags=re.IGNORECASE),
+            )
             tool_name = name or fn.__name__
             tool_desc = description or docstr.description
 
@@ -173,10 +175,10 @@ class NPI:
                 tool_schema = sanitize_schema(model)
 
             # parse examples
-            tool_examples = examples
+            tool_few_shots = few_shots
 
-            if not tool_examples and len(docstr.examples) > 0:
-                tool_examples = []
+            if not tool_few_shots and len(docstr.examples) > 0:
+                tool_few_shots = []
 
                 for ex in docstr.examples:
                     items = re.findall(r'^\s*- ', ex.description, re.MULTILINE)
@@ -190,7 +192,7 @@ class NPI:
                         ex_data = [ex_data]
 
                     for d in ex_data:
-                        tool_examples.append(Example(**d))
+                        tool_few_shots.append(Shot(**d))
 
             # wrap fn in an async wrapper
             @functools.wraps(fn)
@@ -206,7 +208,7 @@ class NPI:
                 description=tool_desc.strip(),
                 code=extract_code(fn),
                 schema=tool_schema,
-                examples=tool_examples,
+                few_shots=tool_few_shots,
             )
 
             self._tools.append(fn_reg)

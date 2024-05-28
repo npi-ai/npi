@@ -1,7 +1,7 @@
 from typing import Callable, Type, Optional, Awaitable, List, Dict, Any
 from dataclasses import dataclass, asdict
 from .parameters import Parameters
-from .example import Example
+from .shot import Shot
 
 ToolFunction = Callable[[Parameters], str | Awaitable[str]]
 
@@ -13,7 +13,7 @@ class FunctionRegistration:
     name: str
     code: str
     schema: Optional[Dict[str, Any]] = None
-    examples: Optional[List[Example]] = None
+    few_shots: Optional[List[Shot]] = None
 
     def get_meta(self):
         return {
@@ -21,5 +21,5 @@ class FunctionRegistration:
             'name': self.name,
             'code': self.code,
             'parameters': self.schema,
-            'examples': [asdict(ex) for ex in self.examples] if self.examples else None,
+            'fewShots': [asdict(ex) for ex in self.few_shots] if self.few_shots else None,
         }

@@ -19,7 +19,7 @@ def create() -> NPI:
         """
         Get today's date.
 
-        Examples:
+        Few shots:
             - instruction: Get today's date.
               calling: |-
                 get_today(
