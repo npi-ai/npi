@@ -2,10 +2,6 @@ from typing import List
 
 from npiai import NPI
 
-from fastapi import FastAPI
-
-app = FastAPI()
-
 
 def create() -> NPI:
     app = NPI(
