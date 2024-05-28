@@ -2,6 +2,7 @@ import asyncio
 import functools
 import inspect
 import ast
+import json
 import re
 from dataclasses import asdict
 from textwrap import dedent
@@ -9,10 +10,10 @@ from pydantic import BaseModel, Field, create_model
 from typing import Optional, List, Callable, Dict, Any
 
 import yaml
-from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam
+from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam, ChatCompletionToolMessageParam
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
-from npiai.utils import parse_docstring
+from npiai.utils import parse_docstring, logger
 
 
 def str_presenter(dumper, data):
@@ -134,6 +135,17 @@ class NPi:
         self._functions.append(fn_reg)
         self._fn_map[fn_reg.name] = fn_reg
         self._tools.append(fn_reg.as_tool())
+
+    async def _exec(self, fn_name: str, args: Dict[str, Any] = None) -> str:
+        if fn_name not in self._fn_map:
+            raise RuntimeError("function not found")
+
+        tool = self._fn_map[fn_name]
+
+        if args is None:
+            return await tool.fn()
+
+        return await tool.fn(**args)
 
     def function(
         self,
@@ -267,11 +279,38 @@ class NPi:
     def server(self, port: int):
         pass
 
-    def call(self, messages: List[ChatCompletionMessageToolCall]):
-        pass
+    async def call(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
+        results: List[ChatCompletionToolMessageParam] = []
 
-    async def async_call(self):
-        pass
+        for call in tool_calls:
+            fn_name = call.function.name
+            args = json.loads(call.function.arguments)
+            call_msg = f'[{self.name}]: Calling {fn_name}'
+
+            if args:
+                arg_list = ', '.join(f'{k}={v}' for k, v in args.items())
+                call_msg += f'({arg_list})'
+            else:
+                call_msg += '()'
+
+            logger.info(call_msg)
+
+            res = await self._exec(fn_name, args)
+
+            logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
+
+            results.append(
+                ChatCompletionToolMessageParam(
+                    role='tool',
+                    tool_call_id=call.id,
+                    content=res,
+                )
+            )
+
+        return results
+
+    def call_sync(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
+        return asyncio.run(self.call(tool_calls))
 
     def add(self, *tools: 'NPi'):
         for tool in tools:
@@ -284,12 +323,8 @@ class NPi:
     def chat(self, msg: str) -> str:
         pass
 
-    def debug(self, fn_name: str, params: Dict[str, Any] = None):
-        if fn_name not in self._fn_map:
-            raise RuntimeError("function not found")
+    async def debug(self, fn_name: str, args: Dict[str, Any] = None) -> str:
+        return await self._exec(fn_name, args)
 
-        tool = self._fn_map[fn_name]
-        res = tool.fn(**params) if params else tool.fn()
-        if asyncio.iscoroutine(res):
-            return asyncio.run(res)
-        return res
+    def debug_sync(self, fn_name: str, args: Dict[str, Any] = None) -> str:
+        return asyncio.run(self.debug(fn_name, args))
