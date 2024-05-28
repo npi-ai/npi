@@ -1,9 +1,8 @@
-from typing import Callable, Type, Optional, Awaitable, List, Dict, Any
+from typing import Callable, Optional, Awaitable, List, Dict, Any
 from dataclasses import dataclass, asdict
-from .parameters import Parameters
 from .shot import Shot
 
-ToolFunction = Callable[[Parameters], str | Awaitable[str]]
+ToolFunction = Callable[..., Awaitable[str]]
 
 
 @dataclass(frozen=True)
