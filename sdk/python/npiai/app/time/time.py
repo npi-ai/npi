@@ -17,14 +17,8 @@ def create() -> NPi:
 
         Few shots:
             - instruction: Get today's date.
-              calling: |-
-                get_today(
-                    'asdf'
-                )
+              calling: get_today()
               output: 2024-05-18
-
-        Returns:
-            None
         """
         import datetime
         return datetime.datetime.now().strftime("%Y-%m-%d")
