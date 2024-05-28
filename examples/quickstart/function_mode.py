@@ -1,9 +1,9 @@
 import os
 
 from openai import OpenAI
-from npiai import app, NPI
+from npiai import app, NPi
 
-npi = NPI()
+npi = NPi()
 
 
 @npi.function(description='demo')
@@ -13,12 +13,17 @@ def test():
 
 if __name__ == "__main__":
     time_tools = app.time.create()
-    print(time_tools.name())  # => time
+    print(time_tools.name)  # => time
     npi.add(time_tools)
-    print(npi.debug(fn_name='time/get_timezone', params={
-        'test': 'Shanghai',
-        'cases': ['case1', 'case2'],
-    }))
+    print(
+        npi.debug(
+            fn_name='time/get_timezone',
+            params={
+                'test': 'Shanghai',
+                'cases': ['case1', 'case2'],
+            },
+        )
+    )
 
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     messages = [
@@ -34,7 +39,7 @@ if __name__ == "__main__":
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
-        tools=npi.tools(),  # use npi as a tool package
+        tools=npi.tools,  # use npi as a tool package
         tool_choice="auto",
         max_tokens=4096,
     )
@@ -46,4 +51,3 @@ if __name__ == "__main__":
 
     for tool_call in tool_calls:
         npi.call(tool_call)
-
