@@ -3,12 +3,13 @@ import functools
 import inspect
 import ast
 import re
+from dataclasses import asdict
 from textwrap import dedent
 from pydantic import BaseModel, Field, create_model
 from typing import Optional, List, Callable, Dict, Any
 
 import yaml
-from openai.types.chat import ChatCompletionMessageToolCall
+from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
 from npiai.utils import parse_docstring
@@ -86,7 +87,7 @@ def sanitize_schema(model: BaseModel) -> Dict[str, Any]:
     return schema
 
 
-class NPI:
+class NPi:
     name: str
     description: str
     model: str
@@ -94,8 +95,17 @@ class NPI:
     version: str
     endpoint: str
 
-    _tools: List[FunctionRegistration]
-    _tool_map: Dict[str, FunctionRegistration]
+    _functions: List[FunctionRegistration]
+    _fn_map: Dict[str, FunctionRegistration]
+    _tools: List[ChatCompletionToolParam]
+
+    @property
+    def tools(self):
+        return self._tools
+
+    @property
+    def functions(self):
+        return self._functions
 
     def __init__(
         self,
@@ -116,8 +126,14 @@ class NPI:
 
         self.version = version
         self.endpoint = endpoint
+        self._functions = []
+        self._fn_map = {}
         self._tools = []
-        self._tool_map = {}
+
+    def _register_function(self, fn_reg: FunctionRegistration):
+        self._functions.append(fn_reg)
+        self._fn_map[fn_reg.name] = fn_reg
+        self._tools.append(fn_reg.as_tool())
 
     def function(
         self,
@@ -201,17 +217,16 @@ class NPI:
                     return await res
                 return res
 
-            fn_reg = FunctionRegistration(
-                fn=tool_wrapper,
-                name=tool_name,
-                description=tool_desc.strip(),
-                code=extract_code(fn),
-                schema=tool_schema,
-                few_shots=tool_few_shots,
+            self._register_function(
+                FunctionRegistration(
+                    fn=tool_wrapper,
+                    name=tool_name,
+                    description=tool_desc.strip(),
+                    code=extract_code(fn),
+                    schema=tool_schema,
+                    few_shots=tool_few_shots,
+                )
             )
-
-            self._tools.append(fn_reg)
-            self._tool_map[tool_name] = fn_reg
 
             return tool_wrapper
 
@@ -242,7 +257,7 @@ class NPI:
                     'name': 'npiai',
                     'version': '0.1.0',
                 }],
-                'functions': [t.get_meta() for t in self._tools],
+                'functions': [t.get_meta() for t in self._functions],
             }
         }
 
@@ -258,23 +273,22 @@ class NPI:
     async def async_call(self):
         pass
 
-    def add(self, *tools: 'NPI'):
+    def add(self, *tools: 'NPi'):
         for tool in tools:
-            for key in tool._tool_map.keys():
-                self._tool_map[f'{tool.name}/{key}'] = tool._tool_map[key]
-                self._tools.append(tool._tool_map[key])
-
-    def tools(self):
-        pass
+            for fn_reg in tool.functions:
+                data = asdict(fn_reg)
+                data['name'] = f'{tool.name}/{fn_reg.name}'
+                scoped_fn_reg = FunctionRegistration(**data)
+                self._register_function(scoped_fn_reg)
 
     def chat(self, msg: str) -> str:
         pass
 
     def debug(self, fn_name: str, params: Dict[str, Any] = None):
-        if fn_name not in self._tool_map:
+        if fn_name not in self._fn_map:
             raise RuntimeError("function not found")
 
-        tool = self._tool_map[fn_name]
+        tool = self._fn_map[fn_name]
         res = tool.fn(**params) if params else tool.fn()
         if asyncio.iscoroutine(res):
             return asyncio.run(res)
