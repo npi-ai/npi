@@ -15,7 +15,7 @@ def create() -> AsyncNPi:
         """
         Get today's date.
 
-        Few shots:
+        FewShots:
             - instruction: Get today's date.
               calling: get_today()
               output: 2024-05-18
