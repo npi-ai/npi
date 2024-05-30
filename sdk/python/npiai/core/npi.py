@@ -8,7 +8,7 @@ import re
 from dataclasses import asdict
 from textwrap import dedent
 from pydantic import BaseModel, Field, create_model
-from typing import Optional, List, Callable, Dict, Any, Callable
+from typing import Optional, List, Callable, Dict, Any, Callable, Awaitable
 
 import yaml
 from openai.types.chat import (
@@ -21,8 +21,9 @@ from openai.types.chat import (
 )
 
 from npiai.types import ToolFunction, Shot, FunctionRegistration
-from npiai.utils import parse_docstring, logger
+from npiai.utils import parse_docstring, logger, to_async_fn
 from npiai.llm import LLM, OpenAI
+from .hooks import Hooks
 
 
 def str_presenter(dumper, data):
@@ -105,12 +106,11 @@ class NPi:
     version: str
     endpoint: str
 
+    hooks: Hooks
+
     _functions: List[FunctionRegistration]
     _fn_map: Dict[str, FunctionRegistration]
     _tools: List[ChatCompletionToolParam]
-
-    _start_callbacks: List[Callable]
-    _end_callbacks: List[Callable]
 
     @property
     def tools(self):
@@ -142,6 +142,7 @@ class NPi:
         self._functions = []
         self._fn_map = {}
         self._tools = []
+        self.hooks = Hooks()
 
     def _register_function(self, fn_reg: FunctionRegistration):
         self._functions.append(fn_reg)
@@ -160,26 +161,6 @@ class NPi:
             return await tool.fn()
 
         return await tool.fn(**args)
-
-    def on_start(self, callback: Callable):
-        """
-        Bootstrap function decorator
-
-        Args:
-            callback: Callback function which will be executed when starting
-        """
-        self._start_callbacks.append(callback)
-        return callback
-
-    def on_end(self, callback: Callable):
-        """
-        Cleanup function decorator
-
-        Args:
-            callback: Callback function which will be executed when ending
-        """
-        self._end_callbacks.append(callback)
-        return callback
 
     def function(
         self,
@@ -256,16 +237,11 @@ class NPi:
                         tool_few_shots.append(Shot(**d))
 
             # wrap fn in an async wrapper
-            @functools.wraps(fn)
-            async def tool_wrapper(*args, **kwargs):
-                res = fn(*args, **kwargs)
-                if asyncio.iscoroutine(res):
-                    return await res
-                return res
+            wrapped_fn = to_async_fn(fn)
 
             self._register_function(
                 FunctionRegistration(
-                    fn=tool_wrapper,
+                    fn=wrapped_fn,
                     name=tool_name,
                     description=tool_desc.strip(),
                     code=extract_code(fn),
@@ -274,7 +250,7 @@ class NPi:
                 )
             )
 
-            return tool_wrapper
+            return wrapped_fn
 
         # called as `@npi.function`
         if callable(tool_fn):
@@ -312,6 +288,11 @@ class NPi:
 
     def add(self, *tools: 'NPi'):
         for tool in tools:
+            # add starting and ending callbacks to hooks
+            self.hooks.on_start(tool._start)
+            self.hooks.on_end(tool._end)
+
+            # add functions
             for fn_reg in tool.functions:
                 data = asdict(fn_reg)
                 data['name'] = f'{tool.name}__{fn_reg.name}'
@@ -392,3 +373,9 @@ class NPi:
         if toolset:
             fn_name = f'{toolset}__{fn_name}'
         return await self._exec(fn_name, args)
+
+    async def _start(self):
+        await self.hooks.internal_start()
+
+    async def _end(self):
+        await self.hooks.internal_end()
