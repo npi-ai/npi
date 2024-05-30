@@ -8,7 +8,7 @@ import re
 from dataclasses import asdict
 from textwrap import dedent
 from pydantic import BaseModel, Field, create_model
-from typing import Optional, List, Callable, Dict, Any
+from typing import Optional, List, Callable, Dict, Any, Callable
 
 import yaml
 from openai.types.chat import (
@@ -109,6 +109,9 @@ class NPi:
     _fn_map: Dict[str, FunctionRegistration]
     _tools: List[ChatCompletionToolParam]
 
+    _start_callbacks: List[Callable]
+    _end_callbacks: List[Callable]
+
     @property
     def tools(self):
         return self._tools
@@ -157,6 +160,26 @@ class NPi:
             return await tool.fn()
 
         return await tool.fn(**args)
+
+    def on_start(self, callback: Callable):
+        """
+        Bootstrap function decorator
+
+        Args:
+            callback: Callback function which will be executed when starting
+        """
+        self._start_callbacks.append(callback)
+        return callback
+
+    def on_end(self, callback: Callable):
+        """
+        Cleanup function decorator
+
+        Args:
+            callback: Callback function which will be executed when ending
+        """
+        self._end_callbacks.append(callback)
+        return callback
 
     def function(
         self,
@@ -298,7 +321,7 @@ class NPi:
     def server(self, port: int):
         pass
 
-    async def call(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
+    async def _call(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
         results: List[ChatCompletionToolMessageParam] = []
 
         for call in tool_calls:
@@ -328,10 +351,7 @@ class NPi:
 
         return results
 
-    def call_sync(self, tool_calls: List[ChatCompletionMessageToolCall]) -> List[ChatCompletionToolMessageParam]:
-        return asyncio.run(self.call(tool_calls))
-
-    async def chat(self, msg: str) -> str:
+    async def _chat(self, msg: str) -> str:
         messages: List[ChatCompletionMessageParam] = [
             ChatCompletionSystemMessageParam(
                 role='system',
@@ -363,18 +383,12 @@ class NPi:
             if tool_calls is None:
                 break
 
-            results = await self.call(tool_calls)
+            results = await self._call(tool_calls)
             messages.extend(results)
 
         return response_message.content
 
-    def chat_sync(self, msg: str) -> str:
-        return asyncio.run(self.chat(msg))
-
-    async def debug(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
+    async def _debug(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         if toolset:
             fn_name = f'{toolset}__{fn_name}'
         return await self._exec(fn_name, args)
-
-    def debug_sync(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
-        return asyncio.run(self.debug(toolset, fn_name, args))

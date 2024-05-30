@@ -1,11 +1,11 @@
 import os
 
-from npiai import NPi
+from npiai.sync_npi import SyncNPi
 from npiai.app import time
 
 
-def create_test_package() -> NPi:
-    testpkg = NPi(
+def create_test_package() -> SyncNPi:
+    testpkg = SyncNPi(
         name='test-pkg',
         description='a function package to get current date and timezone',
         provider='npiai',
@@ -23,13 +23,13 @@ def create_test_package() -> NPi:
 
 
 if __name__ == '__main__':
-    npi = NPi()
+    npi = SyncNPi()
     test_pkg = create_test_package()
 
     npi.add(test_pkg)
 
     print(
-        npi.debug_sync(
+        npi.debug(
             toolset=test_pkg.name,
             fn_name='test2'
         )
@@ -37,5 +37,5 @@ if __name__ == '__main__':
 
     npi.add(time.create())
     # agent mode, use npi as an agent
-    res = npi.chat_sync('What day is it today?')
+    res = npi.chat('What day is it today?')
     print(res)
