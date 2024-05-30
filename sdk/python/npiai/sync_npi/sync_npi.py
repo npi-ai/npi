@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from contextlib import contextmanager
 import asyncio
 
 from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolMessageParam
@@ -15,3 +16,17 @@ class SyncNPi(NPi):
 
     def debug(self, toolset: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         return asyncio.run(self._debug(toolset, fn_name, args))
+
+    def start(self):
+        return asyncio.run(self._start())
+
+    def end(self):
+        return asyncio.run(self._end())
+
+    @contextmanager
+    def launch(self):
+        try:
+            self.start()
+            yield self
+        finally:
+            self.end()
