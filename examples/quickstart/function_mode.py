@@ -1,9 +1,10 @@
 import os
 
 from openai import OpenAI
-from npiai import app, NPi
+from npiai import app
+from npiai.sync_npi import SyncNPi
 
-npi = NPi()
+npi = SyncNPi()
 
 
 @npi.function(description='demo')
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     print(time_tools.name)  # => time
     npi.add(time_tools)
     print(
-        npi.debug_sync(
+        npi.debug(
             toolset=time_tools.name,
             fn_name='get_timezone',
             args={
@@ -44,4 +45,4 @@ if __name__ == "__main__":
 
     messages.append(response_message)
 
-    print(npi.call_sync(response_message.tool_calls))
+    print(npi.call(response_message.tool_calls))
