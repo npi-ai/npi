@@ -1,10 +1,10 @@
 from typing import List
 
-from npiai import NPi
+from npiai.async_npi import AsyncNPi
 
 
-def create() -> NPi:
-    app = NPi(
+def create() -> AsyncNPi:
+    app = AsyncNPi(
         name='time',
         description='a function package to get current date and timezone',
         provider='npiai',
