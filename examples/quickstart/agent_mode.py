@@ -18,6 +18,12 @@ class MyApp(App):
 
 
 async def main():
+    # alternative:
+    # app = MyApp()
+    # app.add(
+    #     create_agent(Gmail(credentials=load_gmail_credentials()))
+    # )
+    # async with create_agent(app) as agent:
     async with create_agent(MyApp()) as agent:
         print(await agent.chat('get latest email in the inbox'))
 
