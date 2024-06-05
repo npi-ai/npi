@@ -3,6 +3,7 @@ import json
 import inspect
 import functools
 import re
+from dataclasses import asdict
 from typing import Dict, List, Optional, Union, Any
 
 import yaml
@@ -158,24 +159,25 @@ class App(BaseApp):
 
     def add(
         self,
-        *tools: Union[FunctionRegistration, NPiBase],
+        *apps: NPiBase,
     ):
-        """
-        Register a tool to this application
+        for app in apps:
+            self._sub_apps.append(app)
 
-        Args:
-            *tools: the tools to register. If a tool app is provided, the `app.as_tool()` method will be called.
-        """
-        for tool in tools:
-            if isinstance(tool, NPiBase):
-                self.add(*tool.list_functions())
-                self._sub_apps.append(tool)
-                continue
+            for fn_reg in app.list_functions():
+                data = asdict(fn_reg)
+                data['name'] = f'{app.name}__{fn_reg.name}'
+                scoped_fn_reg = FunctionRegistration(**data)
 
-            if tool.name in self._fn_map:
-                raise Exception(f'Duplicate function: {tool.name}')
+                if scoped_fn_reg.name in self._fn_map:
+                    raise Exception(f'Duplicate function: {scoped_fn_reg.name}')
 
-            self._add_function(tool)
+                self._add_function(scoped_fn_reg)
+
+    async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
+        if app_name:
+            fn_name = f'{app_name}__{fn_name}'
+        return await self._exec(fn_name, args)
 
     async def call(
         self,
