@@ -25,6 +25,7 @@ async def main():
     # )
     # async with create_agent(app) as agent:
     async with create_agent(MyApp()) as agent:
+        agent.export('.cache/agent.yaml')
         print(await agent.chat('get latest email in the inbox'))
 
 
