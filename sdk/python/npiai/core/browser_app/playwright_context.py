@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 import os
 from urllib.request import urlretrieve
 
@@ -9,7 +10,7 @@ __BROWSER_UTILS_VERSION__ = '0.0.2'
 
 def _prepare_browser_utils():
     # path to the js bundle
-    cache_dir = pathlib.Path(__file__).parent / '../../.cache'
+    cache_dir = pathlib.Path(tempfile.gettempdir()) / '.npi'
     js_path = cache_dir / f'browser-utils@{__BROWSER_UTILS_VERSION__}.js'
 
     if js_path.exists():
