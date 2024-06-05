@@ -39,6 +39,10 @@ class MyApp(App):
 
 
 async def main():
+    # alternative:
+    # app = MyApp()
+    # app.add(Gmail(credentials=load_gmail_credentials()))
+    # async with app:
     async with MyApp() as my_app:
         # debug fn
         print(
