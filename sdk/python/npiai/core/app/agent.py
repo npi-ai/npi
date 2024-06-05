@@ -22,23 +22,19 @@ class Agent(BaseAgent):
 
     def list_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
-
-        async def tool_chat(task: str) -> str:
-            return await self.chat(task)
-
         fn_reg = FunctionRegistration(
-            fn=tool_chat,
-            name=self._app.name,
-            description=self._app.description,
+            fn=self.chat,
+            name=self.name,
+            description=self.description,
             schema={
                 'type': 'object',
                 'properties': {
-                    'task': {
+                    'message': {
                         'type': 'string',
                         'description': f'The task you want {self._app.name} to do'
                     },
                 },
-                'required': ['task'],
+                'required': ['message'],
             }
         )
 
