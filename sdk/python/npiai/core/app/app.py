@@ -173,9 +173,6 @@ class App(BaseApp):
                 else:
                     scoped_fn_reg = fn_reg
 
-                if scoped_fn_reg.name in self._fn_map:
-                    raise Exception(f'Duplicate function: {scoped_fn_reg.name}')
-
                 self._add_function(scoped_fn_reg)
 
     async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
@@ -306,5 +303,8 @@ class App(BaseApp):
             )
 
     def _add_function(self, fn_reg: FunctionRegistration):
+        if fn_reg.name in self._fn_map:
+            raise Exception(f'Duplicate function: {fn_reg.name}')
+
         self._fn_map[fn_reg.name] = fn_reg
         self._tools.append(fn_reg.get_tool_param())
