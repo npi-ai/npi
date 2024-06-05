@@ -148,9 +148,9 @@ def _parse_response(response: str) -> Union[Response, None]:
         return None
 
 
-class Navigator(BrowserApp):
+class NavigatorAgent(BrowserAgent):
     max_steps: int
-    llm: LLM
+    _browser_app: BrowserApp
 
     def __init__(
         self,
@@ -158,14 +158,18 @@ class Navigator(BrowserApp):
         playwright: PlaywrightContext,
         max_steps: int = 42,
     ):
-        super().__init__(
+        self._browser_app = BrowserApp(
             name='navigator',
             description='Perform any task by simulating keyboard/mouse interaction on a specific web page. If the some action needs user confirmation, please specify them.',
             system_role=__PROMPT__,
+            playwright=playwright,
         )
 
-        self.llm = llm
-        self.playwright = playwright
+        super().__init__(
+            app=self._browser_app,
+            llm=llm,
+        )
+
         self.max_steps = max_steps
 
     # navigator uses shared playwright context, so we don't need to start it again here
@@ -176,15 +180,15 @@ class Navigator(BrowserApp):
         pass
 
     async def generate_user_prompt(self, task: str, history: List[Response]):
-        await self.clear_bboxes()
-        raw_screenshot = await self.get_screenshot()
-        elements, added_ids = await self.get_interactive_elements(raw_screenshot)
+        await self._browser_app.clear_bboxes()
+        raw_screenshot = await self._browser_app.get_screenshot()
+        elements, added_ids = await self._browser_app.get_interactive_elements(raw_screenshot)
 
         user_prompt: str = dedent(
             f"""
-            Page Title: {await self.get_page_title()}
+            Page Title: {await self._browser_app.get_page_title()}
             Task: {task}
-            Scrollable: {await self.is_scrollable()}
+            Scrollable: {await self._browser_app.is_scrollable()}
             Previous Actions: {json.dumps(history[-10:])}
             Elements: {json.dumps(elements)}
             Newly Added Elements' ID: {json.dumps(added_ids)}
@@ -193,7 +197,7 @@ class Navigator(BrowserApp):
 
         # print(user_prompt)
 
-        annotated_screenshot = await self.get_screenshot()
+        annotated_screenshot = await self._browser_app.get_screenshot()
 
         if not raw_screenshot or not annotated_screenshot:
             return {
@@ -223,15 +227,7 @@ class Navigator(BrowserApp):
             ]
         }
 
-    @npi_tool
-    async def run(self, task: str) -> str:
-        """
-        Run a navigation task step by step.
-
-        Args:
-            task: The navigation task to run.
-        """
-
+    async def chat(self, message: str) -> str:
         history: List[Response] = []
 
         step = 0
@@ -242,11 +238,11 @@ class Navigator(BrowserApp):
             messages.append(
                 {
                     'role': 'system',
-                    'content': self.system_role,
+                    'content': self._browser_app.system_role,
                 }
             )
 
-            messages.append(await self.generate_user_prompt(task, history))
+            messages.append(await self.generate_user_prompt(message, history))
 
             response_str = await self._call_llm(messages)
             response = _parse_response(response_str)
@@ -256,6 +252,7 @@ class Navigator(BrowserApp):
                 continue
 
             result, elem_json = await self._run_action(response['action'])
+            logger.info(result)
 
             if not result:
                 # requires further intervention if the action is not executable
@@ -307,11 +304,11 @@ class Navigator(BrowserApp):
             [0]: response message if the action is executable, None otherwise
             [1]: element json
         """
-        await self.clear_bboxes()
-        await self.init_observer()
+        await self._browser_app.clear_bboxes()
+        await self._browser_app.init_observer()
 
-        elem = await self.get_element_by_marker_id(action['id']) if 'id' in action else None
-        elem_json = await self.element_to_json(elem) if elem else None
+        elem = await self._browser_app.get_element_by_marker_id(action['id']) if 'id' in action else None
+        elem_json = await self._browser_app.element_to_json(elem) if elem else None
 
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
@@ -319,17 +316,17 @@ class Navigator(BrowserApp):
 
         match action['type']:
             case 'click':
-                result = await self.click(elem)
+                result = await self._browser_app.click(elem)
             case 'enter':
-                result = await self.enter(elem)
+                result = await self._browser_app.enter(elem)
             case 'fill':
-                result = await self.fill(elem, action['value'])
+                result = await self._browser_app.fill(elem, action['value'])
             case 'select':
-                result = await self.select(elem, action['value'])
+                result = await self._browser_app.select(elem, action['value'])
             case 'scroll':
-                result = await self.scroll()
+                result = await self._browser_app.scroll()
             case 'back-to-top':
-                result = await self.back_to_top()
+                result = await self._browser_app.back_to_top()
             case 'confirmation' | 'human-intervention':
                 # TODO: hitl
                 result = None
@@ -342,23 +339,9 @@ class Navigator(BrowserApp):
             await elem.dispose()
 
         try:
-            await self.wait_for_stable()
+            await self._browser_app.wait_for_stable()
         except Error:
             # FIXME: if the action triggers a navigator, we will receive an error showing "Page.evaluate: Execution context was destroyed, most likely because of a navigation"
-            await self.playwright.page.wait_for_timeout(3000)
+            await self._browser_app.playwright.page.wait_for_timeout(3000)
 
         return result, elem_json
-
-
-class NavigatorAgent(BrowserAgent):
-    def __init__(self, playwright: PlaywrightContext, max_steps: int = 42, llm: LLM = None):
-        if not llm:
-            llm = OpenAI(api_key=os.environ.get('OPENAI_API_KEY', None), model='gpt-4o')
-        super().__init__(
-            app=Navigator(
-                playwright=playwright,
-                llm=llm,
-                max_steps=max_steps,
-            ),
-            llm=llm,
-        )
