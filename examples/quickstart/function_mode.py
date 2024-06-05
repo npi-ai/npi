@@ -56,6 +56,15 @@ async def main():
             )
         )
 
+        print(
+            'Debug:gmail:search_emails:',
+            await my_app.debug(
+                app_name='gmail',
+                fn_name='search_emails',
+                args={'max_results': 1}
+            )
+        )
+
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         messages = [
             {
