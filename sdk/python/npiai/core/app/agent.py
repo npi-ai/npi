@@ -17,7 +17,7 @@ class Agent(BaseAgent):
         super().__init__()
         self._app = app
         self.llm = llm or OpenAI(api_key=os.environ.get('OPENAI_API_KEY', None), model='gpt-4o')
-        self.name = app.name
+        self.name = f'{app.name}__agent'
         self.description = app.description
         self.provider = app.provider
 
@@ -25,14 +25,14 @@ class Agent(BaseAgent):
         # Wrap the chat function of this agent to FunctionRegistration
         fn_reg = FunctionRegistration(
             fn=self.chat,
-            name=self.name,
-            description=self.description,
+            name='chat',
+            description=self._app.description,
             schema={
                 'type': 'object',
                 'properties': {
                     'message': {
                         'type': 'string',
-                        'description': f'The task you want {self.name} to do'
+                        'description': f'The task you want {self._app.name} to do or the message you want to chat with {self._app.name}'
                     },
                 },
                 'required': ['message'],

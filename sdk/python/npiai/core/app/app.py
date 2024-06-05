@@ -137,15 +137,11 @@ class App(BaseApp):
     ):
         for tool in tools:
             self._sub_apps.append(tool)
-            is_app = isinstance(tool, App)
 
             for fn_reg in tool.list_functions():
-                if is_app:
-                    data = asdict(fn_reg)
-                    data['name'] = f'{tool.name}__{fn_reg.name}'
-                    scoped_fn_reg = FunctionRegistration(**data)
-                else:
-                    scoped_fn_reg = fn_reg
+                data = asdict(fn_reg)
+                data['name'] = f'{tool.name}__{fn_reg.name}'
+                scoped_fn_reg = FunctionRegistration(**data)
 
                 self._add_function(scoped_fn_reg)
 
