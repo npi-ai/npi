@@ -159,15 +159,19 @@ class App(BaseApp):
 
     def add(
         self,
-        *apps: NPiBase,
+        *tools: NPiBase,
     ):
-        for app in apps:
-            self._sub_apps.append(app)
+        for tool in tools:
+            self._sub_apps.append(tool)
+            is_app = isinstance(tool, App)
 
-            for fn_reg in app.list_functions():
-                data = asdict(fn_reg)
-                data['name'] = f'{app.name}__{fn_reg.name}'
-                scoped_fn_reg = FunctionRegistration(**data)
+            for fn_reg in tool.list_functions():
+                if is_app:
+                    data = asdict(fn_reg)
+                    data['name'] = f'{tool.name}__{fn_reg.name}'
+                    scoped_fn_reg = FunctionRegistration(**data)
+                else:
+                    scoped_fn_reg = fn_reg
 
                 if scoped_fn_reg.name in self._fn_map:
                     raise Exception(f'Duplicate function: {scoped_fn_reg.name}')
@@ -191,7 +195,7 @@ class App(BaseApp):
             call_msg = f'[{self.name}]: Calling {fn_name}'
 
             if args:
-                arg_list = ', '.join(f'{k}={v}' for k, v in args.items())
+                arg_list = ', '.join(f'{k}={json.dumps(v)}' for k, v in args.items())
                 call_msg += f'({arg_list})'
             else:
                 call_msg += '()'

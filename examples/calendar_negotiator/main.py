@@ -57,8 +57,8 @@ class Negotiator(App):
         )
 
         self.add(
-            GoogleCalendar(credentials=load_google_calendar_credentials()),
-            Gmail(credentials=load_gmail_credentials()),
+            create_agent(GoogleCalendar(credentials=load_google_calendar_credentials())),
+            create_agent(Gmail(credentials=load_gmail_credentials())),
         )
 
 
