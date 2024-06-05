@@ -44,6 +44,8 @@ async def main():
     # app.add(Gmail(credentials=load_gmail_credentials()))
     # async with app:
     async with MyApp() as my_app:
+        # export yaml schema
+        my_app.export('.cache/function.yml')
         # debug fn
         print(
             'Debug:echo:',
