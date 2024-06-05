@@ -1,55 +1,25 @@
+import asyncio
 import os
 
 from openai import OpenAI
-from npiai import app
-from npiai.sync_npi import SyncNPi
 
-npi = SyncNPi()
-
-
-@npi.hooks.on_start
-def startup():
-    print('NPi startup')
+from npiai.app.google.gmail import Gmail
+from examples.utils import load_gmail_credentials
 
 
-@npi.hooks.on_end
-def shutdown():
-    print('NPi shutdown')
-
-
-@npi.function(description='demo')
-def test():
-    return 'Hello NPi!'
-
-
-if __name__ == "__main__":
-    time_tools = app.time.create()
-    print(time_tools.name)  # => time
-    npi.add(time_tools)
-
-    with npi.launch():
-        print(
-            npi.debug(
-                toolset=time_tools.name,
-                fn_name='get_timezone',
-                args={
-                    'test': 'Shanghai',
-                    'cases': ['case1', 'case2'],
-                },
-            )
-        )
-
+async def main():
+    async with Gmail(credentials=load_gmail_credentials()) as gmail:
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         messages = [
             {
                 "role": "user",
-                "content": "What day is it today?",
+                "content": "get latest email in the inbox",
             }
         ]
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            tools=npi.tools,  # use npi as a tool package
+            tools=gmail.tools,  # use npi as a tool package
             tool_choice="auto",
             max_tokens=4096,
         )
@@ -57,4 +27,8 @@ if __name__ == "__main__":
 
         messages.append(response_message)
 
-        print(npi.call(response_message.tool_calls))
+        print(await gmail.call(response_message.tool_calls))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

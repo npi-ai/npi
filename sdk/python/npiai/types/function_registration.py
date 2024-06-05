@@ -13,7 +13,6 @@ class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
-    code: str
     schema: Optional[Dict[str, Any]] = None
     few_shots: Optional[List[Shot]] = None
 
@@ -21,12 +20,11 @@ class FunctionRegistration:
         return {
             'description': self.description,
             'name': self.name,
-            'code': self.code,
             'parameters': self.schema,
             'fewShots': [asdict(ex) for ex in self.few_shots] if self.few_shots else None,
         }
 
-    def as_tool(self) -> ChatCompletionToolParam:
+    def get_tool_param(self) -> ChatCompletionToolParam:
         tool: ChatCompletionToolParam = {
             'type': 'function',
             'function': {
