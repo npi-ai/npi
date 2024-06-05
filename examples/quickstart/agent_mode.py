@@ -1,41 +1,14 @@
-import os
+import asyncio
 
-from npiai.sync_npi import SyncNPi
-from npiai.app import time
-
-
-def create_test_package() -> SyncNPi:
-    testpkg = SyncNPi(
-        name='test-pkg',
-        description='a function package to get current date and timezone',
-        provider='npiai',
-    )
-
-    @testpkg.function(description="demo")
-    def test():
-        return 'Hello NPi!'
-
-    @testpkg.function(description="demo")
-    def test2():
-        return 'Hello NPi1111111!'
-
-    return testpkg
+from npiai.core import create_agent
+from npiai.app.google.gmail import Gmail
+from examples.utils import load_gmail_credentials
 
 
-if __name__ == '__main__':
-    npi = SyncNPi()
-    test_pkg = create_test_package()
+async def main():
+    async with create_agent(Gmail(credentials=load_gmail_credentials())) as gmail:
+        print(await gmail.chat('get latest email in the inbox'))
 
-    npi.add(test_pkg)
 
-    print(
-        npi.debug(
-            toolset=test_pkg.name,
-            fn_name='test2'
-        )
-    )
-
-    npi.add(time.create())
-    # agent mode, use npi as an agent
-    res = npi.chat('What day is it today?')
-    print(res)
+if __name__ == "__main__":
+    asyncio.run(main())
