@@ -1,23 +1,24 @@
 """The basic interface for NPi Apps"""
-import json
-import inspect
 import functools
+import inspect
+import json
+import os
 import re
 from dataclasses import asdict
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Any
 
 import yaml
-from pydantic import Field, create_model
 # TODO: use llmlite typings
 from openai.types.chat import (
     ChatCompletionToolParam,
     ChatCompletionMessageToolCall,
     ChatCompletionToolMessageParam,
 )
+from pydantic import Field, create_model
 
+from npiai.core.base import BaseApp, NPiBase
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
-from npiai.core.base import BaseApp, NPiBase
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
@@ -137,8 +138,11 @@ class App(BaseApp):
             }
         }
 
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
         with open(filename, 'w') as f:
             yaml.dump(data, f)
+            logger.info(f'Exported schema to: {filename}')
 
     def list_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
