@@ -114,36 +114,6 @@ class App(BaseApp):
 
         self._register_tools()
 
-    def export(self, filename: str):
-        """
-        Find the wrapped tool functions and export them as yaml
-        """
-        data = {
-            'kind': 'Function',
-            'metadata': {
-                'name': self.name,
-                'description': self.description,
-                'provider': self.provider,
-            },
-            'spec': {
-                'runtime': {
-                    'language': 'python',
-                    'version': '3.11',
-                },
-                'dependencies': [{
-                    'name': 'npiai',
-                    'version': '0.1.0',
-                }],
-                'functions': [t.get_meta() for t in self._fn_map.values()],
-            }
-        }
-
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        with open(filename, 'w') as f:
-            yaml.dump(data, f)
-            logger.info(f'Exported schema to: {filename}')
-
     def list_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
 

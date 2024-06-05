@@ -19,6 +19,7 @@ class Agent(BaseAgent):
         self.llm = llm or OpenAI(api_key=os.environ.get('OPENAI_API_KEY', None), model='gpt-4o')
         self.name = app.name
         self.description = app.description
+        self.provider = app.provider
 
     def list_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
@@ -31,7 +32,7 @@ class Agent(BaseAgent):
                 'properties': {
                     'message': {
                         'type': 'string',
-                        'description': f'The task you want {self._app.name} to do'
+                        'description': f'The task you want {self.name} to do'
                     },
                 },
                 'required': ['message'],
