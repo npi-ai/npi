@@ -8,11 +8,23 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 openai = "^1.23.2"
-npiai-proto = {path = "../../proto/python"}
 termcolor = "^2.4.0"
 loguru = "^0.7.2"
 twilio = "^9.0.5"
 litellm = "^1.38.1"
+pydantic = "^2.7.3"
+simplegmail = "^4.1.1"
+markdownify = "^0.12.1"
+playwright = "^1.44.0"
+google-api-python-client = "^2.132.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.0"
+httplib2 = "^0.22.0"
+pygithub = "^2.3.0"
+discord-py = "^2.3.2"
+pyyaml = "^6.0.1"
+slack-sdk = "^3.27.2"
+docstring-parser = "^0.16"
 
 
 [build-system]
