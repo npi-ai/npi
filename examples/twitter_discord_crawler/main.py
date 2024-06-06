@@ -1,9 +1,11 @@
 import asyncio
+import os
 
 from npiai.core import App, create_agent
 from npiai.hitl_handler import ConsoleHandler
 from npiai.app.discord import Discord
 from npiai.browser_app.twitter import Twitter
+from npiai.llm import OpenAI
 
 PROMPT = """
 You are a Twitter Crawler capable of retrieving data from Twitter and sending messages to Discord.
@@ -20,9 +22,9 @@ Here are some rules for you to fulfill the task:
 ## Example
 Task: Get the last tweet from @npi_ai and send it to Discord.
 Steps:
-1. twitter("Get the last tweet from @npi_ai")
-2. discord.ask_human("Which channel would you like to send the message to? Please specify the channel ID.")
-3. discord("Send the message {{message}} to channel with ID: {{channel_id}}.")
+1. Chat with the twitter app: "Get the last tweet from @npi_ai"
+2. Ask human for additional information: "Which channel would you like to send the message to? Please specify the channel ID."
+3. Chat with the discord app: "Send the message {{message}} to channel with ID: {{channel_id}}."
 """
 
 
@@ -43,7 +45,9 @@ class TwitterDiscordCrawler(App):
 
 
 async def run():
-    async with create_agent(TwitterDiscordCrawler()) as agent:
+    llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
+    
+    async with create_agent(TwitterDiscordCrawler(), llm=llm) as agent:
         print("Twitter Crawler: What's your task for me?")
         task = input('User: ')
         print('')
