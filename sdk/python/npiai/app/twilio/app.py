@@ -11,7 +11,7 @@ class Twilio(App):
         super().__init__(
             name='twilio',
             description='Send messages using Twilio, e.g., twilio("send a message to +16507055795")',
-            system_role='You are a Twilio Agent can send messages via WhatsApp or SMS',
+            system_prompt='You are a Twilio Agent can send messages via WhatsApp or SMS',
         )
 
         sid = account_sid or os.environ.get('TWILIO_ACCOUNT_SID', None)

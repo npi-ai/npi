@@ -2,7 +2,6 @@
 import functools
 import inspect
 import json
-import os
 import re
 from dataclasses import asdict
 from typing import Dict, List, Optional, Any
@@ -16,7 +15,8 @@ from openai.types.chat import (
 )
 from pydantic import Field, create_model
 
-from npiai.core.base import BaseApp, NPiBase
+from npiai.core.hitl import HITL
+from npiai.core.base import BaseApp, NPiToolSet
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 
@@ -75,12 +75,12 @@ class App(BaseApp):
 
     name: str
     description: str
-    system_role: Optional[str]
+    system_prompt: Optional[str]
     provider: str
 
     _tools: List[ChatCompletionToolParam]
     _fn_map: Dict[str, FunctionRegistration]
-    _sub_apps: List[NPiBase]
+    _sub_apps: List[NPiToolSet]
 
     _started: bool = False
 
@@ -100,13 +100,13 @@ class App(BaseApp):
         self,
         name: str,
         description: str,
-        system_role: str = None,
+        system_prompt: str = None,
         provider: str = None,
     ):
         super().__init__()
         self.name = name
         self.description = description
-        self.system_role = system_role
+        self.system_prompt = system_prompt
         self.provider = provider or 'private'
         self._tools = []
         self._fn_map = {}
@@ -114,8 +114,44 @@ class App(BaseApp):
 
         self._register_tools()
 
-    def list_functions(self) -> List[FunctionRegistration]:
+    @npi_tool
+    async def ask_human(self, question: str) -> str:
+        """
+        Ask the user to provide additional information.
+        You should call this method if some information is missing.
+
+        Args:
+            question: The question to ask.
+        """
+        return await self.hitl.input(self.name, question)
+
+    @npi_tool
+    async def confirm_action(self, action: str) -> str:
+        """
+        Ask the user to confirm your action.
+        You should call this method if you are preforming some critical actions such as placing an order.
+
+        Args:
+            action: The action to confirm.
+        """
+        approved = await self.hitl.confirm(self.name, action)
+
+        return 'Approved' if approved else 'Rejected'
+
+    def unpack_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
+
+    def use_hitl(self, hitl: HITL):
+        """
+        Attach the given HITL handler to this app and all its sub apps
+
+        Args:
+            hitl: HITL handler
+        """
+        super().use_hitl(hitl)
+
+        for app in self._sub_apps:
+            app.use_hitl(hitl)
 
     async def start(self):
         """Start the app"""
@@ -133,12 +169,16 @@ class App(BaseApp):
 
     def add(
         self,
-        *tools: NPiBase,
+        *tools: NPiToolSet,
     ):
         for tool in tools:
+            # share hitl handler
+            if tool._hitl is None:
+                tool.use_hitl(self._hitl)
+
             self._sub_apps.append(tool)
 
-            for fn_reg in tool.list_functions():
+            for fn_reg in tool.unpack_functions():
                 data = asdict(fn_reg)
                 data['name'] = f'{tool.name}__{fn_reg.name}'
                 scoped_fn_reg = FunctionRegistration(**data)
@@ -203,8 +243,7 @@ class App(BaseApp):
         """
         Find the wrapped tool functions and register them in this app
         """
-        for attr in dir(self):
-            fn = getattr(self, attr)
+        for attr, fn in inspect.getmembers(self, lambda x: inspect.ismethod(x) or inspect.isfunction(x)):
             tool_meta: ToolMeta | None = getattr(fn, __NPI_TOOL_ATTR__, None)
 
             if not callable(fn) or not tool_meta:

@@ -18,12 +18,22 @@ class GoogleCalendar(App):
         super().__init__(
             name='google_calendar',
             description='Manage events on Google Calendar',
-            system_role='You are an assistant interacting with Google Calendar API. Your job is the selecting the best function based the tool list.',
+            system_prompt='You are an assistant interacting with Google Calendar API. Your job is the selecting the best function based the tool list.',
         )
 
         self.service = build(
             'calendar', 'v3', credentials=credentials
         )
+
+    @npi_tool
+    async def get_user_email(self, message: str) -> str:
+        """
+        Get the user's email address
+
+        Args:
+            message: The message to ask the user for their email address
+        """
+        return await self.hitl.input(self.name, message)
 
     @npi_tool
     def get_today(self):

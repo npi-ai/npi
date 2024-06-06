@@ -161,7 +161,7 @@ class NavigatorAgent(BrowserAgent):
         self._browser_app = BrowserApp(
             name='navigator',
             description='Perform any task by simulating keyboard/mouse interaction on a specific web page. If the some action needs user confirmation, please specify them.',
-            system_role=__PROMPT__,
+            system_prompt=__PROMPT__,
             playwright=playwright,
         )
 
@@ -238,7 +238,7 @@ class NavigatorAgent(BrowserAgent):
             messages.append(
                 {
                     'role': 'system',
-                    'content': self._browser_app.system_role,
+                    'content': self._browser_app.system_prompt,
                 }
             )
 
@@ -327,9 +327,10 @@ class NavigatorAgent(BrowserAgent):
                 result = await self._browser_app.scroll()
             case 'back-to-top':
                 result = await self._browser_app.back_to_top()
-            case 'confirmation' | 'human-intervention':
-                # TODO: hitl
-                result = None
+            case 'confirmation':
+                result = await self.hitl.confirm(self.name, action['description'])
+            case 'human-intervention':
+                result = await self.hitl.input(self.name, action['description'])
             case 'done':
                 result = None
             case _:

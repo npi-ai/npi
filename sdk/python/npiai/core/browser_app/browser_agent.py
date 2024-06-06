@@ -27,11 +27,11 @@ class BrowserAgent(Agent):
 
         messages: List[ChatCompletionMessageParam] = []
 
-        if self._app.system_role:
+        if self._app.system_prompt:
             messages.append(
                 {
                     'role': 'system',
-                    'content': self._app.system_role,
+                    'content': self._app.system_prompt,
                 }
             )
 

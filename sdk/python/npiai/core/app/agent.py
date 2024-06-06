@@ -7,6 +7,7 @@ from npiai.llm import LLM, OpenAI
 from npiai.utils import logger
 from npiai.types import FunctionRegistration
 from npiai.core.base import BaseAgent
+from npiai.core.hitl import HITL
 from .app import App
 
 
@@ -21,7 +22,7 @@ class Agent(BaseAgent):
         self.description = app.description
         self.provider = app.provider
 
-    def list_functions(self) -> List[FunctionRegistration]:
+    def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
         fn_reg = FunctionRegistration(
             fn=self.chat,
@@ -41,6 +42,10 @@ class Agent(BaseAgent):
 
         return [fn_reg]
 
+    def use_hitl(self, hitl: HITL):
+        super().use_hitl(hitl)
+        self._app.use_hitl(hitl)
+
     async def start(self):
         await self._app.start()
 
@@ -53,11 +58,11 @@ class Agent(BaseAgent):
     ) -> str:
         messages: List[ChatCompletionMessageParam] = []
 
-        if self._app.system_role:
+        if self._app.system_prompt:
             messages.append(
                 {
                     'role': 'system',
-                    'content': self._app.system_role,
+                    'content': self._app.system_prompt,
                 }
             )
 

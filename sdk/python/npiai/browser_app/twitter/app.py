@@ -99,6 +99,9 @@ def html_to_md(html: str, **options) -> str:
 
 
 class Twitter(BrowserApp):
+    _username: str
+    _password: str
+
     state_file: str = './credentials/twitter_state.json'
 
     def __init__(
@@ -120,9 +123,12 @@ class Twitter(BrowserApp):
         super().__init__(
             name='twitter',
             description='retrieve and manage tweets',
-            system_role=__SYSTEM_PROMPT__,
+            system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
+
+        self._username = uname
+        self._password = pwd
 
         self.add(
             NavigatorAgent(llm=navigator_llm, playwright=self.playwright)
@@ -150,13 +156,13 @@ class Twitter(BrowserApp):
 
         await self.playwright.page.goto(__ROUTES__['login'])
         await self.playwright.page.get_by_test_id('loginButton').click()
-        await self.playwright.page.get_by_label('Phone, email, or username').fill(self.creds.username)
+        await self.playwright.page.get_by_label('Phone, email, or username').fill(self._username)
         await self.playwright.page.get_by_role('button', name='Next').click()
 
         # check if additional credentials (i.e, username) is required
         await self._check_additional_credentials()
 
-        await self.playwright.page.get_by_label('Password', exact=True).fill(self.creds.password)
+        await self.playwright.page.get_by_label('Password', exact=True).fill(self._password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
 
         # check again if additional credentials (i.e, phone number) is required
@@ -184,9 +190,11 @@ class Twitter(BrowserApp):
             if await cred_input.count() != 0:
                 raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
 
-    @staticmethod
-    async def _request_additional_credentials(cred_name: str) -> str:
-        raise NotImplementedError
+    async def _request_additional_credentials(self, cred_name: str) -> str:
+        raise await self.hitl.input(
+            self.name,
+            f'Please enter {cred_name} to continue the login process.',
+        )
 
     @npi_tool
     async def search(self, query: str, sort_by: Literal['hottest', 'latest'] = 'hottest'):
