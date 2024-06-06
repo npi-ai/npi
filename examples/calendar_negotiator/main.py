@@ -1,9 +1,12 @@
 """ the example of the calendar negotiator"""
 import asyncio
+import os
 
 from npiai.core import App, create_agent
 from npiai.app.google.gmail import Gmail
 from npiai.app.google.calendar import GoogleCalendar
+from npiai.hitl_handler import ConsoleHandler
+from npiai.llm import OpenAI
 
 from examples.utils import load_gmail_credentials, load_google_calendar_credentials
 
@@ -12,7 +15,7 @@ Your are a calendar negotiator. You have the ability to schedule meetings with a
 
 You can use the tools to help you to schedule the meeting.
 
-The tools you can use are: Google Calendar, Google Gmail, and Human Feedback:
+The tools you can use are: Google Calendar and Gmail:
 
 ## Instructions
 
@@ -43,7 +46,7 @@ Steps:
 - google_calendar("check the {user_email_address} availability on Friday")
 - gmail("send an email to test@gmail.com asking their availability on Friday")
 - gmail("wait for response from test@gmail.com")
-- human_feedback("are you sure to schedule a meeting with test@gmail.com on Friday at <time>?")
+- confirm_action("are you sure to schedule a meeting with test@gmail.com on Friday at <time>?")
 - google_calendar("create an event on Friday")
 """
 
@@ -53,8 +56,10 @@ class Negotiator(App):
         super().__init__(
             name='calendar_negotiator',
             description='Schedule meetings with others using gmail and google calendar',
-            system_role=PROMPT,
+            system_prompt=PROMPT,
         )
+
+        self.use_hitl(ConsoleHandler())
 
         self.add(
             create_agent(GoogleCalendar(credentials=load_google_calendar_credentials())),
@@ -62,13 +67,20 @@ class Negotiator(App):
         )
 
 
-async def main():
-    async with create_agent(Negotiator()) as negotiator:
-        print('Negotiator: What\'s your task for me?')
+async def run():
+    llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
+
+    async with create_agent(Negotiator(), llm=llm) as negotiator:
+        print("Negotiator: What's your task for me?")
         task = input('User: ')
         print('')
         await negotiator.chat(task)
 
 
+def main():
+    # poetry entry
+    asyncio.run(run())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

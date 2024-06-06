@@ -33,7 +33,7 @@ class Gmail(App):
         super().__init__(
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
-            system_role='You are a Gmail Agent helping users to manage their emails',
+            system_prompt='You are a Gmail Agent helping users to manage their emails',
         )
 
         self.gmail_client = GmailClientWrapper(
@@ -264,7 +264,7 @@ class Gmail(App):
             max_results=max_results,
         )
 
-        return json.dumps([self._message_to_string(m) for m in msgs])
+        return json.dumps([self._message_to_string(m) for m in msgs], ensure_ascii=False)
 
     @npi_tool
     async def send_email(
@@ -285,6 +285,14 @@ class Gmail(App):
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
+        approved = await self.hitl.confirm(
+            self.name,
+            f'The following email will be sent to {to}: {message}'
+        )
+
+        if not approved:
+            return 'The email could not be sent due to user rejection'
+
         msg = self.gmail_client.send_message(
             sender='',
             to=to,

@@ -52,7 +52,7 @@ class GitHub(App):
         super().__init__(
             name='github',
             description='Manage GitHub issues and pull requests',
-            system_role=__PROMPT__,
+            system_prompt=__PROMPT__,
         )
 
         self.github_client = PyGithub(auth=Auth.Token(token))

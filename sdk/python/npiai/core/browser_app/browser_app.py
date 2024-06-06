@@ -21,7 +21,7 @@ class BrowserApp(App):
         self,
         name: str,
         description: str,
-        system_role: str = None,
+        system_prompt: str = None,
         playwright: PlaywrightContext = None,
         use_screenshot: bool = True,
         headless: bool = True,
@@ -32,7 +32,7 @@ class BrowserApp(App):
         Args:
             name: Name of the browser app
             description: A brief description of the browser app. This will be used if the app is called as a tool.
-            system_role: System prompt of the browser app.
+            system_prompt: System prompt of the browser app.
             playwright: Playwright context to use. A new playwright context is created if None.
             use_screenshot: Whether to send a screenshot of the current page to the vision model. This should be used with a navigator and a vision model.
             headless: Whether to run playwright in headless mode.
@@ -40,7 +40,7 @@ class BrowserApp(App):
         super().__init__(
             name=name,
             description=description,
-            system_role=system_role,
+            system_prompt=system_prompt,
         )
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)

@@ -32,6 +32,7 @@ twilio = "^9.0.5"
 types-protobuf = "^5.26.0.20240422"
 litellm = "^1.38.1"
 docstring-parser = "^0.16"
+questionary = "^2.0.1"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^69.2.0"
@@ -43,5 +44,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 server = "npi.server.app:main"
 negotiator = "examples.calendar_negotiator.main:main"
-twitter = "examples.twitter_crawler.main:main"
+twitter = "examples.twitter_discord_crawler.main:main"
 github-notifier = "examples.github_notifier.main:main"

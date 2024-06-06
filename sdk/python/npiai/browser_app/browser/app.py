@@ -13,7 +13,7 @@ class Browser(BrowserApp):
         super().__init__(
             name='browser',
             description='Perform any task on any webpage',
-            system_role=__SYSTEM_PROMPT__,
+            system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
 

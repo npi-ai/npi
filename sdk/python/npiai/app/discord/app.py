@@ -48,7 +48,7 @@ class Discord(App):
         super().__init__(
             name='discord',
             description='Send/Retrieve messages to/from discord channels',
-            system_role=__PROMPT__,
+            system_prompt=__PROMPT__,
         )
 
         self.client = discord.Client(intents=discord.Intents.default())

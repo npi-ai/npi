@@ -37,7 +37,7 @@ class Slack(App):
         super().__init__(
             name='slack',
             description='Send/Retrieve messages to/from Slack channels',
-            system_role=__PROMPT__,
+            system_prompt=__PROMPT__,
         )
 
         self.client = AsyncWebClient(token=token)

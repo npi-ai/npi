@@ -5,6 +5,7 @@ from openai import OpenAI
 
 from npiai.core import App, npi_tool
 from npiai.app.google.gmail import Gmail
+from npiai.hitl_handler import ConsoleHandler
 from examples.utils import load_gmail_credentials
 
 
@@ -14,6 +15,8 @@ class MyApp(App):
             name='my_app',
             description='test app',
         )
+
+        self.use_hitl(ConsoleHandler())
 
         self.add(Gmail(credentials=load_gmail_credentials()))
 

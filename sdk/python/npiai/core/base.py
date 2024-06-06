@@ -8,15 +8,28 @@ from litellm.utils import ChatCompletionMessageToolCall
 
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
+from .hitl import HITL
 
 
-class NPiBase(ABC):
+class NPiToolSet(ABC):
     name: str
     description: str
     provider: str
+    _hitl: HITL | None = None
+
+    @property
+    def hitl(self) -> HITL:
+        if self._hitl is None:
+            raise AttributeError('HITL handler has not been set')
+
+        return self._hitl
+
+    @staticmethod
+    def test():
+        return 1
 
     @abstractmethod
-    def list_functions(self) -> List[FunctionRegistration]:
+    def unpack_functions(self) -> List[FunctionRegistration]:
         """Export the functions registered in the app"""
         ...
 
@@ -29,6 +42,9 @@ class NPiBase(ABC):
     async def end(self):
         """Stop and dispose the app"""
         ...
+
+    def use_hitl(self, hitl: HITL):
+        self._hitl = hitl
 
     def export(self, filename: str):
         """
@@ -50,7 +66,7 @@ class NPiBase(ABC):
                     'name': 'npiai',
                     'version': '0.1.0',
                 }],
-                'functions': [t.get_meta() for t in self.list_functions()],
+                'functions': [t.get_meta() for t in self.unpack_functions()],
             }
         }
 
@@ -69,7 +85,7 @@ class NPiBase(ABC):
         await self.end()
 
 
-class BaseApp(NPiBase, ABC):
+class BaseApp(NPiToolSet, ABC):
     @abstractmethod
     async def call(
         self,
@@ -78,7 +94,7 @@ class BaseApp(NPiBase, ABC):
         ...
 
 
-class BaseAgent(NPiBase, ABC):
+class BaseAgent(NPiToolSet, ABC):
     @abstractmethod
     async def chat(self, message: str) -> str:
         ...
