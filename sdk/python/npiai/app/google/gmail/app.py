@@ -264,7 +264,7 @@ class Gmail(App):
             max_results=max_results,
         )
 
-        return json.dumps([self._message_to_string(m) for m in msgs])
+        return json.dumps([self._message_to_string(m) for m in msgs], ensure_ascii=False)
 
     @npi_tool
     async def send_email(
