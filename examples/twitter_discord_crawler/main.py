@@ -4,6 +4,7 @@ import os
 from npiai.core import App, create_agent
 from npiai.hitl_handler import ConsoleHandler
 from npiai.app.discord import Discord
+from npiai.app.human_feedback import HumanFeedback
 from npiai.browser_app.twitter import Twitter
 from npiai.llm import OpenAI
 
@@ -39,6 +40,8 @@ class TwitterDiscordCrawler(App):
         self.use_hitl(ConsoleHandler())
 
         self.add(
+            # the HumanFeedback app do not need to be an agent
+            HumanFeedback(),
             create_agent(Twitter(headless=False)),
             create_agent(Discord()),
         )
@@ -46,7 +49,7 @@ class TwitterDiscordCrawler(App):
 
 async def run():
     llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
-    
+
     async with create_agent(TwitterDiscordCrawler(), llm=llm) as agent:
         print("Twitter Crawler: What's your task for me?")
         task = input('User: ')

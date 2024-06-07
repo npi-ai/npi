@@ -5,6 +5,7 @@ import os
 from npiai.core import App, create_agent
 from npiai.app.google.gmail import Gmail
 from npiai.app.google.calendar import GoogleCalendar
+from npiai.app.human_feedback import HumanFeedback
 from npiai.hitl_handler import ConsoleHandler
 from npiai.llm import OpenAI
 
@@ -62,6 +63,8 @@ class Negotiator(App):
         self.use_hitl(ConsoleHandler())
 
         self.add(
+            # the HumanFeedback app do not need to be an agent
+            HumanFeedback(),
             create_agent(GoogleCalendar(credentials=load_google_calendar_credentials())),
             create_agent(Gmail(credentials=load_gmail_credentials())),
         )
