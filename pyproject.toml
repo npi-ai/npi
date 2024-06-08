@@ -1,48 +1,34 @@
 [tool.poetry]
-name = "npi"
-version = "0.0.1"
-description = "Open Source **tool using** API platform for Agent builders"
-authors = ["Wenfeng Wang <w@npi.ai>"]
+name = "npiai"
+version = "0.1.0"
+description = ""
+authors = ["wenfeng <w@npi.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10.10"
-openai = "^1.14.3"
-pydantic = "^2.6.4"
-markdown = "^3.6"
+python = "^3.10"
+openai = "^1.30.3"
+termcolor = "^2.4.0"
+loguru = "^0.7.2"
+twilio = "^9.1.0"
+litellm = "^1.38.10"
+pydantic = "^2.7.3"
 simplegmail = "^4.1.1"
-google-api-python-client = "^2.124.0"
+markdownify = "^0.12.1"
+playwright = "^1.44.0"
+google-api-python-client = "^2.132.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
 httplib2 = "^0.22.0"
-termcolor = "^2.4.0"
 pygithub = "^2.3.0"
-fastapi = "^0.110.1"
-uvicorn = "^0.29.0"
-grpcio = "^1.62.1"
-playwright = "^1.43.0"
-loguru = "^0.7.2"
-markdownify = "^0.12.1"
-npiai-proto = { path = "./proto/python", develop = true }
-npiai = { path = "./sdk/python", develop = true }
 discord-py = "^2.3.2"
 pyyaml = "^6.0.1"
-slack-sdk = "^3.27.1"
-twilio = "^9.0.5"
-types-protobuf = "^5.26.0.20240422"
-litellm = "^1.38.1"
+slack-sdk = "^3.27.2"
 docstring-parser = "^0.16"
 questionary = "^2.0.1"
+discord = "^2.3.2"
 
-[tool.poetry.group.dev.dependencies]
-setuptools = "^69.2.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-server = "npi.server.app:main"
-negotiator = "examples.calendar_negotiator.main:main"
-twitter = "examples.twitter_discord_crawler.main:main"
-github-notifier = "examples.github_notifier.main:main"

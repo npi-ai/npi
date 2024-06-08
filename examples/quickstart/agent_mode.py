@@ -1,7 +1,7 @@
 import asyncio
 
-from npiai.core import App, create_agent
-from npiai.app.google.gmail import Gmail
+from npiai import App, create_agent
+from npiai.app import Gmail
 from npiai.hitl_handler import ConsoleHandler
 from examples.utils import load_gmail_credentials
 
