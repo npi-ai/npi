@@ -2,12 +2,10 @@
 import asyncio
 import os
 
-from npiai.core import App, create_agent
-from npiai.app.google.gmail import Gmail
-from npiai.app.google.calendar import GoogleCalendar
-from npiai.app.human_feedback import HumanFeedback
+from npiai import App, agent_wrapper
+from npiai.app import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
-from npiai.llm import OpenAI
+from npiai import OpenAI
 
 from examples.utils import load_gmail_credentials, load_google_calendar_credentials
 
@@ -60,20 +58,18 @@ class Negotiator(App):
             system_prompt=PROMPT,
         )
 
-        self.use_hitl(ConsoleHandler())
-
-        self.add(
-            # the HumanFeedback app do not need to be an agent
-            HumanFeedback(),
-            create_agent(GoogleCalendar(credentials=load_google_calendar_credentials())),
-            create_agent(Gmail(credentials=load_gmail_credentials())),
+        self.add_tool(
+            agent_wrapper(GoogleCalendar(credentials=load_google_calendar_credentials())),
+            agent_wrapper(Gmail(credentials=load_gmail_credentials())),
         )
+
+        self.use_hitl(ConsoleHandler())
 
 
 async def run():
     llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
 
-    async with create_agent(Negotiator(), llm=llm) as negotiator:
+    async with agent_wrapper(Negotiator(), llm=llm) as negotiator:
         print("Negotiator: What's your task for me?")
         task = input('User: ')
         print('')

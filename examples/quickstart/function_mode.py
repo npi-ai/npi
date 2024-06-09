@@ -3,8 +3,8 @@ import os
 
 from openai import OpenAI
 
-from npiai.core import App, npi_tool
-from npiai.app.google.gmail import Gmail
+from npiai import App, function
+from npiai.app import Gmail
 from npiai.hitl_handler import ConsoleHandler
 from examples.utils import load_gmail_credentials
 
@@ -18,9 +18,9 @@ class MyApp(App):
 
         self.use_hitl(ConsoleHandler())
 
-        self.add(Gmail(credentials=load_gmail_credentials()))
+        self.add_tool(Gmail(credentials=load_gmail_credentials()))
 
-    @npi_tool
+    @function
     def echo(self, v: str):
         """
         Sync echo function.
@@ -30,7 +30,7 @@ class MyApp(App):
         """
         return v
 
-    @npi_tool
+    @function
     async def async_echo(self, v: str = 'Hello Async!'):
         """
         Async echo function.

@@ -123,4 +123,4 @@ More: [https://www.npi.ai/docs/examples](https://www.npi.ai/docs/examples?utm_so
 
 ## License
 
-[BSL v1.1](LICENSE)
+[BSL v1.1](internal/LICENSE)
