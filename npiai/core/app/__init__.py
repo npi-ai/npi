@@ -1,4 +1,3 @@
-from npiai.core.app.app import App, function
-from npiai.core.app.agent import Agent
+from .app import App, function
 
-__all__ = ['App', 'Agent', 'function']
+__all__ = ['App', 'function']

@@ -1,12 +1,16 @@
 import os
-from typing import List
+from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
 
-from npiai import LLM, OpenAI
+from npiai.llm import LLM, OpenAI
 from npiai.utils import logger
 from npiai.types import FunctionRegistration
-from npiai.core import HITL, App, BaseAgent
+
+from npiai.core.app import App
+from npiai.core.app.browser import BrowserApp
+from npiai.core.base import BaseAgent
+from npiai.core.hitl import HITL
 
 
 class Agent(BaseAgent):
@@ -96,3 +100,73 @@ class Agent(BaseAgent):
 
             results = await self._app.call(tool_calls)
             messages.extend(results)
+
+
+class BrowserAgent(Agent):
+    _app: BrowserApp
+
+    def __init__(self, app: BrowserApp, llm: LLM = None):
+        super().__init__(app, llm)
+
+    async def chat(
+            self,
+            message: str
+    ) -> str:
+        if not self._app.use_screenshot:
+            return await super().chat(message)
+
+        screenshot = await self._app.get_screenshot()
+
+        if not screenshot:
+            return await super().chat(message)
+
+        messages: List[ChatCompletionMessageParam] = []
+
+        if self._app.system_prompt:
+            messages.append(
+                {
+                    'role': 'system',
+                    'content': self._app.system_prompt,
+                }
+            )
+
+        messages.append(
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'text',
+                        'text': message,
+                    },
+                    {
+                        'type': 'image_url',
+                        'image_url': {
+                            'url': screenshot,
+                        },
+                    },
+                ]
+            }
+        )
+
+        return await self._call_llm(messages)
+
+
+
+@overload
+def create_agent(app: App, llm: LLM = None) -> Agent:
+    ...
+
+
+@overload
+def create_agent(app: BrowserApp, llm: LLM = None) -> BrowserAgent:
+    ...
+
+
+def create_agent(app: App | BrowserApp, llm: LLM = None) -> Agent | BrowserAgent:
+    if isinstance(app, App):
+        return Agent(app, llm)
+
+    if isinstance(app, BrowserApp):
+        return BrowserAgent(app, llm)
+
+    raise TypeError(f'app must be an instance of App or BrowserApp')

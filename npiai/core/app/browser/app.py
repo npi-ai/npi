@@ -3,8 +3,8 @@ import base64
 from markdownify import MarkdownConverter
 from playwright.async_api import ElementHandle
 
-from npiai import App, function
-from npiai.core.browser_app.playwright_context import PlaywrightContext
+from npiai.core.app import App, function
+from .playwright_context import PlaywrightContext
 
 
 class MdConverter(MarkdownConverter):

@@ -15,7 +15,9 @@ from openai.types.chat import (
 )
 from pydantic import Field, create_model
 
-from npiai.core import HITL, BaseApp, ToolSet
+from npiai.core.base import BaseApp, ToolSet
+from npiai.core.hitl import HITL
+
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 

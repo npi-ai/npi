@@ -1,4 +1,0 @@
-npi_root: "{the path to the root of the NPi project}"
-openai_api_key: "xxxxxx"
-github_access_token: 'xxxxxx'
-discord_token: 'xxxxxx'

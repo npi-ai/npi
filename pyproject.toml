@@ -27,6 +27,7 @@ slack-sdk = "^3.27.2"
 docstring-parser = "^0.16"
 questionary = "^2.0.1"
 discord = "^2.3.2"
+markdown = "^3.6"
 
 
 [build-system]

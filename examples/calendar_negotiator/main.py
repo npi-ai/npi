@@ -61,7 +61,6 @@ class Negotiator(App):
         self.use_hitl(ConsoleHandler())
 
         self.add(
-            # the HumanFeedback app do not need to be an agent
             create_agent(GoogleCalendar(credentials=load_google_calendar_credentials())),
             create_agent(Gmail(credentials=load_gmail_credentials())),
         )
