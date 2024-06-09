@@ -1,4 +1,4 @@
-from .agent import create_agent, Agent, BrowserAgent
+from .agent import agent_wrapper, Agent, BrowserAgent
 from .navigator_agent import NavigatorAgent
 
-__all__ = ['Agent', 'BrowserAgent', 'create_agent', 'NavigatorAgent']
+__all__ = ['Agent', 'BrowserAgent', 'agent_wrapper', 'NavigatorAgent']

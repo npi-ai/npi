@@ -1,4 +1,4 @@
-from .core import App, create_agent, function
+from .core import App, agent_wrapper, function
 from .llm import OpenAI, LLM
 
-__all__ = ['App', 'create_agent', 'function', 'OpenAI', 'LLM']
+__all__ = ['App', 'agent_wrapper', 'function', 'OpenAI', 'LLM']

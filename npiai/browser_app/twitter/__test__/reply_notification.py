@@ -1,10 +1,10 @@
 import asyncio
-from npiai import create_agent
+from npiai import agent_wrapper
 from npiai.browser_app import Twitter
 
 
 async def main():
-    async with create_agent(Twitter(headless=False)) as twitter:
+    async with agent_wrapper(Twitter(headless=False)) as twitter:
         return await twitter.chat(
             'Reply to the latest message in the notifications with your opinions. You can write anything you like.',
         )

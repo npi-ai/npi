@@ -55,8 +55,8 @@ class Agent(BaseAgent):
         await self._app.end()
 
     async def chat(
-        self,
-        message: str,
+            self,
+            message: str,
     ) -> str:
         messages: List[ChatCompletionMessageParam] = []
 
@@ -151,18 +151,7 @@ class BrowserAgent(Agent):
         return await self._call_llm(messages)
 
 
-
-@overload
-def create_agent(app: App, llm: LLM = None) -> Agent:
-    ...
-
-
-@overload
-def create_agent(app: BrowserApp, llm: LLM = None) -> BrowserAgent:
-    ...
-
-
-def create_agent(app: App | BrowserApp, llm: LLM = None) -> Agent | BrowserAgent:
+def agent_wrapper(app: App | BrowserApp, llm: LLM = None) -> Agent | BrowserAgent:
     if isinstance(app, App):
         return Agent(app, llm)
 

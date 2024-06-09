@@ -1,6 +1,6 @@
 import asyncio
 
-from npiai import App, create_agent
+from npiai import App, agent_wrapper
 from npiai.app import Gmail
 from npiai.hitl_handler import ConsoleHandler
 from examples.utils import load_gmail_credentials
@@ -16,7 +16,7 @@ class MyApp(App):
         self.use_hitl(ConsoleHandler())
 
         self.add(
-            create_agent(Gmail(credentials=load_gmail_credentials()))
+            agent_wrapper(Gmail(credentials=load_gmail_credentials()))
         )
 
 
@@ -27,7 +27,7 @@ async def main():
     #     create_agent(Gmail(credentials=load_gmail_credentials()))
     # )
     # async with create_agent(app) as agent:
-    async with create_agent(MyApp()) as agent:
+    async with agent_wrapper(MyApp()) as agent:
         agent.export('.cache/agent.yaml')
         print(await agent.chat('get latest email in the inbox'))
 

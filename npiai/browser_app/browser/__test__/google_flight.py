@@ -1,10 +1,10 @@
 import asyncio
-from npiai import create_agent
+from npiai import agent_wrapper
 from npiai.browser_app.browser import Browser
 
 
 async def main():
-    async with create_agent(Browser(headless=False)) as browser:
+    async with agent_wrapper(Browser(headless=False)) as browser:
         return await browser.chat(
             'Book a one-way flight from ATL to LAX on 4/20 using Google Flights.'
         )
