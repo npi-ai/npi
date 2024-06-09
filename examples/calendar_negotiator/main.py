@@ -58,12 +58,12 @@ class Negotiator(App):
             system_prompt=PROMPT,
         )
 
-        self.use_hitl(ConsoleHandler())
-
-        self.add(
+        self.add_tool(
             agent_wrapper(GoogleCalendar(credentials=load_google_calendar_credentials())),
             agent_wrapper(Gmail(credentials=load_gmail_credentials())),
         )
+
+        self.use_hitl(ConsoleHandler())
 
 
 async def run():

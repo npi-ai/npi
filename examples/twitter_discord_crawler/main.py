@@ -38,7 +38,7 @@ class TwitterDiscordCrawler(App):
 
         self.use_hitl(ConsoleHandler())
 
-        self.add(
+        self.add_tool(
             agent_wrapper(Twitter(headless=False)),
             agent_wrapper(Discord()),
         )

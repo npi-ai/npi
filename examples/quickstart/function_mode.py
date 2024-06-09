@@ -18,7 +18,7 @@ class MyApp(App):
 
         self.use_hitl(ConsoleHandler())
 
-        self.add(Gmail(credentials=load_gmail_credentials()))
+        self.add_tool(Gmail(credentials=load_gmail_credentials()))
 
     @function
     def echo(self, v: str):

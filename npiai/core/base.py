@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
+from typing import List
 
 import yaml
 from litellm.types.completion import ChatCompletionToolMessageParam
@@ -11,7 +11,7 @@ from npiai.utils import logger
 from npiai.core.hitl import HITL
 
 
-class ToolSet(ABC):
+class Tool(ABC):
     name: str
     description: str
     provider: str
@@ -85,7 +85,7 @@ class ToolSet(ABC):
         await self.end()
 
 
-class BaseApp(ToolSet, ABC):
+class BaseApp(Tool, ABC):
     @abstractmethod
     async def call(
         self,
@@ -94,7 +94,7 @@ class BaseApp(ToolSet, ABC):
         ...
 
 
-class BaseAgent(ToolSet, ABC):
+class BaseAgent(Tool, ABC):
     @abstractmethod
     async def chat(self, message: str) -> str:
         ...

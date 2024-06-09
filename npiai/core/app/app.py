@@ -15,7 +15,7 @@ from openai.types.chat import (
 )
 from pydantic import Field, create_model
 
-from npiai.core.base import BaseApp, ToolSet
+from npiai.core.base import BaseApp, Tool
 from npiai.core.hitl import HITL
 
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
@@ -81,7 +81,7 @@ class App(BaseApp):
 
     _tools: List[ChatCompletionToolParam]
     _fn_map: Dict[str, FunctionRegistration]
-    _sub_apps: List[ToolSet]
+    _sub_tools: List[Tool]
 
     _started: bool = False
 
@@ -94,8 +94,8 @@ class App(BaseApp):
         return list(self._fn_map.values())
 
     @property
-    def sub_apps(self):
-        return self._sub_apps
+    def sub_tools(self):
+        return self._sub_tools
 
     def __init__(
         self,
@@ -111,7 +111,7 @@ class App(BaseApp):
         self.provider = provider or 'private'
         self._tools = []
         self._fn_map = {}
-        self._sub_apps = []
+        self._sub_tools = []
 
         self._register_tools()
 
@@ -127,33 +127,33 @@ class App(BaseApp):
         """
         super().use_hitl(hitl)
 
-        for app in self._sub_apps:
+        for app in self._sub_tools:
             app.use_hitl(hitl)
 
     async def start(self):
         """Start the app"""
         if not self._started:
             self._started = True
-            for app in self._sub_apps:
+            for app in self._sub_tools:
                 await app.start()
 
     async def end(self):
         """Stop and dispose the app"""
         if self._started:
             self._started = False
-            for app in self._sub_apps:
+            for app in self._sub_tools:
                 await app.end()
 
-    def add(
+    def add_tool(
         self,
-        *tools: ToolSet,
+        *tools: Tool,
     ):
         for tool in tools:
             # share hitl handler
             if tool._hitl is None:
                 tool.use_hitl(self._hitl)
 
-            self._sub_apps.append(tool)
+            self._sub_tools.append(tool)
 
             for fn_reg in tool.unpack_functions():
                 data = asdict(fn_reg)
