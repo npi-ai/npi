@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
 
@@ -149,6 +149,16 @@ class BrowserAgent(Agent):
         )
 
         return await self._call_llm(messages)
+
+
+@overload
+def agent_wrapper(app: App, llm: LLM = None) -> Agent:
+    ...
+
+
+@overload
+def agent_wrapper(app: BrowserApp, llm: LLM = None) -> BrowserAgent:
+    ...
 
 
 def agent_wrapper(app: App | BrowserApp, llm: LLM = None) -> Agent | BrowserAgent:
