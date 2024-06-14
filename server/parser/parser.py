@@ -1,5 +1,14 @@
+import os
 import ast
 from string import Template
+import yaml
+from typing import List
+import pydantic
+import shutil
+import secrets
+import string
+import boto3
+
 
 class ToolParser(ast.NodeVisitor):
     def __init__(self):
@@ -52,6 +61,7 @@ class ToolParser(ast.NodeVisitor):
                 self.functions[decorator_name].append(node.name)
         self.generic_visit(node)
 
+
 def validate_tool(source_code):
     node = ast.parse(source_code)
     parser = ToolParser()
@@ -82,8 +92,7 @@ def validate_tool(source_code):
 
 
 pyproject_template = Template(
-"""
-[tool.poetry]
+    """[tool.poetry]
 $POETRY_METADATA
 
 [tool.poetry.dependencies]
@@ -94,63 +103,164 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 """)
 
-
 dockerfile_template = Template(
-"""
-FROM npiai/python:3.11
-COPY . /npiai/app
+    """FROM npiai/python:3.11
+COPY . /npiai/tools
 
-WORKDIR /npiai/app
+WORKDIR /npiai/tools
 unzip $ZIP_FILE
 poetry install
 
-ENV MAIN_FILE=/npiai/app/$MAIN_FILE
-ENV MAIN_CLASS=$MAIN_CLASS
-
-ENTRYPOINT ["python", "/npiai/app/main.py"]
+ENTRYPOINT ["python", "/npiai/tools/main.py"]
 """)
 
-def main():
+
+class ToolMetadata(pydantic.BaseModel):
+    id: str
+    name: str
+    version: str
+    description: str
+    author: List[str]
+
+
+entrypoint_template = Template(
+    """import os
+import sys
+import importlib
+import tokenize
+import asyncio
+import sleep
+
+async def main():
+    # Add the directory containing the file to sys.path
+    module_dir, module_name = os.path.split('$MAIN_FILE')
+    module_name = os.path.splitext(module_name)[0]  # Remove the .py extension
+
+    if module_dir not in sys.path:
+        sys.path.append(module_dir)
+
+    # Now you can import the module using its name
+    module = importlib.import_module(module_name)
+    # Create an instance of the class
+    tool_class = getattr(module, '$MAIN_CLASS')
+    instance = tool_class()
+
+    async with instance as i:
+        # await i.wait() TODO add this method to BaseApp class
+        sleep(1000)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+""")
+
+# Create an S3 client
+s3_client = boto3.client('s3')
+
+
+def generate_secure_random_string(length):
+    """
+    Generate a secure random string of specified length.
+
+    Args:
+    length (int): Length of the secure random string to generate.
+
+    Returns:
+    str: The generated secure random string.
+    """
+    # Define the characters to choose from
+    characters = string.ascii_letters + string.digits
+    # Create a secure random string
+    secure_random_string = ''.join(secrets.choice(characters) for _ in range(length))
+    return secure_random_string
+
+
+tmp_dir = '/Users/wenfeng/workspace/npi-ai/npi/tmp'
+
+
+def build(bucket: str, md: ToolMetadata):
+    # 0. download source zip from S3, credentials are stored in the environment
+    root_dir = f'{tmp_dir}/{generate_secure_random_string(16)}'
+    os.makedirs(root_dir, exist_ok=False)
+    target_zip = f'{root_dir}/source.zip'
+
+    s3_client.download_file(bucket, f'{md.id}/source.zip', target_zip)
+    workdir = f'{root_dir}/source'
+    shutil.unpack_archive(target_zip, workdir)
+
     # 1. check tool.yml
+    with open('/'.join([workdir, 'npi.yml']), 'r') as f:
+        tool = yaml.safe_load(f)
+
+    if 'main' not in tool:
+        raise ValueError('No main field specified in npi.yml')
+    if 'class' not in tool:
+        raise ValueError('No class field specified in npi.yml')
 
     # 2. check source code
-    file = '/Users/wenfeng/workspace/npi-ai/npi/npiai/app/github/app.py'
-    with open(file, 'r') as f:
+    with open('/'.join([workdir, tool.get('main')]), 'r') as f:
         validate_tool(f.read())
-
 
     # 3. generate pyproject.yml
     metadata = {
-        'name': 'npiai',
-        'version': '0.1.0',
-        'description': 'NPI AI Tool',
-        'authors': ['NPI AI'],
+        'name': md.name,
+        'version': md.version,
+        'description': "NPi Tools created by NPi Cloud",
+        'authors': md.author,
     }
-    dependencies = {
-        'npiai': '0.1.0',
-    }
+
+    dependencies = {}
+    for dep in tool['dependencies']:
+        dependencies[dep['name']] = dep['version']
     message = pyproject_template.substitute(
         POETRY_METADATA='\n'.join([f'{k} = "{v}"' for k, v in metadata.items()]),
         POETRY_DEPENDENCIES='\n'.join([f'{k} = "{v}"' for k, v in dependencies.items()])
     )
+    with open('/'.join([workdir, 'pyproject.toml']), 'w') as f:
+        f.write(message)
 
-    print(message)
+    # install dependencies to same directory
 
     # 4. generate Dockerfile
-
+    zipFile = f'{md.id}-{md.version}.zip'
     message = dockerfile_template.substitute(
-        ZIP_FILE='app.zip',
-        MAIN_FILE='app.py',
-        MAIN_CLASS='GitHub'
+        ZIP_FILE=zipFile,
+        MAIN_FILE=f'/npiai/tools/{tool.get("main")}',
+        MAIN_CLASS=tool.get('class'),
     )
+    with open('/'.join([workdir, 'Dockerfile']), 'w') as f:
+        f.write(message)
 
-    print(message)
+    # 5. generate entrypoint
+    message = entrypoint_template.substitute(
+        MAIN_FILE=f'/npiai/tools/{tool.get("main")}',
+        MAIN_CLASS=tool.get('class'),
+    )
+    with open('/'.join([workdir, 'main.py']), 'w') as f:
+        f.write(message)
 
     # 5. zip and upload to s3
+    new_file = '/'.join([workdir, f'{md.id}-{md.version}'])
+    shutil.make_archive(new_file, 'gztar', workdir)
 
-    # 6. update db status
+    response = s3_client.upload_file(f'{new_file}.tar.gz', bucket, f'{md.id}/{md.version}/target.tar.gz')
 
+    # build image?
+
+    # 6. TODO generate function.yml, need make export to be a static method
+
+    # 7. clean up
+    shutil.rmtree(root_dir)
 
 
 if __name__ == '__main__':
-    main()
+    build(
+        bucket='npiai-tools-build-test',
+        md=ToolMetadata(
+            id='github',
+            name='github',
+            version='0.1.0',
+            description='GitHub Tool',
+            author=['Wenfeng Wang'],
+        ),
+    )

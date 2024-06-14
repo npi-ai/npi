@@ -6,3 +6,5 @@ env:
 dependencies:
   - name: npiai
     version: 0.1.0
+  - name: test
+    version: 0.1.0
