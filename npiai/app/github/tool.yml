@@ -1,0 +1,8 @@
+main: app.py
+class: GitHub
+env:
+  - name: GITHUB_ACCESS_TOKEN
+    value: 'GITHUB_ACCESS_TOKEN'
+dependencies:
+  - name: npiai
+    version: 0.1.0
