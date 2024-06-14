@@ -8,6 +8,7 @@ import shutil
 import secrets
 import string
 import boto3
+import subprocess
 
 
 class ToolParser(ast.NodeVisitor):
@@ -62,28 +63,18 @@ class ToolParser(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_tool(source_code):
+def validate_tool(source_code, main_class: str, filename='main.py'):
     node = ast.parse(source_code)
     parser = ToolParser()
     parser.visit(node)
 
     if 'npiai.App' not in parser.imports:
         raise ValueError('No import statement found for npiai.App')
-
-    module = parser.imports['npiai.App']
-    if parser.app_class.get('App') is None or len(parser.app_class['App']) == 0:
+    if main_class not in parser.app_class['App'] or len(parser.app_class['App']) == 0:
         raise ValueError('No class extends npiai.App found in the file')
-
-    main_class = 'GitHub'
-    classes = parser.app_class['App']
-    if main_class not in parser.app_class['App']:
-        raise ValueError(f'No class named {main_class} found in {filename}')
-
-    npi_functions = []
 
     if 'npiai.function' not in parser.imports:
         raise ValueError(f'No import statement found for npiai.function')
-
     module = parser.imports['npiai.function']
     if module not in parser.functions or len(parser.functions[module]) == 0:
         raise ValueError('No function that decorated with npiai.function found')
@@ -101,15 +92,17 @@ $POETRY_DEPENDENCIES
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+create = true
+in-project = true
 """)
 
 dockerfile_template = Template(
     """FROM npiai/python:3.11
 COPY . /npiai/tools
 
-WORKDIR /npiai/tools
-unzip $ZIP_FILE
-poetry install
+RUN source /npiai/tools/.venv/bin/activate
 
 ENTRYPOINT ["python", "/npiai/tools/main.py"]
 """)
@@ -129,7 +122,7 @@ import sys
 import importlib
 import tokenize
 import asyncio
-import sleep
+import time
 
 async def main():
     # Add the directory containing the file to sys.path
@@ -147,15 +140,12 @@ async def main():
 
     async with instance as i:
         # await i.wait() TODO add this method to BaseApp class
-        sleep(1000)
+        time.sleep(1000)
 
 
 if __name__ == '__main__':
     asyncio.run(main())
 """)
-
-# Create an S3 client
-s3_client = boto3.client('s3')
 
 
 def generate_secure_random_string(length):
@@ -175,11 +165,14 @@ def generate_secure_random_string(length):
     return secure_random_string
 
 
-tmp_dir = '/Users/wenfeng/workspace/npi-ai/npi/tmp'
+tmp_dir = '/Users/wenfeng/tmp/build'
+
+# Create an S3 client, credentials are stored in the environment
+s3_client = boto3.client('s3')
 
 
 def build(bucket: str, md: ToolMetadata):
-    # 0. download source zip from S3, credentials are stored in the environment
+    # 0. download source zip from S3
     root_dir = f'{tmp_dir}/{generate_secure_random_string(16)}'
     os.makedirs(root_dir, exist_ok=False)
     target_zip = f'{root_dir}/source.zip'
@@ -199,32 +192,40 @@ def build(bucket: str, md: ToolMetadata):
 
     # 2. check source code
     with open('/'.join([workdir, tool.get('main')]), 'r') as f:
-        validate_tool(f.read())
+        validate_tool(f.read(), tool.get('class'))
 
     # 3. generate pyproject.yml
     metadata = {
         'name': md.name,
         'version': md.version,
         'description': "NPi Tools created by NPi Cloud",
-        'authors': md.author,
     }
+    metadata_str = '\n'.join([f'{k} = "{v}"' for k, v in metadata.items()])
+    authors = [f'"{a}"' for a in md.author]
+    metadata_str = f'{metadata_str}\nauthors = [{", ".join(authors)}]'
 
     dependencies = {}
     for dep in tool['dependencies']:
         dependencies[dep['name']] = dep['version']
     message = pyproject_template.substitute(
-        POETRY_METADATA='\n'.join([f'{k} = "{v}"' for k, v in metadata.items()]),
+        POETRY_METADATA=metadata_str,
         POETRY_DEPENDENCIES='\n'.join([f'{k} = "{v}"' for k, v in dependencies.items()])
     )
     with open('/'.join([workdir, 'pyproject.toml']), 'w') as f:
         f.write(message)
 
     # install dependencies to same directory
+    result = subprocess.run('poetry install', cwd=workdir, shell=True, text=True, capture_output=True)
+
+    if result:
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
+        print("Return Code:", result.returncode)
 
     # 4. generate Dockerfile
-    zipFile = f'{md.id}-{md.version}.zip'
+    zip_file = f'{md.id}-{md.version}.zip'
     message = dockerfile_template.substitute(
-        ZIP_FILE=zipFile,
+        ZIP_FILE=zip_file,
         MAIN_FILE=f'/npiai/tools/{tool.get("main")}',
         MAIN_CLASS=tool.get('class'),
     )
@@ -243,17 +244,17 @@ def build(bucket: str, md: ToolMetadata):
     new_file = '/'.join([workdir, f'{md.id}-{md.version}'])
     shutil.make_archive(new_file, 'gztar', workdir)
 
-    response = s3_client.upload_file(f'{new_file}.tar.gz', bucket, f'{md.id}/{md.version}/target.tar.gz')
-
-    # build image?
+    s3_client.upload_file(f'{new_file}.tar.gz', bucket, f'{md.id}/{md.version}/target.tar.gz')
+    # build image here?
 
     # 6. TODO generate function.yml, need make export to be a static method
 
     # 7. clean up
-    shutil.rmtree(root_dir)
+    # shutil.rmtree(root_dir)
 
 
 if __name__ == '__main__':
+    # shutil.make_archive("source", 'zip', '/Users/wenfeng/workspace/npi-ai/npi/npiai/app/github')
     build(
         bucket='npiai-tools-build-test',
         md=ToolMetadata(

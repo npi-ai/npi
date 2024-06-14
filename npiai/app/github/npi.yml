@@ -4,7 +4,11 @@ env:
   - name: GITHUB_ACCESS_TOKEN
     value: 'GITHUB_ACCESS_TOKEN'
 dependencies:
-  - name: npiai
-    version: 0.1.0
-  - name: test
-    version: 0.1.0
+  - name: python
+    version: "^3.10"
+  - name: openai
+    version: "^1.30.3"
+  - name: termcolor
+    version: "^2.4.0"
+  - name: pygithub
+    version: "^2.3.0"
