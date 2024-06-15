@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/npi-ai/npi/internal/api"
+	"github.com/npi-ai/npi/server/api"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

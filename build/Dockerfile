@@ -2,7 +2,7 @@ FROM --platform=$BUILDPLATFORM npiai/base:3.10
 
 LABEL maintainer="Wenfeng Wang <w@npi.ai>"
 
-COPY . /npiai
+COPY .. /npiai
 WORKDIR /npiai
 
 ENV PATH="/root/.local/bin:${PATH}"

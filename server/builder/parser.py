@@ -63,7 +63,7 @@ class ToolParser(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_tool(source_code, main_class: str, filename='main.py'):
+def validate_tool(source_code, main_class: str):
     node = ast.parse(source_code)
     parser = ToolParser()
     parser.visit(node)
@@ -82,8 +82,9 @@ def validate_tool(source_code, main_class: str, filename='main.py'):
     print(f'Found {len(parser.functions[module])} functions decorated with npiai.function')
 
 
-pyproject_template = Template(
+requirements_template = Template(
     """[tool.poetry]
+package-mode = false    
 $POETRY_METADATA
 
 [tool.poetry.dependencies]
@@ -93,18 +94,23 @@ $POETRY_DEPENDENCIES
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[virtualenvs]
-create = true
-in-project = true
+# [virtualenvs]
+# create = true
+# in-project = true
+# options.always-copy = true
+# options.no-pip = true
 """)
 
 dockerfile_template = Template(
-    """FROM npiai/python:3.11
+    """FROM npiai/python:3.12
 COPY . /npiai/tools
 
-RUN source /npiai/tools/.venv/bin/activate
+SHELL ["/bin/bash", "-c"]
 
-ENTRYPOINT ["python", "/npiai/tools/main.py"]
+WORKDIR /npiai/tools
+RUN poetry install
+
+ENTRYPOINT ["poetry", "run", "python", "/npiai/tools/main.py"]
 """)
 
 
@@ -170,6 +176,9 @@ tmp_dir = '/Users/wenfeng/tmp/build'
 # Create an S3 client, credentials are stored in the environment
 s3_client = boto3.client('s3')
 
+# docker_registry = 'npiai'
+docker_registry = '992297059634.dkr.ecr.us-west-2.amazonaws.com'
+
 
 def build(bucket: str, md: ToolMetadata):
     # 0. download source zip from S3
@@ -177,7 +186,7 @@ def build(bucket: str, md: ToolMetadata):
     os.makedirs(root_dir, exist_ok=False)
     target_zip = f'{root_dir}/source.zip'
 
-    s3_client.download_file(bucket, f'{md.id}/source.zip', target_zip)
+    s3_client.download_file(bucket, f'{md.id}/{md.version}/source.zip', target_zip)
     workdir = f'{root_dir}/source'
     shutil.unpack_archive(target_zip, workdir)
 
@@ -190,11 +199,21 @@ def build(bucket: str, md: ToolMetadata):
     if 'class' not in tool:
         raise ValueError('No class field specified in npi.yml')
 
-    # 2. check source code
+    # 2. validate source code
     with open('/'.join([workdir, tool.get('main')]), 'r') as f:
         validate_tool(f.read(), tool.get('class'))
 
-    # 3. generate pyproject.yml
+    # 3. generate main.py
+    message = entrypoint_template.substitute(
+        MAIN_FILE=f'/npiai/tools/{tool.get("main")}',
+        MAIN_CLASS=tool.get('class'),
+    )
+    with open('/'.join([workdir, 'main.py']), 'w') as f:
+        f.write(message)
+
+    # TODO generate function.yml at this step
+
+    # 4. generate pyproject.yml
     metadata = {
         'name': md.name,
         'version': md.version,
@@ -207,22 +226,14 @@ def build(bucket: str, md: ToolMetadata):
     dependencies = {}
     for dep in tool['dependencies']:
         dependencies[dep['name']] = dep['version']
-    message = pyproject_template.substitute(
+    message = requirements_template.substitute(
         POETRY_METADATA=metadata_str,
         POETRY_DEPENDENCIES='\n'.join([f'{k} = "{v}"' for k, v in dependencies.items()])
     )
     with open('/'.join([workdir, 'pyproject.toml']), 'w') as f:
         f.write(message)
 
-    # install dependencies to same directory
-    result = subprocess.run('poetry install', cwd=workdir, shell=True, text=True, capture_output=True)
-
-    if result:
-        print("STDOUT:", result.stdout)
-        print("STDERR:", result.stderr)
-        print("Return Code:", result.returncode)
-
-    # 4. generate Dockerfile
+    # 5. generate Dockerfile
     zip_file = f'{md.id}-{md.version}.zip'
     message = dockerfile_template.substitute(
         ZIP_FILE=zip_file,
@@ -232,34 +243,33 @@ def build(bucket: str, md: ToolMetadata):
     with open('/'.join([workdir, 'Dockerfile']), 'w') as f:
         f.write(message)
 
-    # 5. generate entrypoint
-    message = entrypoint_template.substitute(
-        MAIN_FILE=f'/npiai/tools/{tool.get("main")}',
-        MAIN_CLASS=tool.get('class'),
-    )
-    with open('/'.join([workdir, 'main.py']), 'w') as f:
-        f.write(message)
-
-    # 5. zip and upload to s3
+    # 6. Upload to S3
     new_file = '/'.join([workdir, f'{md.id}-{md.version}'])
     shutil.make_archive(new_file, 'gztar', workdir)
 
     s3_client.upload_file(f'{new_file}.tar.gz', bucket, f'{md.id}/{md.version}/target.tar.gz')
-    # build image here?
+    os.remove(f'{new_file}.tar.gz')
 
-    # 6. TODO generate function.yml, need make export to be a static method
+    # 7. build Docker image
+    try:
+        cmd = f'docker buildx build --platform linux/amd64 -t {docker_registry}/cloud/tools:{md.id} . --push'
+        result = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, shell=True, check=True,
+                                env=os.environ.copy())
+        print(result)
+    except Exception as e:
+        print(e)
 
-    # 7. clean up
-    # shutil.rmtree(root_dir)
+    # 8. clean up
+    shutil.rmtree(root_dir)
 
 
 if __name__ == '__main__':
-    # shutil.make_archive("source", 'zip', '/Users/wenfeng/workspace/npi-ai/npi/npiai/app/github')
+    shutil.make_archive("source", 'zip', '/Users/wenfeng/workspace/npi-ai/npi/npiai/app/github')
     build(
         bucket='npiai-tools-build-test',
         md=ToolMetadata(
             id='github',
-            name='github',
+            name='github123',
             version='0.1.0',
             description='GitHub Tool',
             author=['Wenfeng Wang'],

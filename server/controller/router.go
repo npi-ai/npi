@@ -11,10 +11,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
-	"github.com/npi-ai/npi/internal/api"
-	"github.com/npi-ai/npi/internal/db"
-	"github.com/npi-ai/npi/internal/log"
-	"github.com/npi-ai/npi/internal/schema"
+	"github.com/npi-ai/npi/server/api"
+	"github.com/npi-ai/npi/server/db"
+	"github.com/npi-ai/npi/server/log"
+	"github.com/npi-ai/npi/server/schema"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

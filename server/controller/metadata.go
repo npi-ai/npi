@@ -3,8 +3,8 @@ package controller
 import (
 	"context"
 
-	"github.com/npi-ai/npi/internal/db"
 	server "github.com/npi-ai/npi/proto/go/api"
+	"github.com/npi-ai/npi/server/db"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
