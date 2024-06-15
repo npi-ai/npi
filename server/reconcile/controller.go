@@ -48,7 +48,7 @@ func (c *BaseController[Resource]) GetMaximumParallelism() int {
 func (c *BaseController[Resource]) Reconcile(
 	ctx context.Context,
 	coll *mongo.Collection,
-	currentStatus, midStatus, expectedStatus model.ResourceStatus,
+	sourceState, midState, targetState model.ResourceStatus,
 	g func() Resource,
 	f func(ctx context.Context,
 		resource Resource) error) {
@@ -62,16 +62,18 @@ func (c *BaseController[Resource]) Reconcile(
 				Sort: bson.M{"retry_at": 1},
 			}
 			result := coll.FindOneAndUpdate(ctx,
-				bson.M{"status": currentStatus, "retry_at": bson.M{"$lte": time.Now()}},
+				bson.M{"status": sourceState, "retry_at": bson.M{"$lte": time.Now()}},
 				bson.M{"$set": bson.M{
-					"status": midStatus,
+					"status":      midState,
+					"updated_at":  time.Now(),
+					"in_progress": true,
 				}},
 				&opts,
 			)
 			if result.Err() != nil {
 				if !errors.Is(result.Err(), mongo.ErrNoDocuments) {
 					log.Error(ctx).Err(result.Err()).
-						Str("status", string(currentStatus)).
+						Str("status", string(sourceState)).
 						Str("resource", c.name).
 						Msg("failed to get object from database")
 					time.Sleep(10 * time.Second)
@@ -86,7 +88,7 @@ func (c *BaseController[Resource]) Reconcile(
 				// TODO update error
 				log.Error(ctx).
 					Err(err).
-					Str("status", string(currentStatus)).
+					Str("status", string(sourceState)).
 					Str("resource", c.name).
 					Interface("row_err", _err).
 					Stringer("resource", row).Msg("failed to decode resource")
@@ -102,14 +104,14 @@ func (c *BaseController[Resource]) Reconcile(
 				start := time.Now()
 				log.Info(ctx).
 					Str("resource_id", id.Hex()).
-					Str("status", string(currentStatus)).
+					Str("status", string(sourceState)).
 					Str("resource", c.name).
 					Msg("start to process the resource")
 				if err = f(ctx, r); err != nil {
 					if api.IsError(err, api.ErrResourceRetry) {
 						log.Info(ctx).
 							Str("resource_id", r.ObjectID().Hex()).
-							Str("status", string(currentStatus)).
+							Str("status", string(sourceState)).
 							Str("resource", c.name).
 							Msg("the resource is not ready")
 						_, err = coll.UpdateOne(ctx,
@@ -118,13 +120,14 @@ func (c *BaseController[Resource]) Reconcile(
 								"updated_at":  time.Now(),
 								"retry_at":    time.Now().Add(10 * time.Second),
 								"retry_times": r.RetryTimes() + 1,
-								"status":      currentStatus,
+								"status":      sourceState,
+								"in_progress": false,
 							}},
 						)
 						if err != nil {
 							log.Error(ctx).Err(err).
 								Str("resource_id", r.ObjectID().Hex()).
-								Str("status", string(currentStatus)).
+								Str("status", string(sourceState)).
 								Str("resource", c.name).
 								Interface("resource", r).
 								Int("retry_times", r.RetryTimes()).
@@ -134,21 +137,22 @@ func (c *BaseController[Resource]) Reconcile(
 					}
 					log.Warn(ctx).Err(err).
 						Str("resource_id", id.Hex()).
-						Str("status", string(currentStatus)).
+						Str("status", string(sourceState)).
 						Str("resource", c.name).
 						Msg("failed to handle status")
 					_, err = coll.UpdateOne(ctx,
 						bson.M{"_id": id},
 						bson.M{"$set": bson.M{
-							"updated_at": time.Now(),
-							"status":     model.ResourceStatusError,
-							"error":      err.Error(),
+							"updated_at":  time.Now(),
+							"status":      model.ResourceStatusError,
+							"error":       err.Error(),
+							"in_progress": false,
 						}},
 					)
 					if err != nil {
 						log.Error(ctx).Err(err).
 							Str("resource_id", id.Hex()).
-							Str("status", string(currentStatus)).
+							Str("status", string(sourceState)).
 							Str("resource", c.name).
 							Interface("resource", r).
 							Msg("failed to update status")
@@ -156,23 +160,24 @@ func (c *BaseController[Resource]) Reconcile(
 				} else {
 					log.Info(ctx).
 						Str("resource_id", id.Hex()).
-						Str("before", string(currentStatus)).
-						Str("after", string(expectedStatus)).
+						Str("before", string(sourceState)).
+						Str("after", string(targetState)).
 						Str("resource", c.name).
 						Dur("duration", time.Since(start)).
 						Msg("the resource is handled successfully")
 					_, err = coll.UpdateOne(ctx,
 						bson.M{"_id": id},
 						bson.M{"$set": bson.M{
-							"updated_at": time.Now(),
-							"status":     expectedStatus,
+							"updated_at":  time.Now(),
+							"status":      targetState,
+							"in_progress": false,
 						}},
 					)
 					if err != nil {
 						log.Warn(ctx).
 							Str("resource_id", id.Hex()).
-							Str("before", string(currentStatus)).
-							Str("after", string(expectedStatus)).
+							Str("before", string(sourceState)).
+							Str("after", string(targetState)).
 							Str("resource", c.name).
 							Dur("duration", time.Since(start)).
 							Msg("failed to update database")

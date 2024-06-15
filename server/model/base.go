@@ -40,10 +40,15 @@ func NewBaseResource(ctx context.Context) BaseResource {
 }
 
 type BaseResource struct {
-	Base    `json:",inline" bson:",inline"`
-	Times   int       `json:"-" bson:"retry_times"`
-	RetryAt time.Time `json:"-" bson:"retry_at"`
-	Err     string    `json:"-" bson:"error,omitempty"`
+	Base         `json:",inline" bson:",inline"`
+	Times        int              `json:"-" bson:"retry_times"`
+	RetryAt      time.Time        `json:"-" bson:"retry_at"`
+	Err          string           `json:"-" bson:"error,omitempty"`
+	SourceState  ResourceStatus   `json:"-" bson:"source_state"`
+	TargetState  ResourceStatus   `json:"-" bson:"target_state"`
+	CurrentState ResourceStatus   `json:"-" bson:"current_state"`
+	StateHistory []ResourceStatus `json:"-" bson:"state_history"`
+	InProgress   bool             `json:"-" bson:"in_progress"`
 }
 
 func (b BaseResource) RetryTimes() int {
