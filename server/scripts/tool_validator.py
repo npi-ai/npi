@@ -1,4 +1,5 @@
 import ast
+import argparse
 
 
 class ToolParser(ast.NodeVisitor):
@@ -70,3 +71,16 @@ def validate_tool(source_code, main_class: str):
         raise ValueError('No function that decorated with npiai.function found')
 
     print(f'Found {len(parser.functions[module])} functions decorated with npiai.function')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Validate NPi Tool source code")
+    # Adding a flag argument. 'action="store_true"' makes it a flag
+    parser.add_argument('--source', help="tool source code file", type=str)
+    parser.add_argument('--class_name', help="main class to NPi Tool", type=str)
+
+    args = parser.parse_args()
+    with open(args.source, 'r') as f:
+        source_code = f.read()
+    validate_tool(source_code, args.class_name)
+    print('Validation passed')

@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/npi-ai/npi/server/db"
 	"testing"
+
+	"github.com/npi-ai/npi/server/db"
 )
 
 func Test_Build(t *testing.T) {
@@ -12,6 +13,7 @@ func Test_Build(t *testing.T) {
 		s3Bucket:       "npiai-tools-build-test",
 		s3Service:      db.NewS3(db.S3Config{}),
 		rootDir:        "/Users/wenfeng/tmp/build",
+		validateScript: "/Users/wenfeng/workspace/npi-ai/npi/server/scripts/tool_validator.py",
 	}
 
 	err := bs.build(context.Background(), ToolMetadata{

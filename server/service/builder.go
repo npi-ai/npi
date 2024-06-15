@@ -20,6 +20,7 @@ type BuilderService struct {
 	s3Bucket       string
 	s3Service      *db.S3
 	rootDir        string
+	validateScript string
 }
 
 const (
@@ -76,11 +77,12 @@ func (bs *BuilderService) build(ctx context.Context, md ToolMetadata) error {
 		return api.ErrInvalidRequest.WithMessage("class field is required in tool.yml")
 	}
 
-	result := utils.RunPython(targetDir, map[string]interface{}{})
-	pyOutput := map[string]interface{}{}
-	if err = yaml.Unmarshal([]byte(result), &pyOutput); err != nil {
-		return api.ErrInternal.
-			WithMessage("Failed to parse python output").WithError(err)
+	err = utils.RunPython(bs.validateScript, map[string]string{
+		"source":     filepath.Join(targetDir, tool.Main),
+		"class_name": tool.Class,
+	})
+	if err != nil {
+		return api.ErrInternal.WithMessage("Failed to validate source code").WithError(err)
 	}
 
 	mdStr := fmt.Sprintf("name = \"%s\"\n", md.Name)
