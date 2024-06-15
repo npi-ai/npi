@@ -3,15 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/utils"
 	"gopkg.in/yaml.v3"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type BuilderService struct {

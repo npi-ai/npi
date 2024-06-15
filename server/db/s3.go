@@ -4,20 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/npi-ai/npi/server/constant"
-	"github.com/npi-ai/npi/server/utils/routine_pool"
-	"io"
-	"os"
-	"strings"
 )
 
 type S3 struct {
-	cli  *s3.Client
-	pool *routine_pool.Pool
+	cli *s3.Client
 }
 
 type S3Config struct {
