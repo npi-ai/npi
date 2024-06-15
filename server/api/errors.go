@@ -20,8 +20,9 @@ var (
 	ErrResourceNotFound = newErrorMessage(http.StatusNotFound, 40402, "resource not found")
 	DocumentNotFound    = newErrorMessage(http.StatusNotFound, 40403, "data not found in database")
 
-	ErrInternal = newErrorMessage(http.StatusInternalServerError, 50001, "internal error")
-	ErrUnknown  = newErrorMessage(http.StatusInternalServerError, 50002, "unknown error")
+	ErrInternal      = newErrorMessage(http.StatusInternalServerError, 50001, "internal error")
+	ErrUnknown       = newErrorMessage(http.StatusInternalServerError, 50002, "unknown error")
+	ErrResourceRetry = newErrorMessage(http.StatusInternalServerError, 50003, "resource retry")
 )
 
 func IsErrNotFound(err error) bool {
