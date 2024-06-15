@@ -8,7 +8,6 @@ import (
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
-	"github.com/npi-ai/npi/server/model/resource"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,7 +15,7 @@ import (
 )
 
 type Resource interface {
-	resource.ToolResource
+	model.Tool
 	ObjectID() primitive.ObjectID
 	RetryTimes() int
 }
@@ -59,7 +58,7 @@ func (c *BaseController[Resource]) Reconcile(
 			return
 		default:
 			opts := options.FindOneAndUpdateOptions{
-				Sort: bson.M{"retry_at": 1},
+				Sort: bson.M{"scheduled_at": 1},
 			}
 			result := coll.FindOneAndUpdate(ctx,
 				bson.M{"status": sourceState, "retry_at": bson.M{"$lte": time.Now()}},

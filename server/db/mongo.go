@@ -17,8 +17,7 @@ import (
 // below are general available
 const (
 	CollTools           = "tools"
-	CollToolSpec        = "tool_specs"
-	CollToolInstance    = "tool_instances"
+	CollToolVersions    = "tool_versions"
 	CoolDistributedLock = "distributed_lock"
 )
 

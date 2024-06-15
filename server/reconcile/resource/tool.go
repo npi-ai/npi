@@ -5,7 +5,6 @@ import (
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
-	"github.com/npi-ai/npi/server/model/resource"
 	"github.com/npi-ai/npi/server/reconcile"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,11 +16,11 @@ import (
 // running -> pause_marked -> pausing -> paused
 // deploying/running/deleting/pausing -> error
 type toolController struct {
-	reconcile.BaseController[resource.ToolResource]
+	reconcile.BaseController[model.Tool]
 	coll *mongo.Collection
 }
 
-func NewToolController() reconcile.Controller[resource.ToolResource] {
+func NewToolController() reconcile.Controller[model.Tool] {
 	return &toolController{
 		coll: db.GetCollection(db.CollTools),
 	}
@@ -29,8 +28,8 @@ func NewToolController() reconcile.Controller[resource.ToolResource] {
 
 func (tc *toolController) Start(ctx context.Context) error {
 	tc.BaseController.SetName("Project")
-	g := func() resource.ToolResource {
-		return resource.ToolResource{}
+	g := func() model.Tool {
+		return model.Tool{}
 	}
 
 	// recover tools in progress
@@ -67,10 +66,10 @@ func (tc *toolController) Start(ctx context.Context) error {
 	return nil
 }
 
-func (tc *toolController) DeployingHandler(ctx context.Context, ws resource.ToolResource) error {
+func (tc *toolController) DeployingHandler(ctx context.Context, ws model.Tool) error {
 	return nil
 }
 
-func (tc *toolController) DeletingHandler(ctx context.Context, ws resource.ToolResource) error {
+func (tc *toolController) DeletingHandler(ctx context.Context, ws model.Tool) error {
 	return nil
 }
