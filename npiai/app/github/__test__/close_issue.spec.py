@@ -1,7 +1,7 @@
 import asyncio
 
 from npiai import agent_wrapper
-from npiai import GitHub
+from npiai.app import GitHub
 
 
 async def main():

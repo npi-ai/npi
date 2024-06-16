@@ -4,7 +4,7 @@ from typing import List
 
 import yaml
 from litellm.types.completion import ChatCompletionToolMessageParam
-from litellm.utils import ChatCompletionMessageToolCall
+from litellm.types.utils import ChatCompletionMessageToolCall
 
 from npiai.types import FunctionRegistration
 from npiai.utils import logger

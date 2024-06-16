@@ -8,6 +8,7 @@ import (
 	"github.com/npi-ai/npi/server/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 // state transition:
@@ -81,10 +82,20 @@ func (tc *toolReconciler) Start(ctx context.Context) error {
 }
 
 func (tc *toolReconciler) BuildingHandler(ctx context.Context, ws model.ToolInstance) error {
-	if err := tc.builderSvc.Build(ctx, ws.Metadata); err != nil {
+	imageURI, err := tc.builderSvc.Build(ctx, ws.Metadata)
+	if err != nil {
 		return err
 	}
-	return nil
+	// update tool instance
+	_, err = tc.coll.UpdateOne(ctx,
+		bson.M{"_id": ws.ID},
+		bson.M{
+			"$set": bson.M{
+				"image":      imageURI,
+				"updated_at": time.Now(),
+			},
+		})
+	return db.ConvertError(err)
 }
 
 func (tc *toolReconciler) DeployingHandler(ctx context.Context, ws model.ToolInstance) error {

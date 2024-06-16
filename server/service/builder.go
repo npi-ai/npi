@@ -45,10 +45,10 @@ type ToolDefine struct {
 	Dependencies []model.Dependency `yaml:"dependencies"`
 }
 
-func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) error {
+func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) (string, error) {
 	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, false, false))
 	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage(fmt.Sprintf("Failed to create work directory: %s", workDir)).WithError(err)
 	}
 
@@ -56,12 +56,12 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 	sourceZipPath := filepath.Join(workDir, defaultSourceName)
 	if err := bs.s3Service.DownloadObject(ctx, filepath.Join(md.ID, defaultSourceName),
 		bs.s3Bucket, sourceZipPath); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage(fmt.Sprintf("Failed to download source zip from S3: %s", md.ID)).WithError(err)
 	}
 	targetDir := filepath.Join(workDir, "target")
 	if err := utils.ExtractZip(sourceZipPath, targetDir); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage(fmt.Sprintf("Failed to extract source zip: %s", sourceZipPath)).WithError(err)
 	}
 
@@ -69,22 +69,22 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 	data, err := os.ReadFile(filepath.Join(targetDir, "npi.yml"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return api.ErrInvalidRequest.WithMessage("npi.yml not found in root directory")
+			return "", api.ErrInvalidRequest.WithMessage("npi.yml not found in root directory")
 		}
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to read tool.yml").WithError(err)
 	}
 	tool := ToolDefine{}
 	if err = yaml.Unmarshal(data, &tool); err != nil {
-		return api.ErrInternal.WithMessage("Failed to parse tool.yml").WithError(err)
+		return "", api.ErrInternal.WithMessage("Failed to parse tool.yml").WithError(err)
 	}
 
 	if tool.Main == "" {
-		return api.ErrInvalidRequest.WithMessage("main field is required in tool.yml")
+		return "", api.ErrInvalidRequest.WithMessage("main field is required in tool.yml")
 	}
 
 	if tool.Class == "" {
-		return api.ErrInvalidRequest.WithMessage("class field is required in tool.yml")
+		return "", api.ErrInvalidRequest.WithMessage("class field is required in tool.yml")
 	}
 
 	err = utils.RunPython(bs.validateScript, map[string]string{
@@ -92,7 +92,7 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 		"class_name": tool.Class,
 	})
 	if err != nil {
-		return api.ErrInternal.WithMessage("Failed to validate source code").WithError(err)
+		return "", api.ErrInternal.WithMessage("Failed to validate source code").WithError(err)
 	}
 
 	mdStr := fmt.Sprintf("name = \"%s\"\n", md.Name)
@@ -107,21 +107,21 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 
 	poetryToml := fmt.Sprintf(poetryTemplate, mdStr, depStr)
 	if err = os.WriteFile(filepath.Join(targetDir, "pyproject.toml"), []byte(poetryToml), os.ModePerm); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to write pyproject.toml").WithError(err)
 	}
 
 	// 3. generate main.py
 	entrypoint := fmt.Sprintf(entrypointTemplate, tool.Main, tool.Class, tool.Main, tool.Class)
 	if err = os.WriteFile(filepath.Join(targetDir, "main.py"), []byte(entrypoint), os.ModePerm); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to write main.py").WithError(err)
 	}
 
 	// 4. generate Dockerfile
 	dockerfile := fmt.Sprintf(dockerfileTemplate)
 	if err = os.WriteFile(filepath.Join(targetDir, "Dockerfile"), []byte(dockerfile), os.ModePerm); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to write Dockerfile").WithError(err)
 	}
 
@@ -129,27 +129,27 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 	cmd := exec.Command("tar", "-czvf", "target.tar.gz", "target")
 	cmd.Dir = workDir
 	if _, err = cmd.CombinedOutput(); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to created target.tar.gz").WithError(err)
 	}
 	data, err = os.ReadFile(filepath.Join(workDir, "target.tar.gz"))
 	if err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to read target.tar.gz").WithError(err)
 	}
 	if err = bs.s3Service.PutObject(ctx, filepath.Join(md.ID, "target.tar.gz"), bs.s3Bucket, data); err != nil {
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to upload target.tar.gz to S3").WithError(err)
 	}
 
 	// 6. build docker image
-	//cmd = f'docker buildx build --platform linux/amd64 -t {docker_registry}/cloud/tools:{md.id} . --push'
+	imageURI := fmt.Sprintf("%s/cloud/tools:%s", bs.dockerRegistry, md.ID)
 	cmd = exec.Command("docker", "buildx", "build", "--platform", "linux/amd64",
-		"-t", fmt.Sprintf("%s/cloud/tools:%s", bs.dockerRegistry, md.ID), ".", "--push")
+		"-t", imageURI, ".", "--push")
 	cmd.Dir = targetDir
 	if output, err := cmd.CombinedOutput(); err != nil {
 		println(string(output))
-		return api.ErrInternal.
+		return "", api.ErrInternal.
 			WithMessage("Failed to build docker image").WithError(err)
 	}
 
@@ -157,7 +157,7 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) erro
 	if err = os.RemoveAll(workDir); err != nil {
 		log.Warn().Str("path", workDir).Msg("Failed to remove work directory")
 	}
-	return nil
+	return imageURI, nil
 }
 
 type ToolMetadata struct {
@@ -213,11 +213,11 @@ async def main():
 
 
 if __name__ == '__main__':
-	if len(sys.argv) > 1:
+    if len(sys.argv) > 1:
         if sys.argv[1] == "spec":
             print_tool_spec()
         elif sys.argv[1] == "main":
-    		asyncio.run(main())
+            asyncio.run(main())
 `
 
 	dockerfileTemplate = `FROM npiai/python:3.12
