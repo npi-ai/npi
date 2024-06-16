@@ -11,6 +11,7 @@ import (
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
+	"github.com/npi-ai/npi/server/model"
 	"github.com/npi-ai/npi/server/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -28,17 +29,12 @@ const (
 )
 
 type ToolDefine struct {
-	Main         string       `yaml:"main"`
-	Class        string       `yaml:"class"`
-	Dependencies []Dependency `yaml:"dependencies"`
+	Main         string             `yaml:"main"`
+	Class        string             `yaml:"class"`
+	Dependencies []model.Dependency `yaml:"dependencies"`
 }
 
-type Dependency struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
-}
-
-func (bs *BuilderService) build(ctx context.Context, md ToolMetadata) error {
+func (bs *BuilderService) build(ctx context.Context, md model.ToolMetadata) error {
 	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, false, false))
 	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
 		return api.ErrInternal.
@@ -47,7 +43,7 @@ func (bs *BuilderService) build(ctx context.Context, md ToolMetadata) error {
 
 	// 0. download source zip from S3
 	sourceZipPath := filepath.Join(workDir, defaultSourceName)
-	if err := bs.s3Service.DownloadObject(ctx, filepath.Join(md.ID, md.Version, defaultSourceName),
+	if err := bs.s3Service.DownloadObject(ctx, filepath.Join(md.ID, defaultSourceName),
 		bs.s3Bucket, sourceZipPath); err != nil {
 		return api.ErrInternal.
 			WithMessage(fmt.Sprintf("Failed to download source zip from S3: %s", md.ID)).WithError(err)
@@ -86,7 +82,7 @@ func (bs *BuilderService) build(ctx context.Context, md ToolMetadata) error {
 	}
 
 	mdStr := fmt.Sprintf("name = \"%s\"\n", md.Name)
-	mdStr += fmt.Sprintf("version = \"%s\"\n", md.Version)
+	mdStr += fmt.Sprintf("version = \"%s\"\n", "1.0.0")
 	mdStr += fmt.Sprintf("description = \"%s\"\n", "NPi Tools created by NPi Cloud")
 	mdStr += fmt.Sprintf("authors = [\"%s\"]\n", strings.Join(md.Authors, `", "`))
 
@@ -127,7 +123,7 @@ func (bs *BuilderService) build(ctx context.Context, md ToolMetadata) error {
 		return api.ErrInternal.
 			WithMessage("Failed to read target.tar.gz").WithError(err)
 	}
-	if err = bs.s3Service.PutObject(ctx, filepath.Join(md.ID, md.Version, "target.tar.gz"), bs.s3Bucket, data); err != nil {
+	if err = bs.s3Service.PutObject(ctx, filepath.Join(md.ID, "target.tar.gz"), bs.s3Bucket, data); err != nil {
 		return api.ErrInternal.
 			WithMessage("Failed to upload target.tar.gz to S3").WithError(err)
 	}

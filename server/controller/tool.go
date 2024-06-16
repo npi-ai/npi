@@ -72,12 +72,22 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 		OrgID: utils.GetOrgID(ctx),
 	}
 
+	if tool.Name == "" {
+		tool.Name = utils.GenerateRandomString(8, false, false)
+	}
+
 	toolInstance := &model.ToolInstance{
 		BaseResource: model.NewBaseResource(ctx),
 		ToolID:       tool.ID,
 		OrgID:        tool.OrgID,
 		Version:      time.Now().Format("20060102150405"),
+		Metadata: model.ToolMetadata{
+			Name:        tool.Name,
+			Description: "NPi Tools",
+			Authors:     []string{tool.CreatedBy},
+		},
 	}
+	toolInstance.Metadata.ID = toolInstance.ID.Hex()
 	toolInstance.CurrentState = model.ResourceStatusDraft
 	tool.HeadVersionID = toolInstance.ID
 

@@ -58,7 +58,6 @@ func (t *ToolInstance) OpenAPISchema() []byte {
 				URL:        "https://github.com/npi-ai/npi/blob/main/LICENSE",
 				Identifier: "BUSL-1.1",
 			},
-			Version: t.Metadata.Version,
 		},
 		Servers: []*v3.Server{
 			{
@@ -99,7 +98,6 @@ func changeSnakeToCamel(str string) string {
 type ToolMetadata struct {
 	ID          string   `json:"id" bson:"id"`
 	Name        string   `json:"name" bson:"name"`
-	Version     string   `json:"version" bson:"version"`
 	Description string   `json:"description" bson:"description"`
 	Authors     []string `json:"authors" bson:"authors"`
 }
