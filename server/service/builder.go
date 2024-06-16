@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/db"
@@ -46,6 +47,7 @@ type ToolDefine struct {
 }
 
 func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) (string, error) {
+	start := time.Now()
 	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, false, false))
 	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
 		return "", api.ErrInternal.
@@ -142,16 +144,24 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) (str
 			WithMessage("Failed to upload target.tar.gz to S3").WithError(err)
 	}
 
+	log.Info().Str("id", md.ID).
+		Str("duration", time.Now().Sub(start).String()).
+		Msg("target file has been uploaded to S3")
+
 	// 6. build docker image
 	imageURI := fmt.Sprintf("%s/cloud/tools:%s", bs.dockerRegistry, md.ID)
 	cmd = exec.Command("docker", "buildx", "build", "--platform", "linux/amd64",
-		"-t", imageURI, ".", "--push")
+		"-t", imageURI, ".", "--load")
 	cmd.Dir = targetDir
 	if output, err := cmd.CombinedOutput(); err != nil {
 		println(string(output))
 		return "", api.ErrInternal.
 			WithMessage("Failed to build docker image").WithError(err)
 	}
+
+	log.Info().Str("id", md.ID).
+		Str("duration", time.Now().Sub(start).String()).
+		Msg("docker image has been built successfully")
 
 	// 7. cleanup
 	if err = os.RemoveAll(workDir); err != nil {
@@ -172,9 +182,9 @@ var (
 	entrypointTemplate = `import os
 import sys
 import importlib
-import tokenize
-import asyncio
 import time
+import asyncio
+import json
 
 
 def print_tool_spec():
@@ -190,7 +200,7 @@ def print_tool_spec():
     # Create an instance of the class
     tool_class = getattr(module, '%s')
     instance = tool_class()
-    print(instance().export())
+    print(json.dumps(instance.export()))
 
 
 async def main():
@@ -209,15 +219,22 @@ async def main():
 
     async with instance as i:
         # await i.wait() TODO add this method to BaseApp class
+        print("Tool server started")
         time.sleep(1000)
-
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        if sys.argv[1] == "spec":
+        if sys.argv[1] == 'spec':
             print_tool_spec()
-        elif sys.argv[1] == "main":
+        elif sys.argv[1] == 'server':
             asyncio.run(main())
+        else:
+            print('Usage: python entrypoint.py spec|server')
+            sys.exit(1)
+    else:
+        print('Usage: python entrypoint.py spec|server')
+        sys.exit(1)
+
 `
 
 	dockerfileTemplate = `FROM npiai/python:3.12
@@ -228,7 +245,7 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /npiai/tools
 RUN poetry install
 
-ENTRYPOINT ["poetry", "run", "python", "/npiai/tools/main.py"]
+ENTRYPOINT ["poetry", "run", "python", "main.py", "server"]
 `
 	poetryTemplate = `[tool.poetry]
 package-mode = false

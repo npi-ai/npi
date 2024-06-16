@@ -108,10 +108,10 @@ type ToolFunctionSpec struct {
 	Functions    []Function   `json:"functions" bson:"functions"`
 }
 
-type Language int
+type Language string
 
 const (
-	Python = Language(1)
+	Python = Language("python")
 )
 
 type Runtime struct {
@@ -126,17 +126,17 @@ type Dependency struct {
 }
 
 type Function struct {
-	Name        string      `json:"name" bson:"name"`
-	Description string      `json:"description" bson:"description"`
-	Parameters  []Parameter `json:"parameters" bson:"parameters"`
-	FewShots    []FewShot   `json:"few_shots" bson:"few_shots"`
+	Name        string     `json:"name" bson:"name"`
+	Description string     `json:"description" bson:"description"`
+	Parameters  Parameters `json:"parameters" bson:"parameters"`
+	FewShots    []FewShot  `json:"fewShots" bson:"few_shots"`
 }
 
 func (f *Function) Arguments(lan Language) string {
 	switch lan {
 	case Python:
 		args := ""
-		for _, para := range f.Parameters {
+		for _, para := range f.Parameters.Properties {
 			args += fmt.Sprintf("%s=event['%s'], ", para.Name, para.Name)
 		}
 		return strings.TrimRight(args, ", ")
@@ -146,14 +146,10 @@ func (f *Function) Arguments(lan Language) string {
 
 func (f *Function) Schema() map[string]interface{} {
 	properties := map[string]interface{}{}
-	var required []string
-	for _, para := range f.Parameters {
+	for _, para := range f.Parameters.Properties {
 		properties[para.Name] = map[string]string{
 			"type":        para.Type.Name(),
 			"description": para.Description,
-		}
-		if para.Required {
-			required = append(required, para.Name)
 		}
 	}
 
@@ -165,7 +161,7 @@ func (f *Function) Schema() map[string]interface{} {
 			"parameters": map[string]interface{}{
 				"type":       "object",
 				"properties": properties,
-				"required":   required,
+				"required":   f.Parameters.Required,
 			},
 		},
 	}
@@ -190,7 +186,7 @@ func (f *Function) OpenAPISchema() *v3.PathItem {
 
 	content := orderedmap.New[string, *v3.MediaType]()
 	properties := orderedmap.New[string, *base.SchemaProxy]()
-	for _, para := range f.Parameters {
+	for _, para := range f.Parameters.Properties {
 		properties.Set(para.Name, base.CreateSchemaProxy(&base.Schema{
 			Type:        []string{para.Type.Name()},
 			Description: para.Description,
@@ -219,7 +215,7 @@ func (f *Function) OpenAPISchema() *v3.PathItem {
 	return item
 }
 
-type ParameterType int
+type ParameterType string
 
 func (pt ParameterType) Name() string {
 	switch pt {
@@ -240,20 +236,25 @@ func (pt ParameterType) Name() string {
 }
 
 const (
-	String = ParameterType(1)
-	Int    = ParameterType(2)
-	Float  = ParameterType(3)
-	Bool   = ParameterType(4)
-	Map    = ParameterType(5)
-	List   = ParameterType(6)
+	String = ParameterType("string")
+	Int    = ParameterType("integer")
+	Float  = ParameterType("number")
+	Bool   = ParameterType("bool")
+	Map    = ParameterType("object")
+	List   = ParameterType("array")
 )
 
-type Parameter struct {
+type Parameters struct {
+	Description string              `json:"description" bson:"description"`
+	Type        ParameterType       `json:"type" bson:"type"`
+	Required    []string            `json:"required" bson:"required"`
+	Properties  map[string]Property `json:"properties" bson:"properties"`
+}
+
+type Property struct {
 	Name        string        `json:"name" bson:"name"`
 	Description string        `json:"description" bson:"description"`
 	Type        ParameterType `json:"type" bson:"type"`
-	Required    bool          `json:"required" bson:"required"`
-	Default     interface{}   `json:"default" bson:"default"`
 }
 
 type FewShot struct {
