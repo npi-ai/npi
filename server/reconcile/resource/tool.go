@@ -16,11 +16,11 @@ import (
 // running -> pause_marked -> pausing -> paused
 // deploying/running/deleting/pausing -> error
 type toolController struct {
-	reconcile.BaseController[model.Tool]
+	reconcile.BaseController[model.ToolInstance]
 	coll *mongo.Collection
 }
 
-func NewToolController() reconcile.Controller[model.Tool] {
+func NewToolController() reconcile.Controller[model.ToolInstance] {
 	return &toolController{
 		coll: db.GetCollection(db.CollTools),
 	}
@@ -28,8 +28,8 @@ func NewToolController() reconcile.Controller[model.Tool] {
 
 func (tc *toolController) Start(ctx context.Context) error {
 	tc.BaseController.SetName("Project")
-	g := func() model.Tool {
-		return model.Tool{}
+	g := func() model.ToolInstance {
+		return model.ToolInstance{}
 	}
 
 	// recover tools in progress
@@ -66,10 +66,10 @@ func (tc *toolController) Start(ctx context.Context) error {
 	return nil
 }
 
-func (tc *toolController) DeployingHandler(ctx context.Context, ws model.Tool) error {
+func (tc *toolController) DeployingHandler(ctx context.Context, ws model.ToolInstance) error {
 	return nil
 }
 
-func (tc *toolController) DeletingHandler(ctx context.Context, ws model.Tool) error {
+func (tc *toolController) DeletingHandler(ctx context.Context, ws model.ToolInstance) error {
 	return nil
 }

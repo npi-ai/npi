@@ -15,7 +15,7 @@ import (
 )
 
 type Resource interface {
-	model.Tool
+	model.ToolInstance
 	ObjectID() primitive.ObjectID
 	RetryTimes() int
 }

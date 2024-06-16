@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -27,20 +28,31 @@ type S3Config struct {
 	Region    string `yaml:"region"`
 }
 
-func NewS3(cfg S3Config) *S3 {
-	s3Svc := &S3{}
-	optFns := []func(*config.LoadOptions) error{
-		config.WithRegion(cfg.Region),
-	}
-	if cfg.AK != "" && cfg.SK != "" {
-		optFns = append(optFns, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.AK, cfg.SK, "")))
-	}
-	s3Cfg, err := config.LoadDefaultConfig(context.TODO(), optFns...)
-	if err != nil {
-		panic(fmt.Sprintf("failed to init s3: %s", err))
-	}
+var (
+	s3Svc *S3
+	once  sync.Once
+)
 
-	s3Svc.cli = s3.NewFromConfig(s3Cfg)
+func NewS3(cfg S3Config) *S3 {
+	once.Do(func() {
+		s3Svc = &S3{}
+		optFns := []func(*config.LoadOptions) error{
+			config.WithRegion(cfg.Region),
+		}
+		if cfg.AK != "" && cfg.SK != "" {
+			optFns = append(optFns, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.AK, cfg.SK, "")))
+		}
+		s3Cfg, err := config.LoadDefaultConfig(context.TODO(), optFns...)
+		if err != nil {
+			panic(fmt.Sprintf("failed to init s3: %s", err))
+		}
+
+		s3Svc.cli = s3.NewFromConfig(s3Cfg)
+	})
+	return s3Svc
+}
+
+func GetS3() *S3 {
 	return s3Svc
 }
 

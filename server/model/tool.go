@@ -6,21 +6,33 @@ import (
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	"github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
 )
 
 type Tool struct {
-	BaseResource `json:",inline" bson:",inline"`
-	Metadata     ToolMetadata     `json:"metadata" bson:"metadata"`
-	FunctionSpec ToolFunctionSpec `json:"spec" bson:"spec"`
-	Image        string           `json:"image" bson:"image"`
-	Hostname     string           `json:"hostname" bson:"hostname"`
-	IP           string           `json:"ip" bson:"ip"`
-	Port         int              `json:"port" bson:"port"`
-	Endpoint     string           `json:"endpoint" bson:"endpoint"`
+	Base          `json:",inline" bson:",inline"`
+	OrgID         primitive.ObjectID `json:"org_id" bson:"org_id"`
+	Name          string             `json:"name" bson:"name"`
+	HeadVersionID primitive.ObjectID `json:"head_version_id" bson:"head_version_id"`
 }
 
-func (t *Tool) OpenAISchema() []byte {
+type ToolInstance struct {
+	BaseResource `json:",inline" bson:",inline"`
+	ToolID       primitive.ObjectID `json:"tool_id" bson:"tool_id"`
+	OrgID        primitive.ObjectID `json:"org_id" bson:"org_id"`
+	Version      string             `json:"version" bson:"version"`
+	Metadata     ToolMetadata       `json:"metadata" bson:"metadata"`
+	FunctionSpec ToolFunctionSpec   `json:"spec" bson:"spec"`
+	Image        string             `json:"image" bson:"image"`
+	S3URI        string             `json:"s3_uri" bson:"s3_uri"`
+	Hostname     string             `json:"hostname" bson:"hostname"`
+	IP           string             `json:"ip" bson:"ip"`
+	Port         int                `json:"port" bson:"port"`
+	Endpoint     string             `json:"endpoint" bson:"endpoint"`
+}
+
+func (t *ToolInstance) OpenAISchema() []byte {
 	var tools []interface{}
 	for _, fc := range t.FunctionSpec.Functions {
 		tools = append(tools, fc.Schema())
@@ -29,7 +41,7 @@ func (t *Tool) OpenAISchema() []byte {
 	return data
 }
 
-func (t *Tool) OpenAPISchema() []byte {
+func (t *ToolInstance) OpenAPISchema() []byte {
 	var v3Model = v3.Document{
 		Version: "3.1.0",
 		Info: &base.Info{
@@ -67,7 +79,7 @@ func (t *Tool) OpenAPISchema() []byte {
 	return v3Model.RenderWithIndention(2)
 }
 
-func (t *Tool) GetFunctionByName(s string) Function {
+func (t *ToolInstance) GetFunctionByName(s string) Function {
 	for _, f := range t.FunctionSpec.Functions {
 		if fmt.Sprintf("%s/%s", t.Metadata.Name, changeSnakeToCamel(f.Name)) == s {
 			return f

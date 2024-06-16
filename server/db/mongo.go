@@ -16,9 +16,8 @@ import (
 
 // below are general available
 const (
-	CollTools           = "tools"
-	CollToolVersions    = "tool_versions"
-	CoolDistributedLock = "distributed_lock"
+	CollTools         = "tools"
+	CollToolInstances = "tool_instances"
 )
 
 type MongoConfig struct {
