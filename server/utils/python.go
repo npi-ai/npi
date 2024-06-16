@@ -15,9 +15,9 @@ func RunPython(file string, params map[string]string) error {
 	cmd := exec.Command("python", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Warn().Interface("output", out).Msg("Failed to run python script")
+		log.Warn().Str("output", string(out)).Msg("Failed to run python script")
 		return api.ErrInternal.
-			WithMessage("Failed to created target.tar.gz").WithError(err)
+			WithMessage("Failed to validate tools").WithError(err)
 	}
 	return nil
 }

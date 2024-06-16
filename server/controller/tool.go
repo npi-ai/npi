@@ -88,7 +88,9 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 		},
 	}
 	toolInstance.Metadata.ID = toolInstance.ID.Hex()
-	toolInstance.CurrentState = model.ResourceStatusDraft
+	toolInstance.CurrentState = model.ResourceStatusCreated
+	toolInstance.SourceState = model.ResourceStatusCreated
+	toolInstance.TargetState = model.ResourceStatusBuilt
 	tool.HeadVersionID = toolInstance.ID
 
 	file, err := ctx.FormFile("tool")
@@ -146,8 +148,8 @@ func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
 		api.ResponseWithError(ctx, err)
 		return
 	}
-	if instance.CurrentState != model.ResourceStatusDraft {
-		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("invalid state, tool state of [ draft ] is required"))
+	if instance.CurrentState != model.ResourceStatusBuilt {
+		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("invalid state, tool state of [ Built ] is required"))
 		return
 	}
 
@@ -158,11 +160,9 @@ func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
 				"current_state": model.ResourceStatusQueued,
 				"source_state":  model.ResourceStatusQueued,
 				"target_state":  model.ResourceStatusRunning,
-				"state_history": []model.ResourceStatus{
-					model.ResourceStatusDraft,
-				},
-				"updated_at": time.Now(),
-				"updated_by": utils.GetUserID(ctx),
+				"state_history": append(instance.StateHistory, instance.CurrentState),
+				"updated_at":    time.Now(),
+				"updated_by":    utils.GetUserID(ctx),
 			},
 		})
 	if err != nil {

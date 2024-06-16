@@ -42,10 +42,7 @@ class GitHub(App):
     github_client: PyGithub
 
     def __init__(self, access_token: str = None):
-        token = access_token or os.environ.get('GITHUB_ACCESS_TOKEN', None)
-
-        if token is None:
-            raise UnauthorizedError('GitHub credentials are not found')
+        self.token = access_token or os.environ.get('GITHUB_ACCESS_TOKEN', None)
 
         super().__init__(
             name='github',
@@ -53,7 +50,13 @@ class GitHub(App):
             system_prompt=__PROMPT__,
         )
 
-        self.github_client = PyGithub(auth=Auth.Token(token))
+        self.github_client: PyGithub | None = None
+
+    async def start(self):
+        if self.token is None:
+            raise UnauthorizedError('GitHub credentials are not found')
+        self.github_client = PyGithub(auth=Auth.Token(self.token))
+        await super().start()
 
     @staticmethod
     def _comment_to_json(comment: Union[IssueComment, PullRequestComment]):
@@ -245,12 +248,12 @@ class GitHub(App):
 
     @function
     def create_issue(
-        self,
-        repo: str,
-        title: str,
-        body: str,
-        labels: List[str] = None,
-        assignees: List[str] = None,
+            self,
+            repo: str,
+            title: str,
+            body: str,
+            labels: List[str] = None,
+            assignees: List[str] = None,
     ):
         """
         Create an issue under the given repository.
@@ -274,15 +277,15 @@ class GitHub(App):
 
     @function
     def create_pull_request(
-        self,
-        repo: str,
-        title: str,
-        body: str,
-        base: str,
-        head: str,
-        is_draft: bool = False,
-        labels: List[str] = None,
-        assignees: List[str] = None
+            self,
+            repo: str,
+            title: str,
+            body: str,
+            base: str,
+            head: str,
+            is_draft: bool = False,
+            labels: List[str] = None,
+            assignees: List[str] = None
     ):
         """
         Create a pull request under the given repository.
@@ -346,14 +349,14 @@ class GitHub(App):
 
     @function
     def edit_issue(
-        self,
-        repo: str,
-        number: int,
-        title: str = None,
-        body: str = None,
-        labels: List[str] = None,
-        assignees: List[str] = None,
-        state: Literal['open', 'closed'] = None,
+            self,
+            repo: str,
+            number: int,
+            title: str = None,
+            body: str = None,
+            labels: List[str] = None,
+            assignees: List[str] = None,
+            state: Literal['open', 'closed'] = None,
     ):
         """
         Edit an existing issue. You can also close or reopen an issue by specifying the state parameter.
@@ -381,15 +384,15 @@ class GitHub(App):
 
     @function
     def edit_pull_request(
-        self,
-        repo: str,
-        number: int,
-        title: str = None,
-        body: str = None,
-        base: str = None,
-        labels: List[str] = None,
-        assignees: List[str] = None,
-        state: Literal['open', 'closed'] = None,
+            self,
+            repo: str,
+            number: int,
+            title: str = None,
+            body: str = None,
+            base: str = None,
+            labels: List[str] = None,
+            assignees: List[str] = None,
+            state: Literal['open', 'closed'] = None,
     ):
         """
         Edit an existing pull request. You can also close or reopen a pull request by specifying the state parameter.

@@ -24,6 +24,17 @@ type BuilderService struct {
 	validateScript string
 }
 
+func NewBuilderService(dockerRegistry, s3Bucket, rootDir, validateScript string) *BuilderService {
+	bs := &BuilderService{
+		dockerRegistry: dockerRegistry,
+		s3Bucket:       s3Bucket,
+		s3Service:      db.GetS3(),
+		rootDir:        rootDir,
+		validateScript: validateScript,
+	}
+	return bs
+}
+
 const (
 	defaultSourceName = "source.zip"
 )
@@ -34,7 +45,7 @@ type ToolDefine struct {
 	Dependencies []model.Dependency `yaml:"dependencies"`
 }
 
-func (bs *BuilderService) build(ctx context.Context, md model.ToolMetadata) error {
+func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) error {
 	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, false, false))
 	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
 		return api.ErrInternal.
@@ -57,6 +68,9 @@ func (bs *BuilderService) build(ctx context.Context, md model.ToolMetadata) erro
 	// 1. validate source code
 	data, err := os.ReadFile(filepath.Join(targetDir, "npi.yml"))
 	if err != nil {
+		if os.IsNotExist(err) {
+			return api.ErrInvalidRequest.WithMessage("npi.yml not found in root directory")
+		}
 		return api.ErrInternal.
 			WithMessage("Failed to read tool.yml").WithError(err)
 	}
@@ -98,7 +112,7 @@ func (bs *BuilderService) build(ctx context.Context, md model.ToolMetadata) erro
 	}
 
 	// 3. generate main.py
-	entrypoint := fmt.Sprintf(entrypointTemplate, tool.Main, tool.Class)
+	entrypoint := fmt.Sprintf(entrypointTemplate, tool.Main, tool.Class, tool.Main, tool.Class)
 	if err = os.WriteFile(filepath.Join(targetDir, "main.py"), []byte(entrypoint), os.ModePerm); err != nil {
 		return api.ErrInternal.
 			WithMessage("Failed to write main.py").WithError(err)
@@ -162,6 +176,23 @@ import tokenize
 import asyncio
 import time
 
+
+def print_tool_spec():
+    # Add the directory containing the file to sys.path
+    module_dir, module_name = os.path.split('%s')
+    module_name = os.path.splitext(module_name)[0]  # Remove the .py extension
+
+    if module_dir not in sys.path:
+        sys.path.append(module_dir)
+
+    # Now you can import the module using its name
+    module = importlib.import_module(module_name)
+    # Create an instance of the class
+    tool_class = getattr(module, '%s')
+    instance = tool_class()
+    print(instance().export())
+
+
 async def main():
     # Add the directory containing the file to sys.path
     module_dir, module_name = os.path.split('%s')
@@ -182,7 +213,11 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+	if len(sys.argv) > 1:
+        if sys.argv[1] == "spec":
+            print_tool_spec()
+        elif sys.argv[1] == "main":
+    		asyncio.run(main())
 `
 
 	dockerfileTemplate = `FROM npiai/python:3.12

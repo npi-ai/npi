@@ -74,6 +74,10 @@ func (em errorMessage) WithError(err error) ErrorMessage {
 	if err == nil {
 		return em
 	}
+	underlayErr := &errorMessage{}
+	if errors.As(err, underlayErr) {
+		return em.WithMessage(fmt.Sprintf("%s, %s\n", underlayErr.Err, underlayErr.Message))
+	}
 	return em.WithMessage(err.Error())
 }
 

@@ -1,5 +1,8 @@
 import ast
 import argparse
+import os
+import sys
+import importlib
 
 
 class ToolParser(ast.NodeVisitor):
@@ -54,8 +57,8 @@ class ToolParser(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_tool(source_code, main_class: str):
-    node = ast.parse(source_code)
+def _validate_tool(code, main_class: str):
+    node = ast.parse(code)
     parser = ToolParser()
     parser.visit(node)
 
@@ -74,13 +77,13 @@ def validate_tool(source_code, main_class: str):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Validate NPi Tool source code")
-    # Adding a flag argument. 'action="store_true"' makes it a flag
-    parser.add_argument('--source', help="tool source code file", type=str)
-    parser.add_argument('--class_name', help="main class to NPi Tool", type=str)
+    argP = argparse.ArgumentParser(description="Validate NPi Tool source code")
 
-    args = parser.parse_args()
+    argP.add_argument('--source', type=str, help="tool source code file")
+    argP.add_argument('--class_name', type=str, help="main class to NPi Tool")
+
+    args = argP.parse_args()
     with open(args.source, 'r') as f:
         source_code = f.read()
-    validate_tool(source_code, args.class_name)
+    _validate_tool(source_code, args.class_name)
     print('Validation passed')

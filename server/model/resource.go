@@ -53,7 +53,9 @@ func (b BaseResource) ObjectID() primitive.ObjectID {
 type ResourceStatus string
 
 const (
-	ResourceStatusDraft        = ResourceStatus("draft")
+	ResourceStatusCreated      = ResourceStatus("created")
+	ResourceStatusBuilding     = ResourceStatus("building")
+	ResourceStatusBuilt        = ResourceStatus("built")
 	ResourceStatusQueued       = ResourceStatus("queued")
 	ResourceStatusDeploying    = ResourceStatus("deploying")
 	ResourceStatusRunning      = ResourceStatus("running")

@@ -5,6 +5,7 @@ import (
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
+	"github.com/npi-ai/npi/server/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -16,12 +17,19 @@ import (
 // deploying/running/deleting/pausing -> error
 type toolReconciler struct {
 	BaseReconciler[model.ToolInstance]
-	coll *mongo.Collection
+	coll       *mongo.Collection
+	builderSvc *service.BuilderService
 }
 
 func NewToolReconciler() Reconciler[model.ToolInstance] {
 	return &toolReconciler{
 		coll: db.GetCollection(db.CollToolInstances),
+		builderSvc: service.NewBuilderService(
+			"992297059634.dkr.ecr.us-west-2.amazonaws.com",
+			"npiai-tools-build-test",
+			"/Users/wenfeng/tmp/build",
+			"/Users/wenfeng/workspace/npi-ai/npi/server/scripts/tool_helper.py",
+		),
 	}
 }
 
@@ -47,22 +55,35 @@ func (tc *toolReconciler) Start(ctx context.Context) error {
 	}
 	log.Info().Int("recovered", int(result.ModifiedCount)).Msg("tool recovered")
 	go tc.Reconcile(ctx, tc.coll,
+		model.ResourceStatusCreated,
+		model.ResourceStatusBuilding,
+		model.ResourceStatusBuilt,
+		g, tc.BuildingHandler)
+
+	go tc.Reconcile(ctx, tc.coll,
 		model.ResourceStatusQueued,
 		model.ResourceStatusDeploying,
 		model.ResourceStatusRunning,
 		g, tc.DeployingHandler)
 
-	//go tc.Reconcile(ctx, tc.coll,
-	//	model.ResourceStatusDeleteMarked,
-	//	model.ResourceStatusDeleting,
-	//	model.ResourceStatusDeleted,
-	//	g, tc.DeletingHandler)
-	//
-	//go tc.Reconcile(ctx, tc.coll,
-	//	model.ResourceStatusPauseMarked,
-	//	model.ResourceStatusPausing,
-	//	model.ResourceStatusPaused,
-	//	g, tc.PausingHandler)
+	go tc.Reconcile(ctx, tc.coll,
+		model.ResourceStatusDeleteMarked,
+		model.ResourceStatusDeleting,
+		model.ResourceStatusDeleted,
+		g, tc.DeletingHandler)
+
+	go tc.Reconcile(ctx, tc.coll,
+		model.ResourceStatusPauseMarked,
+		model.ResourceStatusPausing,
+		model.ResourceStatusPaused,
+		g, tc.PausingHandler)
+	return nil
+}
+
+func (tc *toolReconciler) BuildingHandler(ctx context.Context, ws model.ToolInstance) error {
+	if err := tc.builderSvc.Build(ctx, ws.Metadata); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -72,9 +93,11 @@ func (tc *toolReconciler) DeployingHandler(ctx context.Context, ws model.ToolIns
 }
 
 func (tc *toolReconciler) DeletingHandler(ctx context.Context, ws model.ToolInstance) error {
+	println("deleting")
 	return nil
 }
 
 func (tc *toolReconciler) PausingHandler(ctx context.Context, ws model.ToolInstance) error {
+	println("pausing")
 	return nil
 }

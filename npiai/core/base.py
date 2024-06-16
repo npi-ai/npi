@@ -46,7 +46,7 @@ class Tool(ABC):
     def use_hitl(self, hitl: HITL):
         self._hitl = hitl
 
-    def export(self, filename: str):
+    def export(self, filename: str | None = None):
         """
         Find the wrapped tool functions and export them as yaml
         """
@@ -70,11 +70,13 @@ class Tool(ABC):
             }
         }
 
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        with open(filename, 'w') as f:
-            yaml.dump(data, f)
-            logger.info(f'Exported schema to: {filename}')
+        if filename is not None:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            with open(filename, 'w') as f:
+                yaml.dump(data, f)
+                logger.info(f'Exported schema to: {filename}')
+        else:
+            return data
 
     # context manager
     async def __aenter__(self):
@@ -88,8 +90,8 @@ class Tool(ABC):
 class BaseApp(Tool, ABC):
     @abstractmethod
     async def call(
-        self,
-        tool_calls: List[ChatCompletionMessageToolCall],
+            self,
+            tool_calls: List[ChatCompletionMessageToolCall],
     ) -> List[ChatCompletionToolMessageParam]:
         ...
 
