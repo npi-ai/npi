@@ -33,7 +33,7 @@ var (
 	once  sync.Once
 )
 
-func NewS3(cfg S3Config) *S3 {
+func InitS3(cfg S3Config) *S3 {
 	once.Do(func() {
 		s3Svc = &S3{}
 		optFns := []func(*config.LoadOptions) error{

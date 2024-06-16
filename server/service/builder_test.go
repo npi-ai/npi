@@ -11,7 +11,7 @@ func Test_Build(t *testing.T) {
 	bs := &BuilderService{
 		dockerRegistry: "992297059634.dkr.ecr.us-west-2.amazonaws.com",
 		s3Bucket:       "npiai-tools-build-test",
-		s3Service:      db.NewS3(db.S3Config{}),
+		s3Service:      db.InitS3(db.S3Config{}),
 		rootDir:        "/Users/wenfeng/tmp/build",
 		validateScript: "/Users/wenfeng/workspace/npi-ai/npi/server/scripts/tool_validator.py",
 	}

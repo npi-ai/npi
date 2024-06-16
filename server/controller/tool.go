@@ -2,9 +2,8 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/npi-ai/npi/server/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"net/http"
 	"time"
@@ -13,9 +12,11 @@ import (
 	"github.com/gin-gonic/gin/render"
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/db"
+	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
 	"github.com/npi-ai/npi/server/utils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -30,19 +31,20 @@ type ToolController struct {
 	s3Bucket          string
 }
 
-func NewTool() IController {
+func NewTool(bucket string) IController {
 	return &ToolController{
 		toolColl:          db.GetCollection(db.CollTools),
 		toolInstancesColl: db.GetCollection(db.CollToolInstances),
 		s3:                db.GetS3(),
+		s3Bucket:          bucket,
 	}
 }
 
 func (ctrl *ToolController) RegisterRoute(parent *gin.RouterGroup) error {
 	toolRouter := parent.Group("/tools")
-	toolRouter.POST("/", ctrl.CreateTool)
+	toolRouter.POST("", ctrl.CreateTool)
 	toolRouter.DELETE("/:tool_id", ctrl.DeleteTool)
-	toolRouter.PATCH("/:tool_id/publish", ctrl.PublishTool)
+	toolRouter.POST("/:tool_id/publish", ctrl.PublishTool)
 	toolRouter.GET("/:tool_id/openai", ctrl.GetToolOpenAISchema)
 	toolRouter.GET("/:tool_id/openapi", ctrl.GetToolOpenAPISchema)
 	return nil
@@ -50,8 +52,13 @@ func (ctrl *ToolController) RegisterRoute(parent *gin.RouterGroup) error {
 
 func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 	toolReq := &api.ToolRequest{}
-	if err := ctx.BindJSON(toolReq); err != nil {
-		api.ResponseWithError(ctx, api.ErrInvalidRequest)
+	reqStr := ctx.PostForm("body")
+	if reqStr == "" {
+		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("Empty request body"))
+		return
+	}
+	if err := json.Unmarshal([]byte(reqStr), toolReq); err != nil {
+		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("Invalid request body"))
 		return
 	}
 	if toolReq.From != api.ToolFromZip {
@@ -71,6 +78,7 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 		OrgID:        tool.OrgID,
 		Version:      time.Now().Format("20060102150405"),
 	}
+	toolInstance.CurrentState = model.ResourceStatusDraft
 	tool.HeadVersionID = toolInstance.ID
 
 	file, err := ctx.FormFile("tool")
@@ -129,7 +137,7 @@ func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
 		return
 	}
 	if instance.CurrentState != model.ResourceStatusDraft {
-		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("invalid state, tool state of draft is required"))
+		api.ResponseWithError(ctx, api.ErrInvalidRequest.WithMessage("invalid state, tool state of [ draft ] is required"))
 		return
 	}
 

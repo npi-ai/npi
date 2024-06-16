@@ -34,7 +34,6 @@ func NewBaseResource(ctx context.Context) BaseResource {
 type BaseResource struct {
 	Base         `json:",inline" bson:",inline"`
 	Times        int              `json:"-" bson:"retry_times"`
-	ScheduledAt  time.Time        `json:"-" bson:"scheduled_at"`
 	Err          string           `json:"-" bson:"error,omitempty"`
 	SourceState  ResourceStatus   `json:"-" bson:"source_state"`
 	TargetState  ResourceStatus   `json:"-" bson:"target_state"`
