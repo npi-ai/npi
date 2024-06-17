@@ -46,11 +46,19 @@ type ToolInstance struct {
 	Metadata     ToolMetadata       `json:"metadata" bson:"metadata"`
 	FunctionSpec ToolFunctionSpec   `json:"spec" bson:"spec"`
 	Image        string             `json:"image" bson:"image"`
-	S3URI        string             `json:"s3_uri" bson:"s3_uri"`
-	Hostname     string             `json:"hostname" bson:"hostname"`
-	IP           string             `json:"ip" bson:"ip"`
-	Port         int                `json:"port" bson:"port"`
-	Endpoint     string             `json:"endpoint" bson:"endpoint"`
+	S3URI        string             `json:"-" bson:"s3_uri"`
+	ServiceURL   string             `json:"-" bson:"service_url"`
+}
+
+func (t *ToolInstance) GetRuntimeEnv() []map[string]interface{} {
+	var env []map[string]interface{}
+	for _, dep := range t.FunctionSpec.Dependencies {
+		env = append(env, map[string]interface{}{
+			"name":  dep.Name,
+			"value": dep.Version,
+		})
+	}
+	return env
 }
 
 func (t *ToolInstance) OpenAISchema() []byte {

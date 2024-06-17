@@ -14,16 +14,16 @@ import (
 )
 
 func main() {
-	data, _ := os.ReadFile("/Users/wenfeng/workspace/npi-ai/npi/credentials/server.yml")
+	data, _ := os.ReadFile(os.Getenv("SERVER_CONFIG"))
 	cfg := config.ServerConfig{}
 	_ = yaml.Unmarshal(data, &cfg)
 	ctx := context.Background()
 	db.InitMongoDB(ctx, cfg.MongoDB)
 	db.InitS3(cfg.S3)
 
-	toolReconciler := reconcile.NewToolReconciler()
+	toolReconciler := reconcile.NewToolReconciler(cfg.Tools)
 	_ = toolReconciler.Start(ctx)
-	ctrl := controller.NewTool(cfg.Storage.ToolBucket)
+	ctrl := controller.NewTool(cfg.Tools.S3Bucket)
 	if ctrl == nil {
 		panic("NewTool should not return nil")
 	}

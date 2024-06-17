@@ -27,17 +27,28 @@ type toolReconciler struct {
 	BaseReconciler[model.ToolInstance]
 	coll       *mongo.Collection
 	builderSvc *service.BuilderService
+	deploySvc  *service.DeploymentService
 }
 
-func NewToolReconciler() Reconciler[model.ToolInstance] {
+type ToolReconcilerConfig struct {
+	DockerRegistry string `yaml:"docker_registry"`
+	S3Bucket       string `yaml:"bucket"`
+	Workdir        string `yaml:"workdir"`
+	ValidateScript string `yaml:"validate_script"`
+	KubeConfig     string `yaml:"kubeconfig"`
+	Namespace      string `yaml:"namespace"`
+}
+
+func NewToolReconciler(cfg ToolReconcilerConfig) Reconciler[model.ToolInstance] {
 	return &toolReconciler{
 		coll: db.GetCollection(db.CollToolInstances),
 		builderSvc: service.NewBuilderService(
-			"992297059634.dkr.ecr.us-west-2.amazonaws.com",
-			"npiai-tools-build-test",
-			"/Users/wenfeng/tmp/build",
-			"/Users/wenfeng/workspace/npi-ai/npi/server/scripts/tool_helper.py",
+			cfg.DockerRegistry,
+			cfg.S3Bucket,
+			cfg.Workdir,
+			cfg.ValidateScript,
 		),
+		deploySvc: service.NewDeploymentService(cfg.KubeConfig, cfg.Namespace),
 	}
 }
 
@@ -152,18 +163,40 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 	return db.ConvertError(err)
 }
 
-func (tc *toolReconciler) DeployingHandler(ctx context.Context, ws model.ToolInstance) error {
-	println("deploying")
+func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
+	if err := tc.deploySvc.CreateDeployment(ctx,
+		toolInstance.Metadata.ID, toolInstance.Image, toolInstance.GetRuntimeEnv()); err != nil {
+		return err
+	}
+	svcUrl, err := tc.deploySvc.CreateService(ctx, toolInstance.Metadata.ID)
+	if err != nil {
+		return err
+	}
+	_, err = tc.coll.UpdateOne(ctx,
+		bson.M{"_id": toolInstance.ID},
+		bson.M{
+			"$set": bson.M{
+				"service_url": svcUrl,
+				"updated_at":  time.Now(),
+			},
+		})
+
+	return db.ConvertError(err)
+}
+
+func (tc *toolReconciler) DeletingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
+	if err := tc.deploySvc.DeleteDeployment(ctx, toolInstance.Metadata.ID); err != nil {
+		return err
+	}
+
+	if err := tc.deploySvc.DeleteService(ctx, toolInstance.Metadata.ID); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (tc *toolReconciler) DeletingHandler(ctx context.Context, ws model.ToolInstance) error {
-	println("deleting")
-	return nil
-}
-
-func (tc *toolReconciler) PausingHandler(ctx context.Context, ws model.ToolInstance) error {
-	println("pausing")
+func (tc *toolReconciler) PausingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
+	// scale down deployment
 	return nil
 }
 
