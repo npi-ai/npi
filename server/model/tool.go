@@ -15,6 +15,27 @@ type Tool struct {
 	OrgID         primitive.ObjectID `json:"org_id" bson:"org_id"`
 	Name          string             `json:"name" bson:"name"`
 	HeadVersionID primitive.ObjectID `json:"head_version_id" bson:"head_version_id"`
+	Auth          Authentication     `json:"auth" bson:"auth"`
+}
+
+type AuthType string
+
+const (
+	AuthNone   = AuthType("none")
+	AuthAPIKey = AuthType("api_key")
+	AuthOAuth  = AuthType("oauth")
+)
+
+type Authentication struct {
+	Type   AuthType `json:"type" bson:"type"`
+	APIKey string   `json:"api_key" bson:"api_key"`
+	OAuth  OAuthApp `json:"oauth" bson:"oauth"`
+}
+
+type OAuthApp struct {
+	ClientID    string `json:"client_id" bson:"client_id"`
+	Secrets     string `json:"secrets" bson:"secrets"`
+	RedirectURL string `json:"redirect_url" bson:"redirect_url"`
 }
 
 type ToolInstance struct {

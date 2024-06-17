@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
-	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/log"
 	"os/exec"
 )
@@ -16,8 +16,7 @@ func RunPython(file string, params map[string]string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Warn().Str("output", string(out)).Msg("Failed to run python script")
-		return api.ErrInternal.
-			WithMessage("Failed to validate tools").WithError(err)
+		return errors.New("failed to run python script")
 	}
 	return nil
 }

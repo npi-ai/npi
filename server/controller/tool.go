@@ -29,6 +29,7 @@ type ToolController struct {
 	toolInstancesColl *mongo.Collection
 	s3                *db.S3
 	s3Bucket          string
+	toolEndpointRoot  string
 }
 
 func NewTool(bucket string) IController {
@@ -37,6 +38,7 @@ func NewTool(bucket string) IController {
 		toolInstancesColl: db.GetCollection(db.CollToolInstances),
 		s3:                db.GetS3(),
 		s3Bucket:          bucket,
+		toolEndpointRoot:  "https://tools.npi.ai",
 	}
 }
 
@@ -45,6 +47,8 @@ func (ctrl *ToolController) RegisterRoute(parent *gin.RouterGroup) error {
 	toolRouter.POST("", ctrl.CreateTool)
 	toolRouter.DELETE("/:tool_id", ctrl.DeleteTool)
 	toolRouter.POST("/:tool_id/publish", ctrl.PublishTool)
+	toolRouter.GET("/:tool_id/overview", ctrl.GetToolOverview)
+	toolRouter.GET("/:tool_id/functions", ctrl.GetToolFunction)
 	toolRouter.GET("/:tool_id/openai", ctrl.GetToolOpenAISchema)
 	toolRouter.GET("/:tool_id/openapi", ctrl.GetToolOpenAPISchema)
 	return nil
@@ -173,12 +177,41 @@ func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, nil)
 }
 
-func (ctrl *ToolController) GetToolSummary(ctx *gin.Context) {
+func (ctrl *ToolController) GetToolOverview(ctx *gin.Context) {
+	tool, err := ctrl.getToolByID(ctx)
+	if err != nil {
+		api.ResponseWithError(ctx, err)
+		return
+	}
 
+	instance, err := ctrl.getToolInstanceByID(ctx, tool.HeadVersionID)
+	if err != nil {
+		api.ResponseWithError(ctx, err)
+		return
+	}
+	summary := api.ToolSummary{
+		ID:             instance.Metadata.ID,
+		Name:           instance.Metadata.Name,
+		Description:    instance.Metadata.Description,
+		Runtime:        instance.FunctionSpec.Runtime,
+		Dependencies:   instance.FunctionSpec.Dependencies,
+		Authentication: tool.Auth,
+		Endpoint:       fmt.Sprintf("%s/%s", ctrl.toolEndpointRoot, tool.ID.Hex()),
+	}
+	summary.Runtime.Image = instance.Image
+	if summary.Authentication.Type == "" {
+		summary.Authentication.Type = model.AuthNone
+	}
+	api.ResponseWithSuccess(ctx, summary)
 }
 
 func (ctrl *ToolController) GetToolFunction(ctx *gin.Context) {
-
+	instance, err := ctrl.getToolInstanceByCtx(ctx)
+	if err != nil {
+		api.ResponseWithError(ctx, err)
+		return
+	}
+	api.ResponseWithSuccess(ctx, instance.FunctionSpec.Functions)
 }
 
 func (ctrl *ToolController) DeleteTool(ctx *gin.Context) {
@@ -246,6 +279,15 @@ func (ctrl *ToolController) getToolByID(ctx *gin.Context) (*model.Tool, error) {
 	tool := &model.Tool{}
 	_ = result.Decode(&tool)
 	return tool, nil
+}
+
+func (ctrl *ToolController) getToolInstanceByCtx(ctx *gin.Context) (*model.ToolInstance, error) {
+	tool, err := ctrl.getToolByID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ctrl.getToolInstanceByID(ctx, tool.HeadVersionID)
 }
 
 func (ctrl *ToolController) getToolInstanceByID(ctx *gin.Context, id primitive.ObjectID) (*model.ToolInstance, error) {
