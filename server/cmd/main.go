@@ -14,9 +14,14 @@ import (
 )
 
 func main() {
-	data, _ := os.ReadFile(os.Getenv("SERVER_CONFIG"))
+	data, err := os.ReadFile(os.Getenv("SERVER_CONFIG"))
+	if err != nil {
+		panic(fmt.Sprintf("failed to read config file: %s", err))
+	}
 	cfg := config.ServerConfig{}
-	_ = yaml.Unmarshal(data, &cfg)
+	if err = yaml.Unmarshal(data, &cfg); err != nil {
+		panic(fmt.Sprintf("failed to unmarshal config file: %s", err))
+	}
 	ctx := context.Background()
 	db.InitMongoDB(ctx, cfg.MongoDB)
 	db.InitS3(cfg.S3)

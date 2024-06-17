@@ -10,6 +10,7 @@ import (
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
 	"github.com/npi-ai/npi/server/service"
+	"github.com/npi-ai/npi/server/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"os"
@@ -164,13 +165,30 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 }
 
 func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
-	if err := tc.deploySvc.CreateDeployment(ctx,
-		toolInstance.Metadata.ID, toolInstance.Image, toolInstance.GetRuntimeEnv()); err != nil {
+	name := utils.GenerateRandomString(12, false, false, false)
+	if err := tc.deploySvc.CreateDeployment(ctx, name, toolInstance.Image, toolInstance.GetRuntimeEnv()); err != nil {
 		return err
 	}
-	svcUrl, err := tc.deploySvc.CreateService(ctx, toolInstance.Metadata.ID)
+	rollbackDeployment := func() {
+		if err := tc.deploySvc.DeleteDeployment(ctx, name); err != nil {
+			log.Warn().
+				Str("id", toolInstance.Metadata.ID).
+				Str("name", name).
+				Err(err).Msg("Failed to rollback deployment")
+		}
+	}
+	svcUrl, err := tc.deploySvc.CreateService(ctx, name)
 	if err != nil {
+		rollbackDeployment()
 		return err
+	}
+	rollbackService := func() {
+		if _err := tc.deploySvc.DeleteService(ctx, name); _err != nil {
+			log.Warn().
+				Str("id", toolInstance.Metadata.ID).
+				Str("name", name).
+				Err(_err).Msg("Failed to rollback service")
+		}
 	}
 	_, err = tc.coll.UpdateOne(ctx,
 		bson.M{"_id": toolInstance.ID},
@@ -181,15 +199,21 @@ func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance mod
 			},
 		})
 
-	return db.ConvertError(err)
+	if err != nil {
+		rollbackDeployment()
+		rollbackService()
+		return db.ConvertError(err)
+	}
+
+	return nil
 }
 
 func (tc *toolReconciler) DeletingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
-	if err := tc.deploySvc.DeleteDeployment(ctx, toolInstance.Metadata.ID); err != nil {
+	if err := tc.deploySvc.DeleteDeployment(ctx, toolInstance.DeployName); err != nil {
 		return err
 	}
 
-	if err := tc.deploySvc.DeleteService(ctx, toolInstance.Metadata.ID); err != nil {
+	if err := tc.deploySvc.DeleteService(ctx, toolInstance.DeployName); err != nil {
 		return err
 	}
 	return nil

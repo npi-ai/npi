@@ -77,7 +77,7 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 	}
 
 	if tool.Name == "" {
-		tool.Name = utils.GenerateRandomString(8, false, false)
+		tool.Name = "Untitled Tool"
 	}
 
 	toolInstance := &model.ToolInstance{
@@ -215,7 +215,35 @@ func (ctrl *ToolController) GetToolFunction(ctx *gin.Context) {
 }
 
 func (ctrl *ToolController) DeleteTool(ctx *gin.Context) {
+	tool, err := ctrl.getToolByID(ctx)
+	if err != nil {
+		api.ResponseWithError(ctx, err)
+		return
+	}
 
+	_, err = ctrl.toolColl.DeleteOne(ctx, bson.M{"_id": tool.ID})
+	if err != nil {
+		api.ResponseWithError(ctx, db.ConvertError(err))
+		return
+	}
+
+	_, err = ctrl.toolInstancesColl.UpdateMany(ctx,
+		bson.M{"tool_id": tool.ID, "current_state": model.ResourceStatusRunning},
+		bson.M{
+			"$set": bson.M{
+				"current_state": model.ResourceStatusDeleteMarked,
+				"source_state":  model.ResourceStatusDeleteMarked,
+				"target_state":  model.ResourceStatusDeleted,
+				"updated_at":    time.Now(),
+				"updated_by":    utils.GetUserID(ctx),
+			},
+		},
+	)
+	if err != nil {
+		api.ResponseWithError(ctx, db.ConvertError(err))
+		return
+	}
+	api.ResponseWithSuccess(ctx, nil)
 }
 
 func (ctrl *ToolController) CreateToolVersion(ctx *gin.Context) {

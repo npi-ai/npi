@@ -48,6 +48,7 @@ type ToolInstance struct {
 	Image        string             `json:"image" bson:"image"`
 	S3URI        string             `json:"-" bson:"s3_uri"`
 	ServiceURL   string             `json:"-" bson:"service_url"`
+	DeployName   string             `json:"-" bson:"deploy_name"` // TODO move to Tool
 }
 
 func (t *ToolInstance) GetRuntimeEnv() []map[string]interface{} {

@@ -48,7 +48,7 @@ type ToolDefine struct {
 
 func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) (string, error) {
 	start := time.Now()
-	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, false, false))
+	workDir := filepath.Join(bs.rootDir, utils.GenerateRandomString(12, true, false, false))
 	if err := os.MkdirAll(workDir, os.ModePerm); err != nil {
 		return "", api.ErrInternal.
 			WithMessage(fmt.Sprintf("Failed to create work directory: %s", workDir)).WithError(err)

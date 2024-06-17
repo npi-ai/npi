@@ -10,11 +10,14 @@ var (
 	rd = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
-func GenerateRandomString(length int, includeNumber bool, includeSpecial bool) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+func GenerateRandomString(length int, includeUppercase, includeNumber, includeSpecial bool) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz"
 	var password []byte
 	var builder strings.Builder
 
+	if includeUppercase {
+		builder.WriteString("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	}
 	if includeNumber {
 		builder.WriteString("0123456789")
 	}
