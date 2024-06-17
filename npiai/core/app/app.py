@@ -1,10 +1,19 @@
 """The basic interface for NPi Apps"""
+import asyncio
 import functools
 import inspect
 import json
+import os
 import re
 from dataclasses import asdict
 from typing import Dict, List, Optional, Any
+import logging
+
+import uvicorn
+from fastapi import HTTPException
+from pydantic import Field, create_model
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 import yaml
 # TODO: use llmlite typings
@@ -13,11 +22,9 @@ from openai.types.chat import (
     ChatCompletionMessageToolCall,
     ChatCompletionToolMessageParam,
 )
-from pydantic import Field, create_model
 
 from npiai.core.base import BaseApp, Tool
 from npiai.core.hitl import HITL
-
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 
@@ -25,11 +32,11 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
 
 def function(
-    tool_fn: ToolFunction = None,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    schema: Dict[str, Any] = None,
-    few_shots: Optional[List[Shot]] = None,
+        tool_fn: ToolFunction = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        schema: Dict[str, Any] = None,
+        few_shots: Optional[List[Shot]] = None,
 ):
     """
     NPi Tool decorator for functions
@@ -98,11 +105,11 @@ class App(BaseApp):
         return self._sub_tools
 
     def __init__(
-        self,
-        name: str,
-        description: str,
-        system_prompt: str = None,
-        provider: str = None,
+            self,
+            name: str,
+            description: str,
+            system_prompt: str = None,
+            provider: str = None,
     ):
         super().__init__()
         self.name = name
@@ -137,6 +144,36 @@ class App(BaseApp):
             for app in self._sub_tools:
                 await app.start()
 
+    def server(self):
+        """Start the server"""
+        asyncio.run(self.start())
+        if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
+            return
+
+        fapp = FastAPI()
+
+        @fapp.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+        async def root(full_path: str, request: Request):
+            try:
+                match request.method:
+                    case "POST":
+                        args = await request.json()
+                        res = await self._exec(full_path, args)
+                    case "GET":
+                        args = {k: v for k, v in request.query_params.items()}
+                        res = await self._exec(full_path, args)
+                    case _:
+                        return JSONResponse({'error': 'Method not allowed'}, status_code=405)
+                try:
+                    return JSONResponse(content=json.loads(res))
+                except json.JSONDecodeError as e:
+                    return res
+            except Exception as e:
+                logging.error(f"Failed to process request: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail="Internal Server Error")
+
+        uvicorn.run(fapp, host="0.0.0.0", port=18000)
+
     async def end(self):
         """Stop and dispose the app"""
         if self._started:
@@ -145,8 +182,8 @@ class App(BaseApp):
                 await app.end()
 
     def add_tool(
-        self,
-        *tools: Tool,
+            self,
+            *tools: Tool,
     ):
         for tool in tools:
             # share hitl handler
@@ -168,8 +205,8 @@ class App(BaseApp):
         return await self._exec(fn_name, args)
 
     async def call(
-        self,
-        tool_calls: List[ChatCompletionMessageToolCall],
+            self,
+            tool_calls: List[ChatCompletionMessageToolCall],
     ) -> List[ChatCompletionToolMessageParam]:
         results: List[ChatCompletionToolMessageParam] = []
 

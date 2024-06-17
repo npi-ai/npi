@@ -111,7 +111,7 @@ class GitHub(App):
             an Issue object
         """
         repo = self.github_client.get_repo(repo_name)
-        return repo.get_issue(number)
+        return repo.get_issue(int(number))
 
     def _get_pull_request(self, repo_name: str, number: int) -> PullRequest:
         """

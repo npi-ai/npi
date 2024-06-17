@@ -35,10 +35,8 @@ async def main():
     # Create an instance of the class
     tool_class = getattr(module, 'GitHub')
     instance = tool_class()
+    instance.server()
 
-    async with instance as i:
-        # await i.wait() TODO add this method to BaseApp class
-        time.sleep(1000)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

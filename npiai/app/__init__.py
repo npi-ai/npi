@@ -1,8 +1,8 @@
-from .discord import Discord
-from .github import GitHub
-from .google.gmail import Gmail
-from .google.calendar import GoogleCalendar
-from .slack import Slack
-from .twilio import Twilio
+from .discord.app import Discord
+from .github.app import GitHub
+from .google.gmail.app import Gmail
+from .google.calendar.app import GoogleCalendar
+from .slack.app import Slack
+from .twilio.app import Twilio
 
 __all__ = ["Discord", "GitHub", "Gmail", "GoogleCalendar", "Slack", "Twilio"]

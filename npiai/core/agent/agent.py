@@ -1,12 +1,15 @@
 import os
+import asyncio
 from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+import uvicorn
 
 from npiai.llm import LLM, OpenAI
 from npiai.utils import logger
 from npiai.types import FunctionRegistration
-
 from npiai.core.app import App
 from npiai.core.app.browser import BrowserApp
 from npiai.core.base import BaseAgent
@@ -53,6 +56,21 @@ class Agent(BaseAgent):
 
     async def end(self):
         await self._app.end()
+
+    def server(self):
+        """Start the server"""
+        asyncio.run(self.start())
+        if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
+            return
+
+        fapp = FastAPI()
+
+        @fapp.api_route("/chat", methods=["POST"])
+        async def root(full_path: str, request: Request):
+            args = await request.json()
+            return self.chat(args['message'])
+
+        uvicorn.run(fapp, host="0.0.0.0", port=18000)
 
     async def chat(
             self,

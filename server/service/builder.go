@@ -216,11 +216,7 @@ async def main():
     # Create an instance of the class
     tool_class = getattr(module, '%s')
     instance = tool_class()
-
-    async with instance as i:
-        # await i.wait() TODO add this method to BaseApp class
-        print("Tool server started")
-        time.sleep(1000)
+    instance.server()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

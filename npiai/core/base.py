@@ -24,13 +24,14 @@ class Tool(ABC):
 
         return self._hitl
 
-    @staticmethod
-    def test():
-        return 1
-
     @abstractmethod
     def unpack_functions(self) -> List[FunctionRegistration]:
         """Export the functions registered in the app"""
+        ...
+
+    @abstractmethod
+    def server(self):
+        """Start the app"""
         ...
 
     @abstractmethod
