@@ -216,7 +216,7 @@ async def main():
     # Create an instance of the class
     tool_class = getattr(module, '%s')
     instance = tool_class()
-    instance.server()
+    await instance.server()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

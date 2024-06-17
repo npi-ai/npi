@@ -146,9 +146,9 @@ class App(BaseApp):
             for app in self._sub_tools:
                 await app.start()
 
-    def server(self):
+    async def server(self):
         """Start the server"""
-        asyncio.run(self.start())
+        self.start()
         if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
             return
 
@@ -176,7 +176,7 @@ class App(BaseApp):
 
         def signal_handler(sig, frame):
             print(f"Signal {sig} received, shutting down.")
-            self.end()
+            asyncio.create_task(self.end())
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)

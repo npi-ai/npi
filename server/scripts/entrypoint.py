@@ -35,7 +35,7 @@ async def main():
     # Create an instance of the class
     tool_class = getattr(module, 'GitHub')
     instance = tool_class()
-    instance.server()
+    await instance.server()
 
 
 if __name__ == '__main__':
