@@ -5,6 +5,8 @@ import inspect
 import json
 import os
 import re
+import signal
+import sys
 from dataclasses import asdict
 from typing import Dict, List, Optional, Any
 import logging
@@ -171,6 +173,14 @@ class App(BaseApp):
             except Exception as e:
                 logging.error(f"Failed to process request: {e}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Internal Server Error")
+
+        def signal_handler(sig, frame):
+            print(f"Signal {sig} received, shutting down.")
+            self.end()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)
 

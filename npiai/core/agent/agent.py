@@ -1,10 +1,12 @@
 import os
 import asyncio
+import signal
+import sys
 from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
+
 import uvicorn
 
 from npiai.llm import LLM, OpenAI
@@ -66,9 +68,17 @@ class Agent(BaseAgent):
         fapp = FastAPI()
 
         @fapp.api_route("/chat", methods=["POST"])
-        async def root(full_path: str, request: Request):
+        async def root(request: Request):
             args = await request.json()
             return self.chat(args['message'])
+
+        def signal_handler(sig, frame):
+            print(f"Signal {sig} received, shutting down.")
+            self.end()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)
 
