@@ -149,7 +149,7 @@ class App(BaseApp):
 
     async def server(self):
         """Start the server"""
-        self.start()
+        asyncio.run(self.start())
         if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
             print("Server mode is disabled, if you want to run the server, set env NPIAI_TOOL_SERVER_MODE=true")
             print("Exiting...")
