@@ -8,9 +8,11 @@ import (
 )
 
 var (
-	ErrParseBody      = newErrorMessage(http.StatusBadRequest, 40001, "parse body error")
-	ErrInvalidRequest = newErrorMessage(http.StatusBadRequest, 40002, "invalid request")
-	ErrObjectID       = newErrorMessage(http.StatusBadRequest, 40003, "invalid object id")
+	ErrParseBody        = newErrorMessage(http.StatusBadRequest, 40001, "parse body error")
+	ErrInvalidRequest   = newErrorMessage(http.StatusBadRequest, 40002, "invalid request")
+	ErrObjectID         = newErrorMessage(http.StatusBadRequest, 40003, "invalid object id")
+	ErrBalanceNotEnough = newErrorMessage(http.StatusBadRequest, 40004, "out of usage")
+	ErrInvitationExists = newErrorMessage(http.StatusBadRequest, 40005, "invitation already exists")
 
 	ErrUnauthorized = newErrorMessage(http.StatusUnauthorized, 40101, "unauthorized")
 
@@ -19,6 +21,8 @@ var (
 	ErrFunctionNotFound = newErrorMessage(http.StatusNotFound, 40401, "function not found")
 	ErrResourceNotFound = newErrorMessage(http.StatusNotFound, 40402, "resource not found")
 	DocumentNotFound    = newErrorMessage(http.StatusNotFound, 40403, "data not found in database")
+
+	ErrCannotLeave = newErrorMessage(http.StatusConflict, 40901, "cannot leave the org")
 
 	ErrInternal      = newErrorMessage(http.StatusInternalServerError, 50001, "internal error")
 	ErrUnknown       = newErrorMessage(http.StatusInternalServerError, 50002, "unknown error")

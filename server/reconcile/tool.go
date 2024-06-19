@@ -38,6 +38,7 @@ type ToolReconcilerConfig struct {
 	ValidateScript string `yaml:"validate_script"`
 	KubeConfig     string `yaml:"kubeconfig"`
 	Namespace      string `yaml:"namespace"`
+	AccessEndpoint string `yaml:"access_endpoint"`
 }
 
 func NewToolReconciler(cfg ToolReconcilerConfig) Reconciler[model.ToolInstance] {
@@ -45,9 +46,11 @@ func NewToolReconciler(cfg ToolReconcilerConfig) Reconciler[model.ToolInstance] 
 		coll: db.GetCollection(db.CollToolInstances),
 		builderSvc: service.NewBuilderService(
 			cfg.DockerRegistry,
-			cfg.S3Bucket,
 			cfg.Workdir,
 			cfg.ValidateScript,
+			db.S3Config{
+				Bucket: cfg.S3Bucket,
+			},
 		),
 		deploySvc: service.NewDeploymentService(cfg.KubeConfig, cfg.Namespace),
 	}
@@ -164,6 +167,7 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 	return db.ConvertError(err)
 }
 
+// DeployingHandler TODO add env
 func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
 	name := utils.GenerateRandomString(12, false, false, false)
 	if err := tc.deploySvc.CreateDeployment(ctx, name, toolInstance.Image, toolInstance.GetRuntimeEnv()); err != nil {
@@ -195,6 +199,7 @@ func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance mod
 		bson.M{
 			"$set": bson.M{
 				"service_url": svcUrl,
+				"deploy_name": name,
 				"updated_at":  time.Now(),
 			},
 		})

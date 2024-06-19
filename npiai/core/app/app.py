@@ -7,6 +7,7 @@ import os
 import re
 import signal
 import sys
+import time
 from dataclasses import asdict
 from typing import Dict, List, Optional, Any
 import logging
@@ -150,6 +151,8 @@ class App(BaseApp):
         """Start the server"""
         self.start()
         if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
+            print("Server mode is disabled, if you want to run the server, set env NPIAI_TOOL_SERVER_MODE=true")
+            print("Exiting...")
             return
 
         fapp = FastAPI()
@@ -175,11 +178,20 @@ class App(BaseApp):
                 raise HTTPException(status_code=500, detail="Internal Server Error")
 
         def signal_handler(sig, frame):
-            print(f"Signal {sig} received, shutting down.")
-            asyncio.create_task(self.end())
+            print(f"Signal {sig} received, shutting down...")
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+                loop = None
+
+            tsk = loop.create_task(self.end())
+            # while not tsk.done():
+            #     time.sleep(1)
+            print("Shutdown complete")
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGKILL, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)

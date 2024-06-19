@@ -5,6 +5,7 @@ go 1.22.0
 toolchain go1.22.4
 
 require (
+	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
 	github.com/aws/aws-sdk-go-v2 v1.27.2
 	github.com/aws/aws-sdk-go-v2/config v1.27.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.18
@@ -14,6 +15,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/pb33f/libopenapi v0.16.8
 	github.com/rs/zerolog v1.33.0
+	github.com/vincent-petithory/dataurl v1.0.0
 	go.mongodb.org/mongo-driver v1.15.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.30.2

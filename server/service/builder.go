@@ -25,11 +25,11 @@ type BuilderService struct {
 	validateScript string
 }
 
-func NewBuilderService(dockerRegistry, s3Bucket, rootDir, validateScript string) *BuilderService {
+func NewBuilderService(dockerRegistry, rootDir, validateScript string, config db.S3Config) *BuilderService {
 	bs := &BuilderService{
 		dockerRegistry: dockerRegistry,
-		s3Bucket:       s3Bucket,
-		s3Service:      db.GetS3(),
+		s3Bucket:       config.Bucket,
+		s3Service:      db.GetAWSS3(config),
 		rootDir:        rootDir,
 		validateScript: validateScript,
 	}
@@ -203,7 +203,7 @@ def print_tool_spec():
     print(json.dumps(instance.export()))
 
 
-async def main():
+def main():
     # Add the directory containing the file to sys.path
     module_dir, module_name = os.path.split('%s')
     module_name = os.path.splitext(module_name)[0]  # Remove the .py extension
@@ -223,7 +223,8 @@ if __name__ == '__main__':
         if sys.argv[1] == 'spec':
             print_tool_spec()
         elif sys.argv[1] == 'server':
-            asyncio.run(main())
+            print('Starting server...')
+            main()
         else:
             print('Usage: python entrypoint.py spec|server')
             sys.exit(1)
@@ -240,9 +241,11 @@ SHELL ["/bin/bash", "-c"]
 
 WORKDIR /npiai/tools
 RUN poetry install
+ENV NPIAI_TOOL_SERVER_MODE=true
 
 ENTRYPOINT ["poetry", "run", "python", "main.py", "server"]
 `
+
 	poetryTemplate = `[tool.poetry]
 package-mode = false
 %s

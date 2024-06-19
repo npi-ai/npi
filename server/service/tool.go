@@ -1,4 +1,4 @@
-package controller
+package service
 
 import (
 	"bytes"
@@ -20,11 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type IController interface {
-	RegisterRoute(parent *gin.RouterGroup) error
-}
-
-type ToolController struct {
+type ToolService struct {
 	toolColl          *mongo.Collection
 	toolInstancesColl *mongo.Collection
 	s3                *db.S3
@@ -32,29 +28,31 @@ type ToolController struct {
 	toolEndpointRoot  string
 }
 
-func NewTool(bucket string) IController {
-	return &ToolController{
+func NewTool(toolAccessPoint string, cfg db.S3Config) *ToolService {
+	return &ToolService{
 		toolColl:          db.GetCollection(db.CollTools),
 		toolInstancesColl: db.GetCollection(db.CollToolInstances),
-		s3:                db.GetS3(),
-		s3Bucket:          bucket,
-		toolEndpointRoot:  "https://tools.npi.ai",
+		s3:                db.GetAWSS3(cfg),
+		s3Bucket:          cfg.Bucket,
+		toolEndpointRoot:  toolAccessPoint,
 	}
 }
 
-func (ctrl *ToolController) RegisterRoute(parent *gin.RouterGroup) error {
-	toolRouter := parent.Group("/tools")
-	toolRouter.POST("", ctrl.CreateTool)
-	toolRouter.DELETE("/:tool_id", ctrl.DeleteTool)
-	toolRouter.POST("/:tool_id/publish", ctrl.PublishTool)
-	toolRouter.GET("/:tool_id/overview", ctrl.GetToolOverview)
-	toolRouter.GET("/:tool_id/functions", ctrl.GetToolFunction)
-	toolRouter.GET("/:tool_id/openai", ctrl.GetToolOpenAISchema)
-	toolRouter.GET("/:tool_id/openapi", ctrl.GetToolOpenAPISchema)
-	return nil
+func (ctrl *ToolService) ListTool(ctx *gin.Context, orgID primitive.ObjectID) ([]model.Tool, error) {
+	cursor, err := ctrl.toolColl.Find(ctx, bson.M{"org_id": orgID})
+	if err != nil {
+		log.Warn(ctx).Err(err).Msg("Failed to list tools")
+		return nil, db.ConvertError(err)
+	}
+	tools := make([]model.Tool, 0)
+	if err = cursor.All(ctx, &tools); err != nil {
+		log.Warn(ctx).Err(err).Msg("Failed to decode tools")
+		return nil, db.ConvertError(err)
+	}
+	return tools, nil
 }
 
-func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
+func (ctrl *ToolService) CreateTool(ctx *gin.Context) {
 	toolReq := &api.ToolRequest{}
 	reqStr := ctx.PostForm("body")
 	if reqStr == "" {
@@ -70,10 +68,15 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 		return
 	}
 
+	orgID, err := primitive.ObjectIDFromHex(utils.GetOrgID(ctx))
+	if err != nil {
+		api.ResponseWithError(ctx, api.ErrObjectID)
+		return
+	}
 	tool := &model.Tool{
 		Base:  model.NewBase(ctx),
 		Name:  toolReq.Name,
-		OrgID: utils.GetOrgID(ctx),
+		OrgID: orgID,
 	}
 
 	if tool.Name == "" {
@@ -140,7 +143,7 @@ func (ctrl *ToolController) CreateTool(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, tool)
 }
 
-func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
+func (ctrl *ToolService) PublishTool(ctx *gin.Context) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -177,7 +180,7 @@ func (ctrl *ToolController) PublishTool(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, nil)
 }
 
-func (ctrl *ToolController) GetToolOverview(ctx *gin.Context) {
+func (ctrl *ToolService) GetToolOverview(ctx *gin.Context) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -205,7 +208,7 @@ func (ctrl *ToolController) GetToolOverview(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, summary)
 }
 
-func (ctrl *ToolController) GetToolFunction(ctx *gin.Context) {
+func (ctrl *ToolService) GetToolFunction(ctx *gin.Context) {
 	instance, err := ctrl.getToolInstanceByCtx(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -214,7 +217,7 @@ func (ctrl *ToolController) GetToolFunction(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, instance.FunctionSpec.Functions)
 }
 
-func (ctrl *ToolController) DeleteTool(ctx *gin.Context) {
+func (ctrl *ToolService) DeleteTool(ctx *gin.Context) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -246,11 +249,11 @@ func (ctrl *ToolController) DeleteTool(ctx *gin.Context) {
 	api.ResponseWithSuccess(ctx, nil)
 }
 
-func (ctrl *ToolController) CreateToolVersion(ctx *gin.Context) {
+func (ctrl *ToolService) CreateToolVersion(ctx *gin.Context) {
 
 }
 
-func (ctrl *ToolController) GetToolOpenAISchema(ctx *gin.Context) {
+func (ctrl *ToolService) GetToolOpenAISchema(ctx *gin.Context) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -271,7 +274,7 @@ func (ctrl *ToolController) GetToolOpenAISchema(ctx *gin.Context) {
 }
 
 // GetToolOpenAPISchema https://api.npi.ai/schemas/{tool_id}
-func (ctrl *ToolController) GetToolOpenAPISchema(ctx *gin.Context) {
+func (ctrl *ToolService) GetToolOpenAPISchema(ctx *gin.Context) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		api.ResponseWithError(ctx, err)
@@ -292,7 +295,7 @@ func (ctrl *ToolController) GetToolOpenAPISchema(ctx *gin.Context) {
 	ctx.Render(http.StatusOK, rd)
 }
 
-func (ctrl *ToolController) getToolByID(ctx *gin.Context) (*model.Tool, error) {
+func (ctrl *ToolService) getToolByID(ctx *gin.Context) (*model.Tool, error) {
 	toolID := ctx.Param("tool_id")
 
 	tID, err := primitive.ObjectIDFromHex(toolID)
@@ -309,7 +312,7 @@ func (ctrl *ToolController) getToolByID(ctx *gin.Context) (*model.Tool, error) {
 	return tool, nil
 }
 
-func (ctrl *ToolController) getToolInstanceByCtx(ctx *gin.Context) (*model.ToolInstance, error) {
+func (ctrl *ToolService) getToolInstanceByCtx(ctx *gin.Context) (*model.ToolInstance, error) {
 	tool, err := ctrl.getToolByID(ctx)
 	if err != nil {
 		return nil, err
@@ -318,7 +321,7 @@ func (ctrl *ToolController) getToolInstanceByCtx(ctx *gin.Context) (*model.ToolI
 	return ctrl.getToolInstanceByID(ctx, tool.HeadVersionID)
 }
 
-func (ctrl *ToolController) getToolInstanceByID(ctx *gin.Context, id primitive.ObjectID) (*model.ToolInstance, error) {
+func (ctrl *ToolService) getToolInstanceByID(ctx *gin.Context, id primitive.ObjectID) (*model.ToolInstance, error) {
 	result := ctrl.toolInstancesColl.FindOne(ctx, bson.M{"_id": id})
 	if result.Err() != nil {
 		return nil, db.ConvertError(result.Err())
