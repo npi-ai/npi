@@ -38,6 +38,12 @@ type OAuthApp struct {
 	RedirectURL string `json:"redirect_url" bson:"redirect_url"`
 }
 
+type ToolEnv struct {
+	Name   string `json:"name" bson:"name"`
+	Value  string `json:"value" bson:"value"`
+	Secret bool   `json:"secret" bson:"secret"`
+}
+
 type ToolInstance struct {
 	BaseResource `json:",inline" bson:",inline"`
 	ToolID       primitive.ObjectID `json:"tool_id" bson:"tool_id"`
@@ -136,6 +142,14 @@ type ToolFunctionSpec struct {
 	Runtime      Runtime      `json:"runtime" bson:"runtime"`
 	Dependencies []Dependency `json:"dependencies" bson:"dependencies"`
 	Functions    []Function   `json:"functions" bson:"functions"`
+	Env          []ToolEnv    `json:"env" bson:"env"`
+}
+
+type ToolDefine struct {
+	Main         string       `yaml:"main"`
+	Class        string       `yaml:"class"`
+	Environment  []ToolEnv    `yaml:"env"`
+	Dependencies []Dependency `yaml:"dependencies"`
 }
 
 type Language string

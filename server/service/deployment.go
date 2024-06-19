@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"github.com/npi-ai/npi/server/model"
 
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/log"
@@ -50,14 +52,64 @@ func NewDeploymentService(kubeConfig string, namespace string) *DeploymentServic
 }
 
 func (cli *DeploymentService) CreateDeployment(ctx context.Context, name, image string,
-	env []map[string]interface{}) error {
+	env []model.ToolEnv) error {
+	secretName := fmt.Sprintf("%s-env-secret", name)
+	data := map[string]string{}
+	_env := make([]map[string]interface{}, 0)
+	hasSecret := false
+	for _, e := range env {
+		if e.Secret {
+			hasSecret = true
+			_env = append(_env, map[string]interface{}{
+				"name": e.Name,
+				"valueFrom": map[string]interface{}{
+					"secretKeyRef": map[string]interface{}{
+						"name": secretName,
+						"key":  e.Name,
+					},
+				},
+			})
+			data[e.Name] = base64.StdEncoding.EncodeToString([]byte(e.Value))
+		} else {
+			_env = append(_env, map[string]interface{}{
+				"name":  e.Name,
+				"value": e.Value,
+			})
+		}
+	}
+	if hasSecret {
+		secretRes := schema.GroupVersionResource{
+			Group:    "",
+			Version:  "v1",
+			Resource: "secrets",
+		}
+		secretObject := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Secret",
+				"metadata": map[string]interface{}{
+					"name": secretName,
+				},
+				"data": data,
+			},
+		}
+
+		secret, err := cli.client.Resource(secretRes).Namespace(cli.namespace).
+			Create(ctx, secretObject, metav1.CreateOptions{})
+		if err != nil {
+			log.Error(ctx).Str("name", name).Err(err).Msg("Failed to create secret")
+			return api.ErrInternal.WithMessage("Failed to create secret")
+		}
+		log.Info(ctx).Str("name", secret.GetName()).Msg("success to create secret")
+	}
+
 	deploymentRes := schema.GroupVersionResource{
 		Group:    "apps",
 		Version:  "v1",
 		Resource: "deployments",
 	}
 
-	// TODO set restart policy
+	// TODO(ISSUE #87) scale down to 0 when deployment failed to start
 	deploymentObject := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps/v1",
@@ -90,7 +142,7 @@ func (cli *DeploymentService) CreateDeployment(ctx context.Context, name, image 
 										"containerPort": toolServingPort,
 									},
 								},
-								"env": env,
+								"env": _env,
 							},
 						},
 					},
@@ -103,7 +155,7 @@ func (cli *DeploymentService) CreateDeployment(ctx context.Context, name, image 
 	deployment, err := cli.client.Resource(deploymentRes).Namespace(cli.namespace).
 		Create(ctx, deploymentObject, metav1.CreateOptions{})
 	if err != nil {
-		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to create deployment")
+		log.Warn(ctx).Str("name", name).Err(err).Msg("Failed to create deployment")
 		return api.ErrInternal.WithMessage("Failed to create deployment").WithError(err)
 	}
 	log.Info(ctx).Str("name", deployment.GetName()).Msg("Created deployment")

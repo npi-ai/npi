@@ -104,7 +104,7 @@ func (tc *toolReconciler) Start(ctx context.Context) error {
 }
 
 func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
-	imageURI, err := tc.builderSvc.Build(ctx, toolInstance.Metadata)
+	imageURI, tool, err := tc.builderSvc.Build(ctx, toolInstance.Metadata)
 	if err != nil {
 		return err
 	}
@@ -142,8 +142,11 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 		return api.ErrInternal.WithMessage("Failed to get tool spec")
 	}
 
+	log.Info().Str("id", md.ID).Msg("Tool spec has been parsed successfully")
+
 	toolInstance.Metadata.Name = md.Name
 	toolInstance.Metadata.Description = md.Description
+	spec.Env = tool.Environment
 	toolInstance.FunctionSpec = spec
 	// upload image
 	log.Info().Str("image", imageURI).Msg("Uploading docker image")
@@ -170,7 +173,7 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 // DeployingHandler TODO add env
 func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
 	name := utils.GenerateRandomString(12, false, false, false)
-	if err := tc.deploySvc.CreateDeployment(ctx, name, toolInstance.Image, toolInstance.GetRuntimeEnv()); err != nil {
+	if err := tc.deploySvc.CreateDeployment(ctx, name, toolInstance.Image, toolInstance.FunctionSpec.Env); err != nil {
 		return err
 	}
 	rollbackDeployment := func() {
