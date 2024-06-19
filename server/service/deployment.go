@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
-	"github.com/npi-ai/npi/server/model"
 
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/log"
+	"github.com/npi-ai/npi/server/model"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,9 +53,16 @@ func NewDeploymentService(kubeConfig string, namespace string) *DeploymentServic
 	}
 }
 
+const (
+	secretFormat = "%s-env-secret"
+)
+
 func (cli *DeploymentService) CreateDeployment(ctx context.Context, name, image string,
 	env []model.ToolEnv) error {
-	secretName := fmt.Sprintf("%s-env-secret", name)
+	if name == "" {
+		return nil
+	}
+	secretName := fmt.Sprintf(secretFormat, name)
 	data := map[string]string{}
 	_env := make([]map[string]interface{}, 0)
 	hasSecret := false
@@ -156,13 +165,63 @@ func (cli *DeploymentService) CreateDeployment(ctx context.Context, name, image 
 		Create(ctx, deploymentObject, metav1.CreateOptions{})
 	if err != nil {
 		log.Warn(ctx).Str("name", name).Err(err).Msg("Failed to create deployment")
+		if hasSecret {
+			if err = cli.deleteSecret(ctx, name); err != nil {
+				log.Warn(ctx).Str("name", secretName).Err(err).Msg("Failed to delete secret")
+			}
+		}
 		return api.ErrInternal.WithMessage("Failed to create deployment").WithError(err)
 	}
 	log.Info(ctx).Str("name", deployment.GetName()).Msg("Created deployment")
 	return nil
 }
 
+func (cli *DeploymentService) deleteSecret(ctx context.Context, name string) error {
+	if name == "" {
+		return nil
+	}
+	secretRes := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "secrets",
+	}
+
+	secretObject := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "Secret",
+			"metadata": map[string]interface{}{
+				"name": name,
+			},
+		},
+	}
+
+	_, err := cli.client.Resource(secretRes).Namespace(cli.namespace).Get(ctx, secretObject.GetName(), metav1.GetOptions{})
+	if err != nil {
+		var k8sErr *k8serr.StatusError
+		if errors.As(err, &k8sErr) && k8sErr.Status().Reason == metav1.StatusReasonNotFound {
+			return nil
+		}
+		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to get secret")
+		return api.ErrInternal.WithMessage("Failed to get secret").WithError(err)
+	}
+
+	err = cli.client.Resource(secretRes).Namespace(cli.namespace).
+		Delete(ctx, secretObject.GetName(), metav1.DeleteOptions{})
+	if err != nil {
+		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to delete secret")
+		return api.ErrInternal.WithMessage("Failed to delete secret").WithError(err)
+	}
+	log.Info(ctx).Str("name", secretObject.GetName()).Msg("Deleted secret")
+	return nil
+}
+
 func (cli *DeploymentService) DeleteDeployment(ctx context.Context, name string) error {
+	if name == "" {
+		return nil
+	}
+	secretName := fmt.Sprintf(secretFormat, name)
+	_ = cli.deleteSecret(ctx, secretName)
 	deploymentRes := schema.GroupVersionResource{
 		Group:    "apps",
 		Version:  "v1",
@@ -179,7 +238,17 @@ func (cli *DeploymentService) DeleteDeployment(ctx context.Context, name string)
 		},
 	}
 
-	err := cli.client.Resource(deploymentRes).Namespace(cli.namespace).
+	_, err := cli.client.Resource(deploymentRes).Namespace(cli.namespace).Get(ctx, deploymentObject.GetName(), metav1.GetOptions{})
+	if err != nil {
+		var k8sErr *k8serr.StatusError
+		if errors.As(err, &k8sErr) && k8sErr.Status().Reason == metav1.StatusReasonNotFound {
+			return nil
+		}
+		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to get deployment")
+		return api.ErrInternal.WithMessage("Failed to get deployment").WithError(err)
+	}
+
+	err = cli.client.Resource(deploymentRes).Namespace(cli.namespace).
 		Delete(ctx, deploymentObject.GetName(), metav1.DeleteOptions{})
 	if err != nil {
 		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to delete deployment")
@@ -190,6 +259,9 @@ func (cli *DeploymentService) DeleteDeployment(ctx context.Context, name string)
 }
 
 func (cli *DeploymentService) CreateService(ctx context.Context, name string) (string, error) {
+	if name == "" {
+		return "", nil
+	}
 	serviceRes := schema.GroupVersionResource{
 		Group:    "",
 		Version:  "v1",
@@ -231,6 +303,9 @@ func (cli *DeploymentService) CreateService(ctx context.Context, name string) (s
 }
 
 func (cli *DeploymentService) DeleteService(ctx context.Context, name string) error {
+	if name == "" {
+		return nil
+	}
 	serviceRes := schema.GroupVersionResource{
 		Group:    "",
 		Version:  "v1",
@@ -247,7 +322,17 @@ func (cli *DeploymentService) DeleteService(ctx context.Context, name string) er
 		},
 	}
 
-	err := cli.client.Resource(serviceRes).Namespace(cli.namespace).
+	_, err := cli.client.Resource(serviceRes).Namespace(cli.namespace).Get(ctx, serviceObject.GetName(), metav1.GetOptions{})
+	if err != nil {
+		var k8sErr *k8serr.StatusError
+		if errors.As(err, &k8sErr) && k8sErr.Status().Reason == metav1.StatusReasonNotFound {
+			return nil
+		}
+		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to get service")
+		return api.ErrInternal.WithMessage("Failed to get service").WithError(err)
+	}
+
+	err = cli.client.Resource(serviceRes).Namespace(cli.namespace).
 		Delete(ctx, serviceObject.GetName(), metav1.DeleteOptions{})
 	if err != nil {
 		log.Error(ctx).Str("name", name).Err(err).Msg("Failed to delete service")

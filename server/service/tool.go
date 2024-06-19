@@ -231,7 +231,7 @@ func (ctrl *ToolService) DeleteTool(ctx *gin.Context) {
 	}
 
 	_, err = ctrl.toolInstancesColl.UpdateMany(ctx,
-		bson.M{"tool_id": tool.ID, "current_state": model.ResourceStatusRunning},
+		bson.M{"tool_id": tool.ID},
 		bson.M{
 			"$set": bson.M{
 				"current_state": model.ResourceStatusDeleteMarked,
