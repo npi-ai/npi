@@ -13,80 +13,96 @@ NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"
 
 <Steps>
 
-    ### Installation
+### Installation
 
-    <Tabs items={['macOS', 'Linux']}>
-        <Tabs.Tab>
-            ```sh
-            curl -O https://s.npi.ai/cli/latest/darwin/npi
-            chmod +x npi
-            sudo mv npi /usr/local/bin
-            ```
-        </Tabs.Tab>
-        <Tabs.Tab>
-            ```sh
-            curl -O https://s.npi.ai/cli/latest/linux/npi
-            chmod +x npi
-            sudo mv npi /usr/local/bin
-            ```
-        </Tabs.Tab>
-    </Tabs>
-
-    Verify the installation by running `npi version`. If you see the output similar to the following, you are all set:
-
-    ```json
-    {
-        "BuildDate": "2024-05-15_16:26:11-0500",
-        "GitCommit": "8341471",
-        "Platform": "linux/amd64",
-        "Version": "v0.0.3"
-    }
-    ```
-
-### Setting Up NPi Server
-<Callout type={'info'}>
-    If Docker is not yet installed on your system, refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) for setup instructions.
-</Callout>
-Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
+Begin by installing the NPi AI package via pip:
 
 ```sh
-docker run -d --name npi --pull always \
-    -p 9140:9140 \
-    -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi:latest
+pip install npiai
 ```
 
-Confirm server connectivity by running `npi connect test`, it may take a few seconds. If you receive a `server connected` message, the setup is successful. Otherwise, consult the logs with `docker logs npi` and report issues to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
+### Create a New Tool
 
-### Authorize NPi to Access Your GitHub Account
+Let's create a new tool to compute the nth Fibonacci number. Start by crafting a new Python file titled `main.py` and insert the following snippet:
 
-Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi. You may need to grant the `repo` scope so that NPi can access repositories on behalf of you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
 
-![grant-repo-scope](../assets/github-token-grant-repo.png)
+```python filename="main.py"
+from npiai import App, function
 
-Then, authorize NPi's access to your GitHub account with the following command:
+class MyApp(App):
+    def __init__(self):
+        super().__init__(
+            name='my_app',
+            description='test app',
+        )
 
-```sh
-npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
+    @function
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
 ```
 
-### Support the NPi Repository
+### Run the Tool
 
-Easily star and fork the NPi Repository using:
+NPi offers two modes for utilizing the tool: function mode and agent mode.
 
-```sh
-    npi app github "what's the first PR of npi-ai/npi, include the access url, and output with json format"
 
-    # if you like npi, star us for support
-    npi app github "star npi-ai/npi"
+#### Function Mode: Integration with Existing AI Agents
+
+Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to queries. This integration allows us to enrich the AI's functionality by incorporating custom operations without altering the agent's core logic.
+
+```python filename="main.py" showLineNumbers {13, 19-20}
+async def main():
+    async with MyApp() as my_app:
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        messages = [
+            {
+                "role": "user",
+                "content": "What's the 10-th fibonacci number?",
+            }
+        ]
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=my_app.tools,  # use npi as a tool package
+            tool_choice="auto",
+            max_tokens=4096,
+        )
+        response_message = response.choices[0].message
+
+        # call the tool function corresponding to the response message
+        result = await my_app.call(response_message.tool_calls)
+
+        print(result)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-### Clean up
-1. Stop and remove the NPi container:
-    ```sh
-    docker stop npi
-    docker rm npi
-    ```
-2. Revoke your GitHub access token by revisiting: [GitHub Tokens Page](https://github.com/settings/tokens).
+#### Agent Mode: Direct Tool Execution as an Agent
 
+Agent mode allows an NPi tool to function as an independent AI agent that can directly take user queries and generate responses. In this mode, the tool will be converted to an agent that receives user input, processes it internally using its defined functions, and returns the result as an output message. This mode simplifies the creation of an AI-powered interface for individual tools without requiring integration with a larger system.
+
+```python filename="main.py" {1, 4-5}
+from npiai import App, function, agent_wrapper
+
+async def main():
+    async with agent_wrapper(MyApp()) as agent:
+        result = await agent.chat("What's the 10-th fibonacci number?")
+        print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 </Steps>
