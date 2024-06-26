@@ -3,8 +3,12 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import yaml
-from litellm.types.completion import ChatCompletionToolMessageParam
-from litellm.types.utils import ChatCompletionMessageToolCall
+# from litellm.types.completion import ChatCompletionToolMessageParam
+# from litellm.types.utils import ChatCompletionMessageToolCall
+from openai.types.chat import (
+    ChatCompletionMessageToolCall,
+    ChatCompletionToolMessageParam,
+)
 
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
@@ -91,8 +95,8 @@ class Tool(ABC):
 class BaseApp(Tool, ABC):
     @abstractmethod
     async def call(
-            self,
-            tool_calls: List[ChatCompletionMessageToolCall],
+        self,
+        tool_calls: List[ChatCompletionMessageToolCall],
     ) -> List[ChatCompletionToolMessageParam]:
         ...
 
