@@ -35,11 +35,11 @@ __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
 
 def function(
-        tool_fn: ToolFunction = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        schema: Dict[str, Any] = None,
-        few_shots: Optional[List[Shot]] = None,
+    tool_fn: ToolFunction = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    schema: Dict[str, Any] = None,
+    few_shots: Optional[List[Shot]] = None,
 ):
     """
     NPi Tool decorator for functions
@@ -108,11 +108,11 @@ class App(BaseApp):
         return self._sub_tools
 
     def __init__(
-            self,
-            name: str,
-            description: str,
-            system_prompt: str = None,
-            provider: str = None,
+        self,
+        name: str,
+        description: str,
+        system_prompt: str = None,
+        provider: str = None,
     ):
         super().__init__()
         self.name = name
@@ -204,8 +204,8 @@ class App(BaseApp):
                 await app.end()
 
     def add_tool(
-            self,
-            *tools: Tool,
+        self,
+        *tools: Tool,
     ):
         for tool in tools:
             # share hitl handler
@@ -227,8 +227,8 @@ class App(BaseApp):
         return await self._exec(fn_name, args)
 
     async def call(
-            self,
-            tool_calls: List[ChatCompletionMessageToolCall],
+        self,
+        tool_calls: List[ChatCompletionMessageToolCall],
     ) -> List[ChatCompletionToolMessageParam]:
         results: List[ChatCompletionToolMessageParam] = []
 
@@ -269,8 +269,8 @@ class App(BaseApp):
 
         try:
             if args is None:
-                return await tool.fn()
-            return await tool.fn(**args)
+                return str(await tool.fn())
+            return str(await tool.fn(**args))
         except Exception as e:
             logger.error(e)
             return f'Error: {e}'
