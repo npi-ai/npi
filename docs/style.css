@@ -12,3 +12,7 @@ code {
   font-size: 1.25rem;
   margin-top: 2rem;
 }
+
+.required {
+  color: #d73a49;
+}
