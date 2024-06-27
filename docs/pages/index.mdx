@@ -61,9 +61,11 @@ NPi offers two modes for utilizing the tool: function mode and agent mode.
 Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to queries. This integration allows us to enrich the AI's functionality by incorporating custom operations without altering the agent's core logic.
 
 ```python filename="main.py" showLineNumbers {13, 19-20}
+from openai import OpenAI
+
 async def main():
     async with MyApp() as my_app:
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        client = OpenAI()
         messages = [
             {
                 "role": "user",
