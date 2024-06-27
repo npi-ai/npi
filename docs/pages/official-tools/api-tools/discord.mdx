@@ -1,0 +1,171 @@
+import { Steps, Callout } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
+# Discord
+
+The Discord App facilitates communication with Discord channels by providing features that allow you to send or fetch messages.
+
+<Callout type='info'>
+  Please note that the Discord App is designed as a supplementary tool for an
+  exisiting chatbot and does not actively listen for new messages. For effective
+  operation, the app requires explicit identification of the target `user_id`,
+  `channel_id`, and/or `message_id` within your instructions.
+</Callout>
+
+## Setup
+
+<Steps>
+
+    ### Get Discord Access Token
+
+    Follow this guide to create a Discord chatbot and grab your access token: https://discordpy.readthedocs.io/en/stable/discord.html
+
+    ### Authorization
+
+    ```
+    npi auth discord --access-token <discord-access-token>
+    ```
+
+    ### Usage
+
+    <Tabs items={["CLI", "Python"]}>
+        <Tabs.Tab title="CLI">
+            ```sh
+            npi app discord "Get the last 10 messages from the channel with ID {{channel_id}}"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Python">
+            ```python
+            from npiai.app.discord import Discord
+            discord = Discord()
+            discord.chat('Get the last 10 messages from the channel with ID {{channel_id}}')
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Supported Features
+
+### Direct Messaging
+
+- **Description**: Engage in one-on-one conversations by sending direct messages to a user. A new direct message channel will be created if necessary.
+- **In-Context Parameters**[^1]:
+  - Recipient's user ID.
+  - Content of the message.
+
+<h4 className='examples'>Examples</h4>
+
+1. Send a Greeting Message to a User
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app discord "Send a greeting message to XXX (user id: {{user_id}})."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            discord.chat("Send a greeting message to XXX (user id: {{user_id}}).")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Ask for User Confirmation and Await Their Reply
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app discord "Send a direct message to XXX (user id: {{user_id}}) asking them to confirm next Monday's meeting, and wait for their reply."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            discord.chat("Send a direct message to XXX (user id: {{user_id}}) asking them to confirm next Monday's meeting, and wait for their reply.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Message Dispatch
+
+- **Description**: Post messages to a specified Discord channel.
+- **In-Context Parameters**:
+  - Target channel ID.
+  - Content of the message.
+
+<h4 className='examples'>Examples</h4>
+
+1. Broadcast a Message to a Specific Channel
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app discord "Send a greeting message to the channel with ID {{channel_id}}."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            discord.chat("Send a greeting message to the channel with ID {{channel_id}}.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+
+### Message Retrieval
+
+- **Description**: Fetch historic messages from a specified Discord channel.
+- **In-Context Parameters**:
+  - Channel ID where the messages are located.
+  - (_Optional_) Maximum number of messages to retrieve.
+
+<h4 className='examples'>Examples</h4>
+
+1. Fetch Messages from a Channel
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app discord "Get the last 10 messages from the channel with ID {{channel_id}}."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            discord.chat("Get the last 10 messages from the channel with ID {{channel_id}}.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+
+### Message Response
+
+- **Description**: Reply to an existing message within a Discord channel.
+- **In-Context Parameters**:
+  - The channel ID of the message to respond to.
+  - Description to identify the message for a reply. The app will search and match the message according to your input.
+  - (_Optional, Inferred_) Content of the reply message.
+
+<h4 className='examples'>Examples</h4>
+
+1. Reply to a Message in a Channel
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app discord "Reply to the latest message in the channel with ID {{channel_id}}. You can write anything you like."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            discord.chat("Reply to the latest message in the channel with ID {{channel_id}}. You can write anything you like.")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+
+<FeatureRequest />
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.

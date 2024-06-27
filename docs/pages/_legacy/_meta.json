@@ -1,10 +1,12 @@
 {
   "index": "Quick Start",
+  "overview": "Overview",
   "examples": "Examples",
-  "tools-and-functions": "NPi Tools and Functions",
-  "human-in-the-loop": "Human in the Loop",
-  "references": "API References",
-  "official-tools": "Official Tools",
+  "roadmap": "Roadmap",
+  "api-apps": "",
+  "browser-apps": "",
+  "cli": "CLI Reference",
+  "python": "Python SDK Reference",
   "playground": {
     "title": "Playground",
     "type": "page",

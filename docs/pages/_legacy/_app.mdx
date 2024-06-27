@@ -1,0 +1,11 @@
+import '../style.css';
+import PlausibleProvider from 'next-plausible'
+
+export default function MyApp({ Component, pageProps }) {
+  // This default export is required in a new `pages/_app.js` file.
+    return (
+        <PlausibleProvider domain="docs.npi.ai">
+            <Component {...pageProps} />
+        </PlausibleProvider>
+    )
+}

@@ -1,0 +1,260 @@
+import { Steps } from 'nextra/components';
+import { Tabs } from '@components/tabs';
+import { FeatureRequest } from '@components/feature-request';
+
+# Gmail
+
+The Gmail App allows you to streamline your email management tasks.
+
+## Setup
+
+<Steps>
+
+    ### Get Google Workspace OAuth Credentials
+
+    Follow this guide to create a desktop app and download your oauth secret file: https://developers.google.com/workspace/guides/create-credentials#desktop-app
+
+    ### Load Credentials
+
+    ```python
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    def load_google_credentials(token_file: str, scopes: List[str]):
+        creds = None
+        # The file token.json stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists(token_file):
+            creds = Credentials.from_authorized_user_file(token_file, scopes)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    './credentials/google.json', scopes
+                )
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open(token_file, 'w') as token:
+                token.write(creds.to_json())
+
+        return creds
+
+    gmail_creds = load_google_credentials(
+        token_file='path_to_client_secret.json',
+        scopes=['https://mail.google.com/']
+    )
+    ```
+
+    ### Run the Gmail Tool
+
+    <Tabs items={["Function Mode", "Agent Mode"]}>
+        <Tabs.Tab title="Function Mode">
+            ```python
+            from npiai import App
+            from npiai.app import Gmail
+
+            async def main():
+                async with Gmail(gmail_creds) as gmail:
+                    # do something with gmail.tools
+                    print(gmail.tools)
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title="Agent Mode">
+            ```python
+            from npiai import App, agent_wrapper
+            from npiai.app import Gmail
+
+            async def main():
+                async with agent_wrapper(Gmail(gmail_creds)) as agent:
+                    await agent.chat('get latest email in the inbox')
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+</Steps>
+
+## Supported Features
+
+### Sending Emails
+
+- **Description**: Send an email to a recipient
+- **In-Context Parameters**[^1]:
+  - Recipient's email address
+  - (_Optional, Inferred_) Email's subject
+  - (_Optional, Inferred_) Email's body
+  - (_Optional_) CC list
+  - (_Optional_) BCC list
+
+<h4 className='examples'>Examples</h4>
+
+1. Send an Availability Inquiry Email
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send an email to a@a.com asking if they are available this Friday"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Send an email to a@a.com asking if they are available this Friday")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Send an Email with CC
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send a greeting email to a@a.com and CC b@b.com"
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Send a greeting email to a@a.com and CC b@b.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+3. Send an Email and Await a Reply
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Send an email to a@a.com about an upcoming AI meetup and wait for their response. Possible meeting dates: Monday, Tuesday, Wednesday."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat(
+                """
+                Send an email to a@a.com about an upcoming AI meetup and wait for their response.
+                Possible meeting dates: Monday, Tuesday, Wednesday
+                """
+            )
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Fetch Emails
+
+- **Description**: Search for and retrieve emails matching certain criteria.
+- **In-Context Parameters**:
+  - (_Optional, Inferred_) Search query
+  - (_Optional_) Maximum number of messages to return
+
+<h4 className='examples'>Examples</h4>
+
+1. Fetch Latest Unread Emails
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Get the lastest unread emails in the inbox."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Get the lastest unread emails in the inbox")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+2. Retrieve Emails from a Specific Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Get all emails from a@a.com within the last 10 days."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Get all emails from a@a.com within the last 10 days")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Reply to Emails
+
+- **Description**: Respond to an existing email conversation.
+- **In-Context Parameters**:
+  - Target email to reply to (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Reply to the Most Recent Email from a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Reply to the newest email from a@a.com with your thoughts."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Reply to the newest email from a@a.com with your thoughts")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+
+### Add Labels
+
+- **Description**: Assign labels to emails. The labels will be created if they do not exist.
+- **In-Context Parameters**:
+  - Label name(s).
+  - Target emails receiving the label (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Add a Label to Emails From a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Add label 'TEST' to the latest email from a@a.com."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Add label 'TEST' to the latest email from a@a.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+### Remove Labels
+
+- **Description**: Detach labels from selected emails.
+- **In-Context Parameters**:
+  - Label name(s).
+  - Target emails for label removal (identified through a search based on given instructions).
+
+<h4 className='examples'>Examples</h4>
+
+1. Remove a Label From Emails Sent From a Given Sender
+
+    <Tabs items={['CLI', 'Python']}>
+        <Tabs.Tab title='CLI'>
+            ```sh
+            npi app gmail "Remove label 'TEST' from the latest email from a@a.com."
+            ```
+        </Tabs.Tab>
+        <Tabs.Tab title='Python'>
+            ```python
+            gmail.chat("Remove label 'TEST' from the latest email from a@a.com")
+            ```
+        </Tabs.Tab>
+    </Tabs>
+
+<FeatureRequest />
+
+---
+<b><small>Footnotes</small></b>
+
+[^1]: **In-Context Parameters** refer to the special information that you may specify in the instructions. Parameters marked as _Inferred_ could be deduced from the context without needing explicit mention.
