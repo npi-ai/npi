@@ -147,7 +147,7 @@ class App(BaseApp):
             for app in self._sub_tools:
                 await app.start()
 
-    async def server(self):
+    def server(self):
         """Start the server"""
         asyncio.run(self.start())
         if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
@@ -157,16 +157,20 @@ class App(BaseApp):
 
         fapp = FastAPI()
 
+        def convert_camel_to_snake(name: str) -> str:
+            return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
         @fapp.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
         async def root(full_path: str, request: Request):
+            method = convert_camel_to_snake(full_path)
             try:
                 match request.method:
                     case "POST":
                         args = await request.json()
-                        res = await self._exec(full_path, args)
+                        res = await self._exec(method, args)
                     case "GET":
                         args = {k: v for k, v in request.query_params.items()}
-                        res = await self._exec(full_path, args)
+                        res = await self._exec(method, args)
                     case _:
                         return JSONResponse({'error': 'Method not allowed'}, status_code=405)
                 try:
@@ -191,7 +195,7 @@ class App(BaseApp):
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGKILL, signal_handler)
+        # signal.signal(signal.SIGKILL, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)

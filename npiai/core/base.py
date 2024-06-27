@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List
+from pydantic import BaseModel
 
 import yaml
 # from litellm.types.completion import ChatCompletionToolMessageParam
@@ -13,6 +14,10 @@ from openai.types.chat import (
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
 from npiai.core.hitl import HITL
+
+
+class Context(BaseModel):
+    user: str
 
 
 class Tool(ABC):
@@ -45,6 +50,16 @@ class Tool(ABC):
 
     @abstractmethod
     async def end(self):
+        """Stop and dispose the app"""
+        ...
+
+    @abstractmethod
+    async def set(self, ctx: Context, key, value):
+        """Stop and dispose the app"""
+        ...
+
+    @abstractmethod
+    async def get(self, ctx: Context):
         """Stop and dispose the app"""
         ...
 
