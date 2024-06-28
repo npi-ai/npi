@@ -1,10 +1,10 @@
 {
   "index": "Quick Start",
   "examples": "Examples",
-  "tools-and-functions": "NPi Tools and Functions",
-  "human-in-the-loop": "Human in the Loop",
-  "references": "API References",
-  "official-tools": "Official Tools",
+  "core-concepts": "Core Concepts",
+  "how-to": "How To Guides",
+  "references": "SDK References",
+  "official-tools": "Official Tools References",
   "playground": {
     "title": "Playground",
     "type": "page",
