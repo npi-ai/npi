@@ -3,17 +3,15 @@ from abc import ABC, abstractmethod
 from typing import List
 from pydantic import BaseModel
 
+
 import yaml
-# from litellm.types.completion import ChatCompletionToolMessageParam
-# from litellm.types.utils import ChatCompletionMessageToolCall
-from openai.types.chat import (
-    ChatCompletionMessageToolCall,
-    ChatCompletionToolMessageParam,
-)
+from litellm.types.completion import ChatCompletionToolMessageParam
+from litellm.types.utils import ChatCompletionMessageToolCall
 
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
 from npiai.core.hitl import HITL
+from npiai.core.thread import Thread
 
 
 class Context(BaseModel):
@@ -118,5 +116,5 @@ class BaseApp(Tool, ABC):
 
 class BaseAgent(Tool, ABC):
     @abstractmethod
-    async def chat(self, message: str) -> str:
+    async def chat(self, message: str, thread: Thread = None) -> str:
         ...

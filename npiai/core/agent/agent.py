@@ -2,6 +2,7 @@ import os
 import asyncio
 import signal
 import sys
+from abc import ABC
 from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
@@ -17,6 +18,7 @@ from npiai.core.base import BaseAgent
 from npiai.core.hitl import HITL
 from npiai.core.thread import Thread, ThreadMessage
 from npiai.core import callback
+
 
 class Agent(BaseAgent):
     _app: App
@@ -142,7 +144,8 @@ class BrowserAgent(Agent):
 
     async def chat(
             self,
-            message: str
+            message: str,
+            thread: Thread = None,
     ) -> str:
         if not self._app.use_screenshot:
             return await super().chat(message)
