@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from typing import List
 from textwrap import dedent
 
@@ -7,37 +8,28 @@ from googleapiclient.errors import HttpError
 from markdown import markdown
 from simplegmail.message import Message
 
-from google.oauth2.credentials import Credentials
-from oauth2client.client import OAuth2Credentials
-
 from npiai import App, function
-from npiai.app.google.gmail.client import GmailClientWrapper
-
-
-def convert_credentials(google_credentials: Credentials) -> OAuth2Credentials:
-    return OAuth2Credentials(
-        access_token=None,
-        client_id=google_credentials._client_id,
-        client_secret=google_credentials._client_secret,
-        refresh_token=google_credentials._refresh_token,
-        token_expiry=google_credentials.expiry,
-        token_uri=google_credentials._token_uri,
-        user_agent=None
-    )
+from npiai.error import UnauthorizedError
+from .client import GmailClientWrapper
 
 
 class Gmail(App):
     gmail_client: GmailClientWrapper
 
-    def __init__(self, credentials: Credentials):
+    def __init__(self, cred_file: str | None = None):
         super().__init__(
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_prompt='You are a Gmail Agent helping users to manage their emails',
         )
+        if cred_file is None:
+            cred_file = os.environ.get("GOOGLE_CREDENTIAL")
+
+        if cred_file is None:
+            raise UnauthorizedError
 
         self.gmail_client = GmailClientWrapper(
-            _creds=convert_credentials(credentials),
+            creds_file=cred_file,
         )
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:
@@ -123,12 +115,12 @@ class Gmail(App):
 
     @function
     def create_draft(
-        self,
-        to: str,
-        subject: str,
-        message: str = None,
-        cc: List[str] = None,
-        bcc: List[str] = None,
+            self,
+            to: str,
+            subject: str,
+            message: str = None,
+            cc: List[str] = None,
+            bcc: List[str] = None,
     ) -> str:
         """
         Create an email draft.
@@ -154,13 +146,13 @@ class Gmail(App):
 
     @function
     def create_reply_draft(
-        self,
-        to: str,
-        subject: str,
-        recipient_id: str,
-        message: str = None,
-        cc: List[str] = None,
-        bcc: List[str] = None,
+            self,
+            to: str,
+            subject: str,
+            recipient_id: str,
+            message: str = None,
+            cc: List[str] = None,
+            bcc: List[str] = None,
     ):
         """
         Create a draft that replies to the last email retrieved in the previous chat.
@@ -203,13 +195,13 @@ class Gmail(App):
 
     @function
     def reply(
-        self,
-        to: str,
-        subject: str,
-        recipient_id: str,
-        message: str = None,
-        cc: List[str] = None,
-        bcc: List[str] = None,
+            self,
+            to: str,
+            subject: str,
+            recipient_id: str,
+            message: str = None,
+            cc: List[str] = None,
+            bcc: List[str] = None,
     ):
         """
         Reply to the last email retrieved in the previous chat.
@@ -268,12 +260,12 @@ class Gmail(App):
 
     @function
     async def send_email(
-        self,
-        to: str,
-        subject: str,
-        message: str = None,
-        cc: List[str] = None,
-        bcc: List[str] = None,
+            self,
+            to: str,
+            subject: str,
+            message: str = None,
+            cc: List[str] = None,
+            bcc: List[str] = None,
     ):
         """
         Send an email.

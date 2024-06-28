@@ -2,27 +2,35 @@
 
 import datetime
 import json
+import os
 
-from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from oauth2client import file
 
 from npiai import function, App
-
+from npiai.error import UnauthorizedError
 
 # https://developers.google.com/calendar/quickstart/python
 # API Reference: https://developers.google.com/calendar/api/v3/reference
 
 
 class GoogleCalendar(App):
-    def __init__(self, credentials: Credentials):
+    def __init__(self, cred_file: str | None = None):
         super().__init__(
             name='google_calendar',
             description='Manage events on Google Calendar',
-            system_prompt='You are an assistant interacting with Google Calendar API. Your job is the selecting the best function based the tool list.',
+            system_prompt='You are an assistant interacting with Google Calendar API. '
+                          'Your job is the selecting the best function based the tool list.',
         )
+        if cred_file is None:
+            cred_file = os.environ.get("GOOGLE_CREDENTIAL")
 
+        if cred_file is None:
+            raise UnauthorizedError
+
+        store = file.Storage(cred_file)
         self.service = build(
-            'calendar', 'v3', credentials=credentials
+            'calendar', 'v3', credentials=store.get()
         )
 
     @function
