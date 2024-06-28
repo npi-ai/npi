@@ -8,7 +8,6 @@ from litellm.types.completion import ChatCompletionMessageParam
 from fastapi import FastAPI, Request
 
 import uvicorn
-
 from npiai.llm import LLM, OpenAI
 from npiai.utils import logger
 from npiai.types import FunctionRegistration
@@ -16,7 +15,8 @@ from npiai.core.app import App
 from npiai.core.app.browser import BrowserApp
 from npiai.core.base import BaseAgent
 from npiai.core.hitl import HITL
-
+from npiai.core.thread import Thread, ThreadMessage
+from npiai.core import callback
 
 class Agent(BaseAgent):
     _app: App
@@ -85,30 +85,33 @@ class Agent(BaseAgent):
     async def chat(
             self,
             message: str,
+            thread: Thread = None,
     ) -> str:
-        messages: List[ChatCompletionMessageParam] = []
+        if thread is None:
+            thread = Thread('')
 
+        msg = thread.fork(message)
         if self._app.system_prompt:
-            messages.append(
+            msg.append(
                 {
                     'role': 'system',
                     'content': self._app.system_prompt,
                 }
             )
 
-        messages.append(
+        msg.append(
             {
                 'role': 'user',
                 'content': message,
             }
         )
 
-        return await self._call_llm(messages)
+        return await self._call_llm(thread, msg)
 
-    async def _call_llm(self, messages: List[ChatCompletionMessageParam]) -> str:
+    async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
         while True:
             response = await self.llm.completion(
-                messages=messages,
+                messages=message.raw(),
                 tools=self._app.tools,
                 tool_choice='auto',
                 max_tokens=4096,
@@ -116,10 +119,11 @@ class Agent(BaseAgent):
 
             response_message = response.choices[0].message
 
-            messages.append(response_message)
+            message.append(response_message)
 
             if response_message.content:
                 logger.info(response_message.content)
+                await thread.send_msg(callback.Callable(response_message.content))
 
             tool_calls = response_message.get('tool_calls', None)
 
@@ -127,7 +131,7 @@ class Agent(BaseAgent):
                 return response_message.content
 
             results = await self._app.call(tool_calls)
-            messages.extend(results)
+            message.extend(results)
 
 
 class BrowserAgent(Agent):
