@@ -53,12 +53,13 @@ class MyApp(App):
 
 ### Run the Tool
 
-NPi offers two modes for utilizing the tool: function mode and agent mode.
-
+You could use NPi tools in two different ways: `function mode` and `agent mode`. Let's explore both modes.
 
 #### Function Mode: Integration with Existing AI Agents
 
-Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to queries. This integration allows us to enrich the AI's functionality by incorporating custom operations without altering the agent's core logic.
+Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged
+as callable functions that the AI agent can invoke in response to queries. This integration allows developers to enrich
+the AI's functionality by incorporating custom operations without altering the agent's core logic.
 
 ```python filename="main.py" showLineNumbers {15, 21-22}
 from openai import OpenAI
@@ -91,9 +92,12 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### Agent Mode: Direct Tool Execution as an Agent
+#### Agent Mode: Tool Execution as an Agent
 
-Agent mode allows an NPi tool to function as an independent AI agent that can directly take user queries and generate responses. In this mode, the tool will be converted to an agent that receives user input, processes it internally using its defined functions, and returns the result as an output message. This mode simplifies the creation of an AI-powered interface for individual tools without requiring integration with a larger system.
+Agent mode allows an NPi tools to serve as an independent AI agents that can directly take plain queries and generate
+responses. In this mode, the tool will be converted to an agent that receives instructions, processes it internally
+using its defined functions, and returns the result as an output message. This mode simplifies the creation of an
+AI-powered programming interface for domain-specific scenarios. We suggest you use tool with this mode in your Agentic AI applications.
 
 ```python filename="main.py" {1, 4-5}
 from npiai import App, function, agent_wrapper
