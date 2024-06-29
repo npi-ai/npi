@@ -6,7 +6,8 @@ from typing import Literal
 from playwright.async_api import TimeoutError
 from markdownify import MarkdownConverter
 
-from npiai import BrowserApp, function, NavigatorAgent
+from npiai import function
+from npiai.core.app.browser import BrowserApp, NavigatorAgent
 from npiai.utils import logger
 from npiai.error.auth import UnauthorizedError
 

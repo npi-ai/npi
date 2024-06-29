@@ -1,5 +1,5 @@
-from npiai import BrowserApp, function, NavigatorAgent
-from npiai import LLM
+from npiai.core.app.browser import BrowserApp, NavigatorAgent
+from npiai import LLM, function
 
 __SYSTEM_PROMPT__ = """
 You are a general browser-based autonomous agent helping user to finish any task on any webpage. For a given task, you should first go to the appropriate web page, and then pass the task to the navigator to fulfill it.

@@ -137,11 +137,11 @@ class Slack(App):
     @function
     async def reply(self, channel_id: str, thread_id: str, message: str):
         """
-        Reply to a thread in the Slack channel with the given channel ID.
+        Reply to a context in the Slack channel with the given channel ID.
 
         Args:
             channel_id: The ID of the **channel** to reply to.
-            thread_id: The ID of the **thread** to reply to.
+            thread_id: The ID of the **context** to reply to.
             message: The message to reply.
         """
         res = await self.client.chat_postMessage(
@@ -153,7 +153,7 @@ class Slack(App):
         msg = res['message']
 
         logger.debug(
-            f'[{self.name}]: Created reply for thread ID {thread_id}. Reply: (id: {msg["ts"]}) {msg["text"]}'
+            f'[{self.name}]: Created reply for context ID {thread_id}. Reply: (id: {msg["ts"]}) {msg["text"]}'
         )
 
         return f'Created reply for message ID {msg.id}. Reply ID: {msg["ts"]}'
@@ -161,11 +161,11 @@ class Slack(App):
     @function
     async def wait_for_reply(self, channel_id: str, thread_id: str):
         """
-        Wait for a reply to the given thread in the Slack channel with the given channel ID.
+        Wait for a reply to the given context in the Slack channel with the given channel ID.
 
         Args:
             channel_id: The ID of the **channel** to wait for.
-            thread_id: The ID of the **thread** to wait for.
+            thread_id: The ID of the **context** to wait for.
         """
         last_ts = thread_id
 
@@ -180,7 +180,7 @@ class Slack(App):
                 messages = self._get_messages_from_response(thread_res)[1:]
 
                 logger.debug(
-                    f'[{self.name}]: Found {len(messages)} thread replies: {json.dumps(messages, indent=2, ensure_ascii=False)}'
+                    f'[{self.name}]: Found {len(messages)} context replies: {json.dumps(messages, indent=2, ensure_ascii=False)}'
                 )
 
                 return json.dumps(messages, ensure_ascii=False)

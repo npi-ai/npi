@@ -1,5 +1,4 @@
 import asyncio
-import json
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
@@ -7,7 +6,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 
 from npiai import agent_wrapper
-from npiai.core.thread import ThreadManager, Thread
+from playground.context import ContextManager, Context
 from npiai.app import Gmail, GoogleCalendar, GitHub, Twilio, Slack, Discord
 from npiai.browser_app import Twitter, Browser
 from npiai.utils import logger
@@ -20,10 +19,10 @@ from playground.proto import (
 
 
 class Chat(pbgrpc.PlaygroundServicer):
-    thread_manager: ThreadManager
+    thread_manager: ContextManager
 
     def __init__(self):
-        self.thread_manager = ThreadManager()
+        self.thread_manager = ContextManager()
 
     @staticmethod
     def get_app(app_type: pb.AppType):
@@ -93,7 +92,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         thread = self.thread_manager.get_thread(request.thread_id)
 
         if not thread:
-            logger.error(f"thread not found {request.thread_id}")
+            logger.error(f"context not found {request.thread_id}")
             resp = pb.GetAppScreenResponse()
             resp.code = pb.ResponseCode.FAILED
             return resp
@@ -104,7 +103,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         logger.info(f"fetching chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)
         if not thread:
-            logger.error("thread not found")
+            logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED
             return
 
@@ -143,7 +142,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         logger.info(f"received action chat [{req.thread_id}]")
         thread = self.thread_manager.get_thread(req.thread_id)
         if not thread:
-            logger.error("thread not found")
+            logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED
             return
 
@@ -155,7 +154,7 @@ class Chat(pbgrpc.PlaygroundServicer):
             return
         cb.callback(result=req.action_result_request)
 
-    async def run(self, thread: Thread):
+    async def run(self, thread: Context):
         app = None
         try:
             app = self.get_app(thread.app_type)

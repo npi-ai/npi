@@ -441,7 +441,7 @@ class GmailClientWrapper(Gmail):
 
     def add_labels(self, message: Message, labels: List[Label]):
         """
-        Add labels to a message's thread
+        Add labels to a message's context
 
         Args:
             message: The message to add labels to
@@ -465,7 +465,7 @@ class GmailClientWrapper(Gmail):
 
     def remove_labels(self, message: Message, labels: List[Label]):
         """
-        Remove labels from a message's thread
+        Remove labels from a message's context
 
         Args:
             message: The message to remove labels from

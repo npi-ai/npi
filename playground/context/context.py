@@ -1,14 +1,14 @@
-"""This module contains the classes for the thread and thread message"""
+"""This module contains the classes for the context and context message"""
 import datetime
 import uuid
 import json
 import asyncio
-from typing import List, Union, TYPE_CHECKING, Optional
+from typing import List, Union
 
 from litellm.types.completion import (
     ChatCompletionMessageParam,
 )
-from npiai.core import callback
+from playground import callback
 
 
 # if TYPE_CHECKING:
@@ -16,7 +16,7 @@ from npiai.core import callback
 
 
 class ThreadMessage:
-    """the message wrapper of a message in the thread"""
+    """the message wrapper of a message in the context"""
     thread_id: str
     agent_id: str
     task: str
@@ -34,7 +34,7 @@ class ThreadMessage:
         self.messages = []
 
     def append(self, msg: Union[ChatCompletionMessageParam]) -> None:
-        """add a message to the thread"""
+        """add a message to the context"""
         self.messages.append(msg)
 
     def set_result(self, result: str) -> None:
@@ -49,7 +49,7 @@ class ThreadMessage:
         self.messages.extend(result)
 
     def plaintext(self) -> str:
-        """convert the thread message to plain text"""
+        """convert the context message to plain text"""
         msgs = {
             "task": self.task,
             "response": self.response,
@@ -80,7 +80,7 @@ class ThreadMessage:
         return json.dumps(msgs)
 
 
-class Thread:
+class Context:
     """the abstraction of chat context """
     __active_app: Union['App', None] = None
     __last_screenshot: str | None = None
@@ -122,7 +122,7 @@ class Thread:
         return screenshot
 
     async def send_msg(self, cb: callback.Callable) -> None:
-        """send a message to the thread"""
+        """send a message to the context"""
         self.cb_dict[cb.id()] = cb
         await self.q.put(cb)
 
@@ -164,11 +164,11 @@ class Thread:
         return self.__failed_msg
 
     def retrieve(self, msg: str) -> str:
-        """retrieve the message from the thread"""
+        """retrieve the message from the context"""
         return msg
 
     def append(self, msg: ThreadMessage) -> None:
-        """add a message to the thread"""
+        """add a message to the context"""
         self.history.append(msg)
 
     def fork(self, task: str) -> ThreadMessage:
@@ -181,7 +181,7 @@ class Thread:
         return tm
 
     def plaintext(self) -> str:
-        """convert the thread to plain text"""
+        """convert the context to plain text"""
         msgs = []
         for msg in self.history:
             if isinstance(msg, ThreadMessage):

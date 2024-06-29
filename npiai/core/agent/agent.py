@@ -2,7 +2,6 @@ import os
 import asyncio
 import signal
 import sys
-from abc import ABC
 from typing import List, overload
 
 from litellm.types.completion import ChatCompletionMessageParam
@@ -16,8 +15,8 @@ from npiai.core.app import App
 from npiai.core.app.browser import BrowserApp
 from npiai.core.base import BaseAgent
 from npiai.core.hitl import HITL
-from npiai.core.thread import Thread, ThreadMessage
-from npiai.core import callback
+from playground.context import Context, ThreadMessage
+from playground import callback
 
 
 class Agent(BaseAgent):
@@ -87,10 +86,10 @@ class Agent(BaseAgent):
     async def chat(
             self,
             message: str,
-            thread: Thread = None,
+            thread: Context = None,
     ) -> str:
         if thread is None:
-            thread = Thread('')
+            thread = Context('')
 
         msg = thread.fork(message)
         if self._app.system_prompt:
@@ -110,7 +109,7 @@ class Agent(BaseAgent):
 
         return await self._call_llm(thread, msg)
 
-    async def _call_llm(self, thread: Thread, message: ThreadMessage) -> str:
+    async def _call_llm(self, thread: Context, message: ThreadMessage) -> str:
         while True:
             response = await self.llm.completion(
                 messages=message.raw(),
@@ -145,7 +144,7 @@ class BrowserAgent(Agent):
     async def chat(
             self,
             message: str,
-            thread: Thread = None,
+            thread: Context = None,
     ) -> str:
         if not self._app.use_screenshot:
             return await super().chat(message)
