@@ -90,10 +90,10 @@ npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
 Easily star and fork the NPi Repository using:
 
 ```sh
-npi app github "what's the first PR of npi-ai/npi, include the access url, and output with json format"
+npi tools github "what's the first PR of npi-ai/npi, include the access url, and output with json format"
 
 # if you like npi, star us for support
-npi app github "star npi-ai/npi"
+npi tools github "star npi-ai/npi"
 ```
 
 #### Clean up

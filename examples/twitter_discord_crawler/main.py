@@ -1,10 +1,10 @@
 import asyncio
 import os
 
-from npiai import App, agent_wrapper
+from npiai import FunctionTool, agent_wrapper
 from npiai.hitl_handler import ConsoleHandler
-from npiai.app import Discord
-from npiai.browser_app import Twitter
+from npiai.tools import Discord
+from npiai.tools.browser import Twitter
 from npiai import OpenAI
 
 PROMPT = """
@@ -15,20 +15,20 @@ The tools you can use are: Twitter, Discord, and Console Feedback.
 
 Here are some rules for you to fulfill the task:
 
-1. The Twitter tool is a browser-based agent that can simulate human interactions on twitter. You should pass a detailed subtask to it.
+1. The Twitter tool is a chrome-based agent that can simulate human interactions on twitter. You should pass a detailed subtask to it.
 2. If the discord channel ID is not provided, you should ask the user for it.
 3. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Console Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
 
 ## Example
 Task: Get the last tweet from @npi_ai and send it to Discord.
 Steps:
-1. Chat with the twitter app: "Get the last tweet from @npi_ai"
+1. Chat with the twitter tools: "Get the last tweet from @npi_ai"
 2. Ask human for additional information: "Which channel would you like to send the message to? Please specify the channel ID."
-3. Chat with the discord app: "Send the message {{message}} to channel with ID: {{channel_id}}."
+3. Chat with the discord tools: "Send the message {{message}} to channel with ID: {{channel_id}}."
 """
 
 
-class TwitterDiscordCrawler(App):
+class TwitterDiscordCrawler(FunctionTool):
     def __init__(self):
         super().__init__(
             name='twitter_crawler',

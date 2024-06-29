@@ -1,6 +1,6 @@
 import os
 
-from npiai.app import GitHub
+from npiai.tools import GitHub
 
 os.environ.setdefault("NPIAI_TOOL_SERVER_MODE", "true")
 

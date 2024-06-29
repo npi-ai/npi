@@ -7,10 +7,9 @@ from typing import Dict
 import grpc
 from google.protobuf.empty_pb2 import Empty
 
-from npiai import agent_wrapper, Agent
-from playground.context import ContextManager, Context
-from npiai.app import Gmail, GoogleCalendar, GitHub, Twilio, Slack, Discord
-from npiai.browser_app import Twitter, Browser
+from npiai import agent_wrapper, AgentTool
+from npiai.context import ContextManager, Context
+from npiai.tools.browser import Browser
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
 
@@ -25,7 +24,7 @@ class Chat(pbgrpc.PlaygroundServicer):
 
     def __init__(self):
         self.ctx_manager = ContextManager()
-        self.agent_container: Dict[pb.AppType, Agent] = {}
+        self.agent_container: Dict[pb.AppType, AgentTool] = {}
 
     async def start(self):
         # self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())

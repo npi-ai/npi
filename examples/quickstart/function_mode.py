@@ -3,17 +3,17 @@ import os
 
 from openai import OpenAI
 
-from npiai import App, function
-from npiai.app import Gmail
+from npiai import FunctionTool, function
+from npiai.tools import Gmail
 from npiai.hitl_handler import ConsoleHandler
 from examples.utils import load_gmail_credentials
 
 
-class MyApp(App):
+class MyApp(FunctionTool):
     def __init__(self):
         super().__init__(
             name='my_app',
-            description='test app',
+            description='test tools',
         )
 
         self.use_hitl(ConsoleHandler())
@@ -43,9 +43,9 @@ class MyApp(App):
 
 async def main():
     # alternative:
-    # app = MyApp()
-    # app.add(Gmail(credentials=load_gmail_credentials()))
-    # async with app:
+    # tools = MyApp()
+    # tools.add(Gmail(credentials=load_gmail_credentials()))
+    # async with tools:
     async with MyApp() as my_app:
         # export yaml schema
         my_app.export('.cache/function.yml')
