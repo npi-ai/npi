@@ -18,7 +18,6 @@ from playground import callback
 class ThreadMessage:
     """the message wrapper of a message in the context"""
     thread_id: str
-    agent_id: str
     task: str
     msg_id: str
     response: str
@@ -26,8 +25,7 @@ class ThreadMessage:
     metadata: dict
     born_at: datetime.date  # RFC3339
 
-    def __init__(self, agent_id: str, thread_id: str, task: str) -> None:
-        self.agent_id = agent_id
+    def __init__(self, thread_id: str, task: str) -> None:
         self.thread_id = thread_id
         self.task = task
         self.born_at = datetime.datetime.now()
@@ -174,7 +172,7 @@ class Context:
     def fork(self, task: str) -> ThreadMessage:
         """fork a child message, typically when call a new tools"""
         tm = ThreadMessage(
-            agent_id=self.agent_id,
+            # agent_id=self.agent_id,
             thread_id=self.id, task=task
         )
         self.history.append(tm)

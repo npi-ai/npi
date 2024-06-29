@@ -1,4 +1,5 @@
 import asyncio
+import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
@@ -26,18 +27,18 @@ class Chat(pbgrpc.PlaygroundServicer):
         self.ctx_manager = ContextManager()
         self.agent_container: Dict[pb.AppType, Agent] = {}
 
-    def start(self):
-        self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
-        self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
-        self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
-        self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
-        self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
+    async def start(self):
+        # self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
+        # self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
+        # self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
+        # self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
+        # self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
         self.agent_container[pb.WEB_BROWSER] = agent_wrapper(Browser())
-        self.agent_container[pb.TWILIO] = agent_wrapper(Twilio())
-        self.agent_container[pb.SLACK] = agent_wrapper(Slack())
+        # self.agent_container[pb.TWILIO] = agent_wrapper(Twilio())
+        # self.agent_container[pb.SLACK] = agent_wrapper(Slack())
 
         for app in self.agent_container.values():
-            app.start()
+            await app.start()
 
     def shutdown(self):
         for app in self.agent_container.values():
@@ -178,7 +179,8 @@ _cleanup_coroutines = []
 async def serve(address: str) -> None:
     server = grpc.aio.server(ThreadPoolExecutor())
     srv = Chat()
-    srv.start()
+    await srv.start()
+
     pbgrpc.add_PlaygroundServicer_to_server(srv, server)
     server.add_insecure_port(address)
     logger.info(f"Server serving at {address}")
@@ -198,12 +200,23 @@ async def serve(address: str) -> None:
     await server.wait_for_termination()
 
 
+async def cleanup():
+    if _cleanup_coroutines:
+        logger.info("Cleaning up...")
+        # Gather and run all cleanup coroutines
+        await asyncio.gather(*[coro() for coro in _cleanup_coroutines])
+
+
 def main():
     try:
         asyncio.run(serve("[::]:9140"))
+    # except Exception as e:
+    #     logger.error(f"Failed to start the server: {e}")
     finally:
-        asyncio.run(*_cleanup_coroutines)
+        if _cleanup_coroutines:
+            asyncio.run(cleanup())
 
 
 if __name__ == "__main__":
+    os.environ.setdefault("GOOGLE_CREDENTIAL", "credentials/google.json")
     main()

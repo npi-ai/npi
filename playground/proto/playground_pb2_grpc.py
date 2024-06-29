@@ -16,17 +16,17 @@ class PlaygroundStub(object):
             channel: A grpc.Channel.
         """
         self.Chat = channel.unary_unary(
-                '/npi.core.api.Playground/Chat',
+                '/npi.playground.api.Playground/Chat',
                 request_serializer=playground__pb2.Request.SerializeToString,
                 response_deserializer=playground__pb2.Response.FromString,
                 )
         self.GetAppScreen = channel.unary_unary(
-                '/npi.core.api.Playground/GetAppScreen',
+                '/npi.playground.api.Playground/GetAppScreen',
                 request_serializer=playground__pb2.GetAppScreenRequest.SerializeToString,
                 response_deserializer=playground__pb2.GetAppScreenResponse.FromString,
                 )
         self.Ping = channel.unary_unary(
-                '/npi.core.api.Playground/Ping',
+                '/npi.playground.api.Playground/Ping',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
@@ -73,7 +73,7 @@ def add_PlaygroundServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'npi.core.api.Playground', rpc_method_handlers)
+            'npi.playground.api.Playground', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -92,7 +92,7 @@ class Playground(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/npi.core.api.Playground/Chat',
+        return grpc.experimental.unary_unary(request, target, '/npi.playground.api.Playground/Chat',
             playground__pb2.Request.SerializeToString,
             playground__pb2.Response.FromString,
             options, channel_credentials,
@@ -109,7 +109,7 @@ class Playground(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/npi.core.api.Playground/GetAppScreen',
+        return grpc.experimental.unary_unary(request, target, '/npi.playground.api.Playground/GetAppScreen',
             playground__pb2.GetAppScreenRequest.SerializeToString,
             playground__pb2.GetAppScreenResponse.FromString,
             options, channel_credentials,
@@ -126,7 +126,7 @@ class Playground(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/npi.core.api.Playground/Ping',
+        return grpc.experimental.unary_unary(request, target, '/npi.playground.api.Playground/Ping',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,

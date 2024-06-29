@@ -27,14 +27,6 @@ func init() {
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		cmdCfg := loadCfg()
 		cfg.merge(rootCmd.PersistentFlags(), *cmdCfg)
-		err := checkUpdate()
-		if err != nil {
-			color.Yellow("failed to check updating: %v ", err)
-			return
-		}
-		if cmd.Name() == "connect" || cmd.Name() == "version" {
-			return
-		}
 	}
 	rootCmd.PersistentFlags().StringVar(&cfg.NPIServer, "endpoint", "127.0.0.1:9140", "the endpoint of NPi server")
 	rootCmd.PersistentFlags().StringVar(&cfg.APIKey, "api-key", "", "the api access key for NPi server")

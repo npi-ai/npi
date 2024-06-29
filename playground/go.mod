@@ -1,13 +1,13 @@
 module github.com/npi-ai/playground
 
-go 1.21.6
+go 1.22.4
 
 require (
 	github.com/fatih/color v1.17.0
-	github.com/go-resty/resty/v2 v2.13.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/spf13/cobra v1.8.1
+	github.com/spf13/pflag v1.0.5
 	go.uber.org/mock v0.4.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240624140628-dc46fd24d27d
 	google.golang.org/grpc v1.64.0
@@ -21,7 +21,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect

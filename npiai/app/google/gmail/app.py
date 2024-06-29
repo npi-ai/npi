@@ -26,7 +26,7 @@ class Gmail(App):
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
 
         if cred_file is None:
-            raise UnauthorizedError
+            raise UnauthorizedError("Google credential file not found")
 
         self.gmail_client = GmailClientWrapper(
             creds_file=cred_file,

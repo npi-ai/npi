@@ -18,8 +18,8 @@ import (
 
 func appCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "app",
-		Short: "the applications NPi supported",
+		Use:   "chat",
+		Short: "chat with NPi Playground",
 	}
 	cmd.AddGroup()
 	cmd.AddCommand(
@@ -84,7 +84,6 @@ func twitterCommand() *cobra.Command {
 func discordCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "discord",
-		Aliases: []string{"gcal"},
 		Short:   "chat with Discord",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_DISCORD, args[0])

@@ -2,7 +2,8 @@ from npiai.core.app.browser import BrowserApp, NavigatorAgent
 from npiai import LLM, function
 
 __SYSTEM_PROMPT__ = """
-You are a general browser-based autonomous agent helping user to finish any task on any webpage. For a given task, you should first go to the appropriate web page, and then pass the task to the navigator to fulfill it.
+You are a general browser-based autonomous agent helping user to finish any task on any webpage. For a given task,
+ you should first go to the appropriate web page, and then pass the task to the navigator to fulfill it.
 """
 
 
@@ -15,7 +16,7 @@ class Browser(BrowserApp):
             headless=headless,
         )
 
-        self.add(
+        self.add_tool(
             NavigatorAgent(
                 llm=navigator_llm,
                 playwright=self.playwright,
