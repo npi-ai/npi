@@ -2,11 +2,11 @@
 // source: playground.proto
 
 /*
-Package server is a reverse proxy.
+Package playground is a reverse proxy.
 
 It translates gRPC into RESTful JSON APIs.
 */
-package server
+package playground
 
 import (
 	"context"
@@ -168,7 +168,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.core.api.Playground/Chat", runtime.WithHTTPPathPattern("/apps/chat"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/chat"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -193,7 +193,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.core.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/apps/getAppScreen/{thread_id}/{type}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}/{type}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -218,7 +218,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.core.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -282,7 +282,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.core.api.Playground/Chat", runtime.WithHTTPPathPattern("/apps/chat"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/chat"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -304,7 +304,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.core.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/apps/getAppScreen/{thread_id}/{type}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}/{type}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -326,7 +326,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.core.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -346,9 +346,9 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_Playground_Chat_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"apps", "chat"}, ""))
+	pattern_Playground_Chat_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chat"}, ""))
 
-	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"apps", "getAppScreen", "thread_id", "type"}, ""))
+	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2}, []string{"getAppScreen", "thread_id", "type"}, ""))
 
 	pattern_Playground_Ping_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ping"}, ""))
 )

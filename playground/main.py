@@ -1,11 +1,12 @@
 import asyncio
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from typing import Dict
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 
-from npiai import agent_wrapper
+from npiai import agent_wrapper, Agent
 from playground.context import ContextManager, Context
 from npiai.app import Gmail, GoogleCalendar, GitHub, Twilio, Slack, Discord
 from npiai.browser_app import Twitter, Browser
@@ -19,32 +20,28 @@ from playground.proto import (
 
 
 class Chat(pbgrpc.PlaygroundServicer):
-    thread_manager: ContextManager
+    ctx_manager: ContextManager
 
     def __init__(self):
-        self.thread_manager = ContextManager()
+        self.ctx_manager = ContextManager()
+        self.agent_container: Dict[pb.AppType, Agent] = {}
 
-    @staticmethod
-    def get_app(app_type: pb.AppType):
-        match app_type:
-            case pb.GOOGLE_GMAIL:
-                return Gmail()
-            case pb.GOOGLE_CALENDAR:
-                return GoogleCalendar()
-            case pb.TWITTER:
-                return Twitter()
-            case pb.DISCORD:
-                return Discord()
-            case pb.GITHUB:
-                return GitHub()
-            case pb.WEB_BROWSER:
-                return Browser()
-            case pb.TWILIO:
-                return Twilio()
-            case pb.SLACK:
-                return Slack()
-            case _:
-                raise Exception("unsupported application")
+    def start(self):
+        self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
+        self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
+        self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
+        self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
+        self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
+        self.agent_container[pb.WEB_BROWSER] = agent_wrapper(Browser())
+        self.agent_container[pb.TWILIO] = agent_wrapper(Twilio())
+        self.agent_container[pb.SLACK] = agent_wrapper(Slack())
+
+        for app in self.agent_container.values():
+            app.start()
+
+    def shutdown(self):
+        for app in self.agent_container.values():
+            app.end()
 
     async def Chat(
             self,
@@ -55,11 +52,11 @@ class Chat(pbgrpc.PlaygroundServicer):
         response = pb.Response()
         if request.code == pb.RequestCode.CHAT:
             try:
-                thread = self.thread_manager.new_thread(request.chat_request)
-                response.thread_id = thread.id
+                ctx = self.ctx_manager.new_thread(request.chat_request)
+                response.thread_id = ctx.id
                 response.code = pb.ResponseCode.SUCCESS
                 # ignore task result
-                _ = asyncio.create_task(self.run(thread))
+                _ = asyncio.create_task(self.run(request.chat_request.type, ctx))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -89,19 +86,18 @@ class Chat(pbgrpc.PlaygroundServicer):
             request: pb.GetAppScreenRequest,
             _: grpc.ServicerContext,
     ) -> pb.GetAppScreenResponse:
-        thread = self.thread_manager.get_thread(request.thread_id)
+        thread = self.ctx_manager.get_thread(request.thread_id)
 
         if not thread:
             logger.error(f"context not found {request.thread_id}")
             resp = pb.GetAppScreenResponse()
-            resp.code = pb.ResponseCode.FAILED
             return resp
 
         return pb.GetAppScreenResponse(base64=await thread.refresh_screenshot())
 
     async def __fetch_thread(self, req: pb.Request, resp: pb.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
-        thread = self.thread_manager.get_thread(req.thread_id)
+        thread = self.ctx_manager.get_thread(req.thread_id)
         if not thread:
             logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED
@@ -110,11 +106,11 @@ class Chat(pbgrpc.PlaygroundServicer):
         if thread.is_finished():
             resp.code = pb.ResponseCode.FINISHED
             resp.chat_response.message = thread.get_result()
-            self.thread_manager.release(req.thread_id)
+            self.ctx_manager.release(req.thread_id)
         elif thread.is_failed():
             resp.code = pb.ResponseCode.FAILED
             resp.chat_response.message = thread.get_failed_msg()
-            self.thread_manager.release(req.thread_id)
+            self.ctx_manager.release(req.thread_id)
         else:
             resp.code = pb.ResponseCode.MESSAGE
             cb = await thread.fetch_msg()
@@ -122,11 +118,11 @@ class Chat(pbgrpc.PlaygroundServicer):
                 if thread.is_finished():
                     resp.code = pb.ResponseCode.FINISHED
                     resp.chat_response.message = thread.get_result()
-                    self.thread_manager.release(req.thread_id)
+                    self.ctx_manager.release(req.thread_id)
                 elif thread.is_failed():
                     resp.code = pb.ResponseCode.FAILED
                     resp.chat_response.message = thread.get_failed_msg()
-                    self.thread_manager.release(req.thread_id)
+                    self.ctx_manager.release(req.thread_id)
                 else:
                     resp.code = pb.ResponseCode.FAILED
                     resp.chat_response.message = "error in fetching message"
@@ -140,7 +136,7 @@ class Chat(pbgrpc.PlaygroundServicer):
 
     async def __action(self, req: pb.Request, resp: pb.Response):
         logger.info(f"received action chat [{req.thread_id}]")
-        thread = self.thread_manager.get_thread(req.thread_id)
+        thread = self.ctx_manager.get_thread(req.thread_id)
         if not thread:
             logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED
@@ -154,13 +150,15 @@ class Chat(pbgrpc.PlaygroundServicer):
             return
         cb.callback(result=req.action_result_request)
 
-    async def run(self, thread: Context):
+    async def run(self, app_type: pb.AppType, thread: Context):
         app = None
         try:
-            app = self.get_app(thread.app_type)
+
+            if app_type not in self.agent_container:
+                raise ValueError(f"App {app_type} not found")
+
+            agent = self.agent_container[app_type]
             thread.set_active_app(app)
-            await app.start()
-            agent = agent_wrapper(app)
             result = await agent.chat(thread.instruction, thread)
             thread.finish(result)
         except UnauthorizedError as e:
@@ -171,9 +169,6 @@ class Chat(pbgrpc.PlaygroundServicer):
             thread.failed(str(e))
             # raise e
         finally:
-            if app is not None:
-                # clean up
-                await app.end()
             thread.set_active_app(None)
 
 
@@ -182,7 +177,9 @@ _cleanup_coroutines = []
 
 async def serve(address: str) -> None:
     server = grpc.aio.server(ThreadPoolExecutor())
-    pbgrpc.add_PlaygroundServicer_to_server(Chat(), server)
+    srv = Chat()
+    srv.start()
+    pbgrpc.add_PlaygroundServicer_to_server(srv, server)
     server.add_insecure_port(address)
     logger.info(f"Server serving at {address}")
     await server.start()
@@ -191,6 +188,7 @@ async def serve(address: str) -> None:
 
     async def server_graceful_shutdown():
         logger.info("Starting graceful shutdown...")
+        srv.shutdown()
         # Shuts down the server with 5 seconds of grace period. During the
         # grace period, the server won't accept new connections and allow
         # existing RPCs to continue within the grace period.

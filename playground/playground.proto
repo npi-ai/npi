@@ -1,23 +1,23 @@
 syntax = "proto3";
 
-package npi.core.api;
+package npi.playground.api;
 
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 
-option go_package = "github.com/npi-ai/npi/server";
+option go_package = "github.com/npi-ai/playground";
 
 service Playground {
   rpc Chat(Request) returns (Response) {
     option (google.api.http) = {
-      post: "/apps/chat"
+      post: "/chat"
       body: "*"
     };
   };
 
   rpc GetAppScreen(GetAppScreenRequest) returns (GetAppScreenResponse) {
     option (google.api.http) = {
-      get: "/apps/getAppScreen/{thread_id}/{type}"
+      get: "/getAppScreen/{thread_id}/{type}"
     };
   };
 
