@@ -2,8 +2,8 @@
 import asyncio
 import os
 
-from npiai import App, agent_wrapper
-from npiai.app import Gmail, GoogleCalendar
+from npiai import FunctionTool, agent_wrapper
+from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
 from npiai import OpenAI
 
@@ -50,7 +50,7 @@ Steps:
 """
 
 
-class Negotiator(App):
+class Negotiator(FunctionTool):
     def __init__(self):
         super().__init__(
             name='calendar_negotiator',

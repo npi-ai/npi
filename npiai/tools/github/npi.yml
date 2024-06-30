@@ -1,0 +1,15 @@
+main: tools.py
+class: GitHub
+env:
+  - name: GITHUB_ACCESS_TOKEN
+    value: 'YOUR_GITHUB_ACCESS_TOKEN'
+    secret: true
+dependencies:
+  - name: python
+    version: "^3.10"
+  - name: npiai
+    version: "^0.1.2"
+  - name: openai
+    version: "^1.30.3"
+  - name: pygithub
+    version: "^2.3.0"
