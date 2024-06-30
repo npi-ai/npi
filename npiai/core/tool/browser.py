@@ -42,7 +42,6 @@ class BrowserTool(FunctionTool):
         )
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
-        print(f"browser {id(self)}, name: {self.name}, id: {id(self.playwright)}")
 
     @function
     async def get_text(self):

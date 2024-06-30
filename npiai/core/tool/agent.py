@@ -148,7 +148,7 @@ class BrowserAgentTool(AgentTool):
     async def chat(
             self,
             message: str,
-            thread: Context = None,
+            ctx: Context = None,
     ) -> str:
         if not self._tool.use_screenshot:
             return await super().chat(message)
@@ -158,7 +158,7 @@ class BrowserAgentTool(AgentTool):
         if not screenshot:
             return await super().chat(message)
 
-        msg = thread.fork(message)
+        msg = ctx.fork(message)
         if self._tool.system_prompt:
             msg.append(
                 {
@@ -185,7 +185,7 @@ class BrowserAgentTool(AgentTool):
             }
         )
 
-        return await self._call_llm(thread, msg)
+        return await self._call_llm(ctx, msg)
 
 
 @overload
