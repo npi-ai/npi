@@ -31,8 +31,13 @@ class AgentTool(BaseAgentTool):
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
+
+        def chat(message: str):
+            # TODO: pass thread down
+            return self.chat(message)
+
         fn_reg = FunctionRegistration(
-            fn=self.chat,
+            fn=chat,
             name='chat',
             description=self._tool.description,
             schema={
