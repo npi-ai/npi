@@ -167,6 +167,7 @@ class NavigatorAgent(BrowserAgentTool):
             llm=llm,
         )
 
+        print(f"navigator, {id(self)}, {id(self._browser_app)}, pl ctx: {id(self._browser_app.playwright)}")
         self.max_steps = max_steps
 
     # navigator uses shared playwright context, so we don't need to start it again here
@@ -177,6 +178,7 @@ class NavigatorAgent(BrowserAgentTool):
         pass
 
     async def generate_user_prompt(self, task: str, history: List[Response]):
+        print(f"generate_user_prompt, navi: {id(self)}, browser: {id(self._browser_app)}, pl: {id(self._browser_app.playwright)}")
         await self._browser_app.clear_bboxes()
         raw_screenshot = await self._browser_app.get_screenshot()
         elements, added_ids = await self._browser_app.get_interactive_elements(raw_screenshot)

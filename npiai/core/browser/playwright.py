@@ -35,7 +35,6 @@ class PlaywrightContext:
         Args:
             headless: Whether to run playwright in headless mode
         """
-        self.id = uuid.uuid4()
         self.headless = headless
         self.ready = False
         self.playwright: Playwright | None = None

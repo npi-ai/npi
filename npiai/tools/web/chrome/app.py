@@ -15,7 +15,6 @@ class Chrome(BrowserTool):
             system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
-
         self.add_tool(
             NavigatorAgent(
                 llm=navigator_llm,

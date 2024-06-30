@@ -139,8 +139,8 @@ class FunctionTool(BaseFunctionTool):
         """Start the tools"""
         if not self._started:
             self._started = True
-            for app in self._sub_tools:
-                await app.start()
+            for tool in self._sub_tools:
+                await tool.start()
 
     def server(self):
         """Start the server"""
