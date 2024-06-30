@@ -18,7 +18,7 @@ from pydantic import Field, create_model
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from litellm.types.completion import ChatCompletionToolMessageParam
-from litellm.types.utils import ChatCompletionMessageToolCall
+from litellm.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
 from npiai.core.base import BaseTool, BaseFunctionTool
