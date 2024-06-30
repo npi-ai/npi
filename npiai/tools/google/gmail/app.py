@@ -12,24 +12,46 @@ from npiai import FunctionTool, function
 from npiai.error import UnauthorizedError
 from .client import GmailClientWrapper
 
+from google.oauth2.credentials import Credentials as GoogleCredentials
+from oauth2client.client import OAuth2Credentials
+
+from datetime import datetime
+
+
+def convert_google_cred_to_oauth2_cred(google_credentials: GoogleCredentials) -> OAuth2Credentials:
+    # Convert expiry datetime to string if necessary
+    expiry = google_credentials.expiry.isoformat() if google_credentials.expiry else None
+
+    # Create an instance of OAuth2Credentials
+    return OAuth2Credentials(
+        access_token=google_credentials.token,
+        client_id=google_credentials.client_id,
+        client_secret=google_credentials.client_secret,
+        refresh_token=google_credentials.refresh_token,
+        token_expiry=google_credentials.expiry,
+        token_uri=google_credentials.token_uri,
+        user_agent=None,  # or any user agent you have
+        scopes=google_credentials.scopes
+    )
+
 
 class Gmail(FunctionTool):
     gmail_client: GmailClientWrapper
 
-    def __init__(self, cred_file: str | None = None):
+    def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__(
             name='gmail',
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_prompt='You are a Gmail Agent helping users to manage their emails',
         )
-        if cred_file is None:
+        if creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
-
-        if cred_file is None:
-            raise UnauthorizedError("Google credential file not found")
+            if cred_file is None:
+                raise UnauthorizedError("Google credential file not found")
+            creds = GoogleCredentials.from_authorized_user_file(cred_file, "https://mail.google.com/")
 
         self.gmail_client = GmailClientWrapper(
-            creds_file=cred_file,
+            _creds=convert_google_cred_to_oauth2_cred(creds)
         )
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:

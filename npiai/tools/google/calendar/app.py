@@ -5,7 +5,7 @@ import json
 import os
 
 from googleapiclient.discovery import build
-from oauth2client import file
+from google.oauth2.credentials import Credentials as GoogleCredentials
 
 from npiai import function, FunctionTool
 from npiai.error import UnauthorizedError
@@ -15,22 +15,21 @@ from npiai.error import UnauthorizedError
 
 
 class GoogleCalendar(FunctionTool):
-    def __init__(self, cred_file: str | None = None):
+    def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__(
             name='google_calendar',
             description='Manage events on Google Calendar',
             system_prompt='You are an assistant interacting with Google Calendar API. '
                           'Your job is the selecting the best function based the tool list.',
         )
-        if cred_file is None:
+        if creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
+            if cred_file is None:
+                raise UnauthorizedError("Google credential file not found")
+            creds = GoogleCredentials.from_authorized_user_file(cred_file, "'https://www.googleapis.com/auth/calendar")
 
-        if cred_file is None:
-            raise UnauthorizedError
-
-        store = file.Storage(cred_file)
         self.service = build(
-            'calendar', 'v3', credentials=store.get()
+            'calendar', 'v3', credentials=creds
         )
 
     @function

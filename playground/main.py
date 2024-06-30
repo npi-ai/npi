@@ -9,7 +9,7 @@ from google.protobuf.empty_pb2 import Empty
 
 from npiai import agent_wrapper, AgentTool
 from npiai.context import ContextManager, Context
-from npiai.tools import GitHub
+from npiai.tools import GitHub, Gmail, GoogleCalendar
 from npiai.tools.web import Chrome
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
@@ -28,8 +28,8 @@ class Chat(pbgrpc.PlaygroundServicer):
         self.agent_container: Dict[pb.AppType, AgentTool] = {}
 
     async def start(self):
-        # self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
-        # self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
+        self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
+        self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
         # self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
         # self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
         self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
@@ -217,6 +217,9 @@ def main():
             asyncio.run(cleanup())
 
 
+from dotenv import load_dotenv
+
 if __name__ == "__main__":
-    os.environ.setdefault("GOOGLE_CREDENTIAL", "credentials/google.json")
+    dotenv_path = os.path.join(os.path.dirname(__file__), 'credentials/.env')
+    load_dotenv(dotenv_path)
     main()
