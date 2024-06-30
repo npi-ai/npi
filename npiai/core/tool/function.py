@@ -1,5 +1,6 @@
 """The basic interface for NPi Apps"""
 import asyncio
+import dataclasses
 import functools
 import inspect
 import json
@@ -214,10 +215,7 @@ class FunctionTool(BaseFunctionTool):
             self._sub_tools.append(tool)
 
             for fn_reg in tool.unpack_functions():
-                data = asdict(fn_reg)
-                data['name'] = f'{tool.name}_{fn_reg.name}'
-                scoped_fn_reg = FunctionRegistration(**data)
-
+                scoped_fn_reg = dataclasses.replace(fn_reg, name=f'{tool.name}_{fn_reg.name}')
                 self._add_function(scoped_fn_reg)
 
     async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
