@@ -4,7 +4,7 @@ import os
 from npiai import FunctionTool, agent_wrapper
 from npiai.hitl_handler import ConsoleHandler
 from npiai.tools import Discord
-from npiai.tools.browser import Twitter
+from npiai.tools.web import Twitter
 from npiai import OpenAI
 
 PROMPT = """

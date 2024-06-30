@@ -11,21 +11,17 @@ from dataclasses import asdict
 from typing import Dict, List, Optional, Any
 import logging
 
+import yaml
 import uvicorn
 from fastapi import HTTPException
 from pydantic import Field, create_model
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from litellm.types.completion import ChatCompletionToolMessageParam
+from litellm.types.utils import ChatCompletionMessageToolCall
+from openai.types.chat import ChatCompletionToolParam
 
-import yaml
-# TODO: use llmlite typings
-from openai.types.chat import (
-    ChatCompletionToolParam,
-    ChatCompletionMessageToolCall,
-    ChatCompletionToolMessageParam,
-)
-
-from npiai.core.base import BaseTool
+from npiai.core.base import BaseTool, BaseFunctionTool
 from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
@@ -80,7 +76,7 @@ def function(
     return decorator
 
 
-class FunctionTool(BaseTool):
+class FunctionTool(BaseFunctionTool):
     """The basic interface for the natural language programming interface"""
 
     name: str

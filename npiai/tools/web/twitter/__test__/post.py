@@ -1,6 +1,6 @@
 import asyncio
 from npiai import agent_wrapper
-from npiai.tools.browser import Twitter
+from npiai.tools.web import Twitter
 
 
 async def main():

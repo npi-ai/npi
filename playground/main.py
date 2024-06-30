@@ -9,7 +9,8 @@ from google.protobuf.empty_pb2 import Empty
 
 from npiai import agent_wrapper, AgentTool
 from npiai.context import ContextManager, Context
-from npiai.tools.browser import Browser
+from npiai.tools import GitHub
+from npiai.tools.web import Chrome
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
 
@@ -31,8 +32,8 @@ class Chat(pbgrpc.PlaygroundServicer):
         # self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
         # self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
         # self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
-        # self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
-        self.agent_container[pb.WEB_BROWSER] = agent_wrapper(Browser())
+        self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
+        self.agent_container[pb.WEB_BROWSER] = agent_wrapper(Chrome())
         # self.agent_container[pb.TWILIO] = agent_wrapper(Twilio())
         # self.agent_container[pb.SLACK] = agent_wrapper(Slack())
 

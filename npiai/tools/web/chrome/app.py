@@ -7,7 +7,7 @@ You are a general chrome-based autonomous agent helping user to finish any task 
 """
 
 
-class Browser(BrowserTool):
+class Chrome(BrowserTool):
     def __init__(self, navigator_llm: LLM = None, headless: bool = True):
         super().__init__(
             name='chrome',

@@ -13,13 +13,13 @@ from npiai.utils import logger
 from npiai.types import FunctionRegistration
 from npiai.context import Context, ThreadMessage
 from npiai.core import callback
-from npiai.core.base import BaseTool
+from npiai.core.base import BaseAgentTool
 from npiai.core.hitl import HITL
 from npiai.core.tool.function import FunctionTool
 from npiai.core.tool.browser import BrowserTool
 
 
-class AgentTool(BaseTool):
+class AgentTool(BaseAgentTool):
 
     def __init__(self, tool: FunctionTool, llm: LLM = None):
         self.name = f'{tool.name}_agent'
@@ -122,7 +122,7 @@ class AgentTool(BaseTool):
             message.append(response_message)
 
             if response_message.content:
-                logger.info(response_message.content)
+                # logger.info(response_message.content)
                 await thread.send_msg(callback.Callable(response_message.content))
 
             tool_calls = response_message.get('tool_calls', None)
@@ -153,17 +153,16 @@ class BrowserAgentTool(AgentTool):
         if not screenshot:
             return await super().chat(message)
 
-        messages: List[ChatCompletionMessageParam] = []
-
+        msg = thread.fork(message)
         if self._tool.system_prompt:
-            messages.append(
+            msg.append(
                 {
                     'role': 'system',
                     'content': self._tool.system_prompt,
                 }
             )
 
-        messages.append(
+        msg.append(
             {
                 'role': 'user',
                 'content': [
@@ -181,7 +180,7 @@ class BrowserAgentTool(AgentTool):
             }
         )
 
-        return await self._call_llm(thread, messages)
+        return await self._call_llm(thread, msg)
 
 
 @overload

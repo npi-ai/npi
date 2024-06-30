@@ -7,6 +7,7 @@ import yaml
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
 from npiai.core.hitl import HITL
+from npiai.context import Context
 
 
 class BaseTool(ABC):
@@ -86,3 +87,22 @@ class BaseTool(ABC):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.end()
+
+
+class BaseFunctionTool(BaseTool, ABC):
+    @abstractmethod
+    async def call(
+        self,
+        tool_calls: List[ChatCompletionMessageToolCall],
+    ) -> List[ChatCompletionToolMessageParam]:
+        ...
+
+
+class BaseAgentTool(BaseTool, ABC):
+    @abstractmethod
+    async def chat(
+            self,
+            message: str,
+            thread: Context = None,
+    ) -> str:
+        ...
