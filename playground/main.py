@@ -16,7 +16,7 @@ from npiai.error import UnauthorizedError
 
 from playground.proto import (
     playground_pb2 as pb,
-    playground_pb2_grpc as pbgrpc
+    playground_pb2_grpc as pbgrpc,
 )
 
 
@@ -40,9 +40,9 @@ class Chat(pbgrpc.PlaygroundServicer):
         for app in self.agent_container.values():
             await app.start()
 
-    def shutdown(self):
+    async def shutdown(self):
         for app in self.agent_container.values():
-            app.end()
+            await app.end()
 
     async def Chat(
             self,
@@ -190,7 +190,7 @@ async def serve(address: str) -> None:
 
     async def server_graceful_shutdown():
         logger.info("Starting graceful shutdown...")
-        srv.shutdown()
+        await srv.shutdown()
         # Shuts down the server with 5 seconds of grace period. During the
         # grace period, the server won't accept new connections and allow
         # existing RPCs to continue within the grace period.
