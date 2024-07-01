@@ -1,3 +1,11 @@
+:root {
+  --shiki-token-comment: rgb(0 0 0 / 0.5);
+}
+
+.dark {
+  --shiki-token-comment: rgb(255 255 255 / 0.5);
+}
+
 ul ul {
   margin-top: 0 !important;
 }

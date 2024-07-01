@@ -1,13 +1,145 @@
-import { Todo } from '@components/todo';
-
-<Todo />
-
 ## Introduction
+
+At the core of NPi are the concepts of **Functions** and **Tools**, which enable users to streamline and automate complex tasks across diverse platforms. A **Function** is the basic building block within NPi, designed to execute a specific, defined task - such as sending an email, parsing a document, or querying a database. A **Tool**, on the other hand, is a higher-order construct that encompasses a collection of Functions targeted towards a particular application domain.
+
+## NPi Functions
+
+Functions within NPi are the atomic operations to perform specific tasks. It is the most granular level at which automation can be designed and executed. In NPi, all Functions are annotated with the `@function` decorator, which automatically parses the function signature and registers it with the corrsponding NPi Tool. For example, the following code snippet demonstrates a simple Function that adds two numbers:
+
+```python {10-19}
+from npi import function, FunctionTool
+
+class MathTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='math',
+            description='Perform mathematical operations',
+        )
+
+    @function
+    def add(self, a: int, b: int) -> int:
+        """
+        Adds two numbers
+
+        Args:
+            a: First number
+            b: Second number
+        """
+        return a + b
+```
 
 ## NPi Tools
 
-### API Tools
+NPi provides two distinct offerings to facilitate interaction with software and web-based applications - Function Tools and Browser Tools. The API Tools use third-party provided SDKs, while Browser Tools operate by navigating through web interfaces.
+
+### Function Tools
+
+Function Tools are built to interact directly with third-party software applications via their APIs. They may leverage the APIs provided by external services, such as Google Calendar or GitHub, to perform a variety of tasks. In NPi, Function Tools are implemented as classes that inherit from the `FunctionTool` base class. Each Function Tool contains a collection of Functions that are annotated with the `@function` decorator. Here's an example of a Function Tool interfacing with the Google Calendar API:
+
+```python
+from npi import function, FunctionTool
+
+class CalendarTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='calendar',
+            description='Interact with Google Calendar API',
+        )
+
+    @function
+    def create_event(self, summary: str, start: str, end: str) -> str:
+        """
+        Creates a new event in Google Calendar
+
+        Args:
+            summary: Event summary
+            start: Event start time
+            end: Event end time
+        """
+        # Code to interact with Google Calendar API
+        return "Event created successfully"
+```
 
 ### Browser Tools
 
-## NPi Functions
+Browser Tools emulate user actions in web-based applications via a headless browser powered by [Playwright](https://playwright.dev/python/). These Tools are not dependent on the availability of a structured API. Similar to Function Tools, Browser Tools are implemented as classes derived from `BrowserTool`, with Functions annotated with `@function`.
+
+NPi provides a special Browser Tool called `NavigatorAgent` that can interact with an arbitary web page by simulating user actions, such as navigating across web pages, filling forms, clicking buttons, and scraping web content. Below is a simplified Browser Tool using the `NavigatorAgent`:
+
+```python {11-16}
+from npiai import function, BrowserTool
+from npiai.core import NavigatorAgent
+
+
+class WebBrowser(BrowserTool):
+    def __init__(self):
+        super().__init__(
+            name='web-browser',
+            description='Perform any task on any webpage',
+        )
+        self.add_tool(
+            NavigatorAgent(
+                llm=navigator_llm,
+                playwright=self.playwright,
+            )
+        )
+
+    @function
+    async def goto(self, url: str):
+        """
+        Open the given URL in the browser
+
+        Args:
+            url: The URL to open
+        """
+        await self.playwright.page.goto(url)
+        return f'Opened {await self.get_page_url()}, page title: {await self.get_page_title()}'
+```
+
+## Frequently Asked Questions
+
+<details>
+  <summary>
+    **Can I use normal methods within a Tool class?**
+  </summary>
+
+  Yes, you can use normal methods within a Tool class. Only methods annotated with the `@function` decorator will be registered and exposed to LLMs. For example, the following code snippet demonstrates a Tool class with a normal method `_cached_add`:
+
+  ```python {23-27}
+  from npi import function, FunctionTool
+
+  class MathTool(FunctionTool):
+      def __init__(self):
+          super().__init__(
+              name='math',
+              description='Perform mathematical operations',
+          )
+
+          self._caches = {}
+
+      @function
+      def add(self, a: int, b: int) -> int:
+          """
+          Adds two numbers
+
+          Args:
+              a: First number
+              b: Second number
+          """
+          return self._cached_add(a, b)
+
+      def _cached_add(a: int, b: int) -> int:
+          key = (a, b)
+          if key not in self._caches:
+              self._caches[key] = a + b
+          return self._caches[key]
+  ```
+</details>
+
+<details>
+  <summary>
+    **Is it mandatory to provided a docstring for each Function?**
+  </summary>
+
+  Yes, providing a docstring for each Function is mandatory. The docstring should describe the purpose of the Function and the arguments it accepts in Google-style format. This is essential for generating the schema for the Tool and its Functions and for communicating with LLMs. We will discuss the details in the [Create a New Tool](/how-to/new-tool) section.
+</details>
