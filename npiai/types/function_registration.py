@@ -13,6 +13,7 @@ class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
+    ctx_param_name: str
     schema: Optional[Dict[str, Any]] = None
     few_shots: Optional[List[Shot]] = None
 

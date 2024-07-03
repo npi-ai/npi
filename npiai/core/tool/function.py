@@ -249,7 +249,11 @@ class FunctionTool(BaseFunctionTool):
             logger.info(call_msg)
             await ctx.send_msg(callback.Callable(call_msg))
 
-            res = await self._exec(fn_name, args)
+            try:
+                res = await self._exec(ctx, fn_name, args)
+            except Exception as e:
+                logger.error(e)
+                await ctx.send_msg(callback.Callable(f'Exception while executing {fn_name}: {e}'))
 
             logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
@@ -263,7 +267,7 @@ class FunctionTool(BaseFunctionTool):
 
         return results
 
-    async def _exec(self, fn_name: str, args: Dict[str, Any] = None) -> str:
+    async def _exec(self, ctx: Context, fn_name: str, args: Dict[str, Any] = None) -> str:
         if fn_name not in self._fn_map:
             raise RuntimeError(
                 f'[{self.name}]: function `{fn_name}` not found. Available functions: {self._fn_map.keys()}'
@@ -271,13 +275,16 @@ class FunctionTool(BaseFunctionTool):
 
         tool = self._fn_map[fn_name]
 
-        try:
+        # add context param
+        if tool.ctx_param_name is not None:
             if args is None:
-                return str(await tool.fn())
-            return str(await tool.fn(**args))
-        except Exception as e:
-            logger.error(e)
-            return f'Error: {e}'
+                args = {tool.ctx_param_name: ctx}
+            else:
+                args[tool.ctx_param_name] = ctx
+
+        if args is None:
+            return str(await tool.fn())
+        return str(await tool.fn(**args))
 
     def _register_tools(self):
         """
@@ -301,6 +308,7 @@ class FunctionTool(BaseFunctionTool):
 
             # parse schema
             tool_schema = tool_meta.schema
+            ctx_param_name = None
 
             if not tool_schema and len(params) > 0:
                 # get parameter descriptions
@@ -311,6 +319,9 @@ class FunctionTool(BaseFunctionTool):
                 # get parameter field definitions
                 param_fields = {}
                 for p in params:
+                    if p.annotation is Context:
+                        ctx_param_name = p.name
+                        continue
                     param_fields[p.name] = (p.annotation, Field(
                         default=p.default if p.default is not inspect.Parameter.empty else ...,
                         description=param_descriptions.get(p.name, ''),
@@ -345,6 +356,7 @@ class FunctionTool(BaseFunctionTool):
                     # wrap fn in an async wrapper
                     fn=to_async_fn(fn),
                     name=tool_name,
+                    ctx_param_name=ctx_param_name,
                     description=tool_desc.strip(),
                     schema=tool_schema,
                     few_shots=tool_few_shots,
