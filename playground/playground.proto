@@ -10,20 +10,20 @@ option go_package = "github.com/npi-ai/playground";
 service Playground {
   rpc Chat(Request) returns (Response) {
     option (google.api.http) = {
-      post: "/chat"
+      post: "/playground/chat"
       body: "*"
     };
   };
 
   rpc GetAppScreen(GetAppScreenRequest) returns (GetAppScreenResponse) {
     option (google.api.http) = {
-      get: "/getAppScreen/{thread_id}"
+      get: "/playground/getAppScreen/{thread_id}"
     };
   };
 
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      get: "/ping"
+      get: "/playground/ping"
     };
   };
 }

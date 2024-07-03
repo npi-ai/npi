@@ -160,7 +160,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/chat"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/playground/chat"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -185,7 +185,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/playground/getAppScreen/{thread_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -210,7 +210,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/playground/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -274,7 +274,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/chat"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Chat", runtime.WithHTTPPathPattern("/playground/chat"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -296,7 +296,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/playground/getAppScreen/{thread_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -318,7 +318,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/ping"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/Ping", runtime.WithHTTPPathPattern("/playground/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -338,11 +338,11 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_Playground_Chat_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chat"}, ""))
+	pattern_Playground_Chat_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"playground", "chat"}, ""))
 
-	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"getAppScreen", "thread_id"}, ""))
+	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"playground", "getAppScreen", "thread_id"}, ""))
 
-	pattern_Playground_Ping_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ping"}, ""))
+	pattern_Playground_Ping_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"playground", "ping"}, ""))
 )
 
 var (

@@ -16,7 +16,7 @@
     "application/json"
   ],
   "paths": {
-    "/chat": {
+    "/playground/chat": {
       "post": {
         "operationId": "Playground_Chat",
         "responses": {
@@ -48,7 +48,7 @@
         ]
       }
     },
-    "/getAppScreen/{threadId}": {
+    "/playground/getAppScreen/{threadId}": {
       "get": {
         "operationId": "Playground_GetAppScreen",
         "responses": {
@@ -96,7 +96,7 @@
         ]
       }
     },
-    "/ping": {
+    "/playground/ping": {
       "get": {
         "operationId": "Playground_Ping",
         "responses": {
