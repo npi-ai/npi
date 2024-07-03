@@ -96,6 +96,7 @@ class BaseFunctionTool(BaseTool, ABC):
     async def call(
             self,
             tool_calls: List[ChatCompletionMessageToolCall],
+            ctx: Context = None,
     ) -> List[ChatCompletionToolMessageParam]:
         ...
 

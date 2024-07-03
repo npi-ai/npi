@@ -26,6 +26,8 @@ from npiai.core.base import BaseTool, BaseFunctionTool
 from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
+from npiai.context import Context
+from npiai.core import callback
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
@@ -226,7 +228,11 @@ class FunctionTool(BaseFunctionTool):
     async def call(
             self,
             tool_calls: List[ChatCompletionMessageToolCall],
+            ctx: Context = None,
     ) -> List[ChatCompletionToolMessageParam]:
+        if ctx is None:
+            ctx = Context('')
+
         results: List[ChatCompletionToolMessageParam] = []
 
         for call in tool_calls:
@@ -241,6 +247,7 @@ class FunctionTool(BaseFunctionTool):
                 call_msg += '()'
 
             logger.info(call_msg)
+            await ctx.send_msg(callback.Callable(call_msg))
 
             res = await self._exec(fn_name, args)
 

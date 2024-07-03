@@ -135,7 +135,7 @@ class AgentTool(BaseAgentTool):
             if tool_calls is None:
                 return response_message.content
 
-            results = await self._tool.call(tool_calls)
+            results = await self._tool.call(tool_calls, thread)
             message.extend(results)
 
 
@@ -151,12 +151,12 @@ class BrowserAgentTool(AgentTool):
             ctx: Context = None,
     ) -> str:
         if not self._tool.use_screenshot:
-            return await super().chat(message)
+            return await super().chat(message, ctx)
 
         screenshot = await self._tool.get_screenshot()
 
         if not screenshot:
-            return await super().chat(message)
+            return await super().chat(message, ctx)
 
         msg = ctx.fork(message)
         if self._tool.system_prompt:

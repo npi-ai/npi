@@ -10,6 +10,7 @@ from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
 
+from npiai.core import callback
 from npiai.llm import LLM
 from npiai.utils import logger
 from npiai.context import Context, ThreadMessage
@@ -149,10 +150,10 @@ def _parse_response(response: str) -> Union[Response, None]:
 class NavigatorAgent(BrowserAgentTool):
 
     def __init__(
-        self,
-        llm: LLM,
-        playwright: PlaywrightContext,
-        max_steps: int = 42,
+            self,
+            llm: LLM,
+            playwright: PlaywrightContext,
+            max_steps: int = 42,
     ):
         self._browser_app = BrowserTool(
             name='navigator',
@@ -234,10 +235,12 @@ class NavigatorAgent(BrowserAgentTool):
                 ctx = Context("")
             msg = ctx.fork(message)
 
-            msg.append({
-                'role': 'system',
-                'content': self._browser_app.system_prompt,
-            })
+            msg.append(
+                {
+                    'role': 'system',
+                    'content': self._browser_app.system_prompt,
+                }
+            )
             msg.append(await self.generate_user_prompt(message, history))
 
             response_str = await self._call_llm(ctx, msg)
@@ -247,7 +250,7 @@ class NavigatorAgent(BrowserAgentTool):
                 # try again if the response can't be parsed correctly
                 continue
 
-            result, elem_json = await self._run_action(response['action'])
+            result, elem_json = await self._run_action(response['action'], ctx)
             logger.info(result)
 
             if not result:
@@ -289,7 +292,7 @@ class NavigatorAgent(BrowserAgentTool):
 
         return response_message.content
 
-    async def _run_action(self, action: Action) -> Tuple[Union[str, None], dict]:
+    async def _run_action(self, action: Action, ctx: Context) -> Tuple[Union[str, None], dict]:
         """
         Run the given action
 
@@ -309,6 +312,7 @@ class NavigatorAgent(BrowserAgentTool):
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
         logger.info(call_msg)
+        await ctx.send_msg(callback.Callable(call_msg))
 
         match action['type']:
             case 'click':
