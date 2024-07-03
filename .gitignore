@@ -3,7 +3,7 @@
 **/__pycache__
 .VSCodeCounter
 .vscode
-.env
+**/.env
 .DS_Store
 
 credentials.json

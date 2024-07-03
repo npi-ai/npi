@@ -24,7 +24,7 @@ def print_tool_spec():
 
 async def main():
     # Add the directory containing the file to sys.path
-    module_dir, module_name = os.path.split('app.py')
+    module_dir, module_name = os.path.split('tools.py')
     module_name = os.path.splitext(module_name)[0]  # Remove the .py extension
 
     if module_dir not in sys.path:

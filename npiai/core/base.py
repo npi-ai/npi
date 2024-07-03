@@ -1,30 +1,24 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List
-from pydantic import BaseModel
 
 import yaml
-# from litellm.types.completion import ChatCompletionToolMessageParam
-# from litellm.types.utils import ChatCompletionMessageToolCall
-from openai.types.chat import (
-    ChatCompletionMessageToolCall,
-    ChatCompletionToolMessageParam,
-)
+from litellm.types.completion import ChatCompletionToolMessageParam
+from litellm.types.utils import ChatCompletionMessageToolCall
 
 from npiai.types import FunctionRegistration
 from npiai.utils import logger
 from npiai.core.hitl import HITL
+from npiai.context import Context
 
 
-class Context(BaseModel):
-    user: str
+class BaseTool(ABC):
 
-
-class Tool(ABC):
-    name: str
-    description: str
-    provider: str
-    _hitl: HITL | None = None
+    def __init__(self, name: str, description: str, provider: str = 'npiai'):
+        self.name = name
+        self.description = description
+        self.provider = provider
+        self._hitl: HITL | None = None
 
     @property
     def hitl(self) -> HITL:
@@ -35,32 +29,22 @@ class Tool(ABC):
 
     @abstractmethod
     def unpack_functions(self) -> List[FunctionRegistration]:
-        """Export the functions registered in the app"""
+        """Export the functions registered in the tools"""
         ...
 
     @abstractmethod
     def server(self):
-        """Start the app"""
+        """Start the tools"""
         ...
 
     @abstractmethod
     async def start(self):
-        """Start the app"""
+        """Start the tools"""
         ...
 
     @abstractmethod
     async def end(self):
-        """Stop and dispose the app"""
-        ...
-
-    @abstractmethod
-    async def set(self, ctx: Context, key, value):
-        """Stop and dispose the app"""
-        ...
-
-    @abstractmethod
-    async def get(self, ctx: Context):
-        """Stop and dispose the app"""
+        """Stop and dispose the tools"""
         ...
 
     def use_hitl(self, hitl: HITL):
@@ -107,16 +91,21 @@ class Tool(ABC):
         await self.end()
 
 
-class BaseApp(Tool, ABC):
+class BaseFunctionTool(BaseTool, ABC):
     @abstractmethod
     async def call(
-        self,
-        tool_calls: List[ChatCompletionMessageToolCall],
+            self,
+            tool_calls: List[ChatCompletionMessageToolCall],
+            ctx: Context = None,
     ) -> List[ChatCompletionToolMessageParam]:
         ...
 
 
-class BaseAgent(Tool, ABC):
+class BaseAgentTool(BaseTool, ABC):
     @abstractmethod
-    async def chat(self, message: str) -> str:
+    async def chat(
+            self,
+            message: str,
+            thread: Context = None,
+    ) -> str:
         ...

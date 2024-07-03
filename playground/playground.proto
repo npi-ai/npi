@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package npi.playground.api;
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/npi-ai/playground";
+
+service Playground {
+  rpc Chat(Request) returns (Response) {
+    option (google.api.http) = {
+      post: "/chat"
+      body: "*"
+    };
+  };
+
+  rpc GetAppScreen(GetAppScreenRequest) returns (GetAppScreenResponse) {
+    option (google.api.http) = {
+      get: "/getAppScreen/{thread_id}"
+    };
+  };
+
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/ping"
+    };
+  };
+}
+
+enum RequestCode {
+  REQUEST_UNKNOWN = 0;
+  CHAT = 1;
+  FETCH = 2;
+  ACTION_RESULT = 3;
+}
+
+message Request {
+    RequestCode code = 1;
+    string request_id = 2;
+    string thread_id = 3;
+    oneof request {
+        ChatRequest chat_request = 10;
+        ActionResultRequest action_result_request = 12;
+        google.protobuf.Empty empty = 99;
+    }
+}
+
+enum AppType {
+  APP_UNKNOWN = 0;
+  GOOGLE_GMAIL = 1;
+  GOOGLE_CALENDAR = 2;
+  GITHUB = 3;
+  SLACK = 4;
+  DISCORD = 5;
+  TWITTER = 6;
+  WEB_BROWSER = 7;
+  TWILIO = 8;
+}
+
+message AppSchemaRequest {
+  AppType type = 1;
+}
+
+message AppSchemaResponse {
+  string schema = 1;
+  string description = 2;
+}
+
+message ChatRequest {
+  AppType type = 1;
+  string instruction = 2;
+}
+
+message ActionResultRequest {
+  string action_id = 1;
+  string action_result = 2;
+}
+
+message AuthorizeRequest {
+  AppType type = 1;
+  map<string, string> credentials = 2;
+}
+
+message AuthorizeResponse {
+  map<string, string> result = 1;
+}
+
+enum ResponseCode {
+  RESPONSE_UNKNOWN = 0;
+  SUCCESS = 1;
+  FAILED = 2;
+  MESSAGE = 3;
+  ACTION_REQUIRED = 4;
+  FINISHED = 5;
+}
+
+message Response {
+    ResponseCode code = 1;
+    string request_id = 2;
+    string thread_id = 3;
+    oneof response {
+        ChatResponse chat_response = 10;
+        ActionRequiredResponse action_response = 11;
+        google.protobuf.Empty empty = 99;
+    }
+}
+
+message ChatResponse {
+  string message = 1;
+}
+
+enum ActionType {
+    UNKNOWN_ACTION = 0;
+    INFORMATION = 1;
+    SINGLE_SELECTION = 2;
+    MULTIPLE_SELECTION = 3;
+    CONFIRMATION = 4;
+}
+
+message ActionRequiredResponse {
+  ActionType type = 1;
+  string action_id = 2;
+  string message = 3;
+  repeated string options = 4;
+}
+
+
+message GetAppScreenRequest {
+  string thread_id = 1;
+  AppType type = 2;
+}
+
+message GetAppScreenResponse {
+  string base64 = 1;
+}
