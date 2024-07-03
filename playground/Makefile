@@ -9,12 +9,12 @@ generate-py:
  		 --grpc_python_out=${NPI_PROTO_ROOT}/proto playground.proto
 
 generate-http:
-	mkdir -p ${NPI_PROTO_ROOT}/http
+	mkdir -p ${NPI_PROTO_ROOT}/go
 	protoc -I=${NPI_PROTO_ROOT}/include -I=${NPI_PROTO_ROOT} \
 		  --grpc-gateway_opt paths=source_relative \
 		  --grpc-gateway_opt generate_unbound_methods=true \
-		  --grpc-gateway_out ${NPI_PROTO_ROOT}/http \
-		  --openapiv2_out ${NPI_PROTO_ROOT}/http playground.proto
+		  --grpc-gateway_out ${NPI_PROTO_ROOT}/go \
+		  --openapiv2_out ${NPI_PROTO_ROOT}/go playground.proto
 
 generate-go:
 	mkdir -p ${NPI_PROTO_ROOT}/go

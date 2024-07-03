@@ -58,13 +58,16 @@ func local_request_Playground_Chat_0(ctx context.Context, marshaler runtime.Mars
 
 }
 
+var (
+	filter_Playground_GetAppScreen_0 = &utilities.DoubleArray{Encoding: map[string]int{"thread_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_Playground_GetAppScreen_0(ctx context.Context, marshaler runtime.Marshaler, client PlaygroundClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetAppScreenRequest
 	var metadata runtime.ServerMetadata
 
 	var (
 		val string
-		e   int32
 		ok  bool
 		err error
 		_   = err
@@ -80,17 +83,12 @@ func request_Playground_GetAppScreen_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "thread_id", err)
 	}
 
-	val, ok = pathParams["type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "type")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	e, err = runtime.Enum(val, AppType_value)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "type", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Playground_GetAppScreen_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.Type = AppType(e)
 
 	msg, err := client.GetAppScreen(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -103,7 +101,6 @@ func local_request_Playground_GetAppScreen_0(ctx context.Context, marshaler runt
 
 	var (
 		val string
-		e   int32
 		ok  bool
 		err error
 		_   = err
@@ -119,17 +116,12 @@ func local_request_Playground_GetAppScreen_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "thread_id", err)
 	}
 
-	val, ok = pathParams["type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "type")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	e, err = runtime.Enum(val, AppType_value)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "type", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Playground_GetAppScreen_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.Type = AppType(e)
 
 	msg, err := server.GetAppScreen(ctx, &protoReq)
 	return msg, metadata, err
@@ -193,7 +185,7 @@ func RegisterPlaygroundHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}/{type}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -304,7 +296,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}/{type}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/npi.playground.api.Playground/GetAppScreen", runtime.WithHTTPPathPattern("/getAppScreen/{thread_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -348,7 +340,7 @@ func RegisterPlaygroundHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 var (
 	pattern_Playground_Chat_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chat"}, ""))
 
-	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2}, []string{"getAppScreen", "thread_id", "type"}, ""))
+	pattern_Playground_GetAppScreen_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"getAppScreen", "thread_id"}, ""))
 
 	pattern_Playground_Ping_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ping"}, ""))
 )

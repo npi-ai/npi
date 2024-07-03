@@ -48,7 +48,7 @@
         ]
       }
     },
-    "/getAppScreen/{threadId}/{type}": {
+    "/getAppScreen/{threadId}": {
       "get": {
         "operationId": "Playground_GetAppScreen",
         "responses": {
@@ -74,8 +74,8 @@
           },
           {
             "name": "type",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "required": false,
             "type": "string",
             "enum": [
               "APP_UNKNOWN",
@@ -87,7 +87,8 @@
               "TWITTER",
               "WEB_BROWSER",
               "TWILIO"
-            ]
+            ],
+            "default": "APP_UNKNOWN"
           }
         ],
         "tags": [
