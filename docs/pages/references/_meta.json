@@ -1,0 +1,6 @@
+{
+  "function-tool": "FunctionTool",
+  "browser-tool": "BrowserTool",
+  "agent": "Agent",
+  "function-decorator": "@function decorator"
+}
