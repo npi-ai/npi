@@ -60,6 +60,13 @@ class BrowserTool(FunctionTool):
         await super().end()
         await self.playwright.stop()
 
+    async def goto_blank(self):
+        """
+        Go to about:blank page
+        This can be used as a cleanup function when a session finishes
+        """
+        await self.playwright.page.goto('about:blank')
+
     async def get_screenshot(self) -> str | None:
         """Get the screenshot of the current page"""
         if not self.playwright or not self.playwright.ready or self.playwright.page.url == 'about:blank':

@@ -149,6 +149,9 @@ class BrowserAgentTool(AgentTool):
     async def get_screenshot(self) -> str | None:
         return await self._tool.get_screenshot()
 
+    async def goto_blank(self):
+        await self._tool.goto_blank()
+
     async def chat(
             self,
             message: str,

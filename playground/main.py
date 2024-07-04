@@ -7,7 +7,7 @@ from typing import Dict
 import grpc
 from google.protobuf.empty_pb2 import Empty
 
-from npiai import agent_wrapper, AgentTool
+from npiai import agent_wrapper, AgentTool, BrowserAgentTool
 from npiai.context import ContextManager, Context
 from npiai.tools import GitHub, Gmail, GoogleCalendar
 from npiai.tools.web import Chrome
@@ -152,6 +152,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         cb.callback(result=req.action_result_request)
 
     async def run(self, app_type: pb.AppType, thread: Context):
+        agent = None
         try:
             if app_type not in self.agent_container:
                 raise ValueError(f"App {app_type} not found")
@@ -168,6 +169,9 @@ class Chat(pbgrpc.PlaygroundServicer):
             # raise e
         finally:
             thread.set_active_app(None)
+            if isinstance(agent, BrowserAgentTool):
+                # release current session
+                await agent.goto_blank()
 
 
 _cleanup_coroutines = []
