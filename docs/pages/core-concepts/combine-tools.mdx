@@ -1,0 +1,114 @@
+## Combining Tools
+
+NPi tools can be combined to create more complex tools.
+
+### Combining Tools in Function Mode
+
+When adding a sub-tool to a tool in function mode, the sub-tool's functions are automatically unpacked and added to the parent tool. This allows the parent tool to call the sub-tool's functions as if they were its own, and the parent tool is responsible for the invocation of all functions. (If you wrap the parent tool into an agent, the agent will handle all the reasoning and planning processes.)
+
+The Python code snippet below demonstrates how to combine two tools in function mode. In this case, the sub-tool's `add` function is directly added to the parent tool and is visible as `my_sub_tool__add`.
+
+```python filename="function_mode.py" {29, 45}
+from openai import OpenAI
+from npiai import FunctionTool, function
+
+class MySubTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_sub_tool',
+            description='test sub tool',
+        )
+
+    @function
+    def add(self, a: int, b: int) -> int:
+        """
+        Add two numbers.
+
+        Args:
+            a: The first number.
+            b: The second number.
+        """
+        return a + b
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+        self.add_tool(MySubTool())
+
+    @function
+    def multiply(self, a: int, b: int) -> int:
+        """
+        Multiply two numbers.
+
+        Args:
+            a: The first number.
+            b: The second number.
+        """
+        return a * b
+
+
+async def main():
+    async with MyTool() as my_tool:
+        print(my_tool.unpack_functions())  # [multiply(), my_sub_tool__add()]
+```
+
+### Combining Tools in Agent Mode
+
+When combining tools in agent mode, the sub-tool's functions are not automatically unpacked and added to the parent tool. Instead, the sub-tool is treated as a separate agent that can be called by the parent tool via the `agent.chat()` method, i.e., the sub-tool's agent will be resposible for the reasoning and planning processes for its own functions.
+
+The Python code snippet below demonstrates how to combine two tools in agent mode. In this case, the sub-tool is wrapped as an agent and only the agent's `chat` function is visible to the parent tool.
+
+```python filename="agent_mode.py" {29-31, 48}
+from npiai import App, agent_wrapper, function
+
+class MySubTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_sub_tool',
+            description='test sub tool',
+        )
+
+    @function
+    def add(self, a: int, b: int) -> int:
+        """
+        Add two numbers.
+
+        Args:
+            a: The first number.
+            b: The second number.
+        """
+        return a + b
+
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+        self.add_tool(
+            agent_wrapper(MySubTool())
+        )
+
+    @function
+    def multiply(self, a: int, b: int) -> int:
+        """
+        Multiply two numbers.
+
+        Args:
+            a: The first number.
+            b: The second number.
+        """
+        return a * b
+
+
+async def main():
+    async with App() as app:
+        async with MyTool() as my_tool:
+            print(agent.unpack_functions())  # [multiply(), my_sub_tool__agent__chat()]
+```

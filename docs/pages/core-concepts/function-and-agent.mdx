@@ -1,0 +1,55 @@
+## Function Mode and Agent Mode
+
+NPi tools can be used in two different modes: `function mode` and `agent mode`. Below we delve into each mode and its applications.
+
+### Function Mode: Integration with Existing AI Agents
+
+Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to prompts. This integration allows developers to enrich the AI's functionality by incorporating custom operations without altering the agent's core logic.
+
+Consider the following Python example, which demonstrates how to employ NPi tools within an OpenAI agent's workflow:
+
+```python filename="function_mode.py" {4, 12, 18-19}
+from openai import OpenAI
+
+async def main():
+    async with MyTool() as my_tool:
+        client = OpenAI()
+        messages = [
+            {"role": "user", "content": "What's the 10-th Fibonacci number?"}
+        ]
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=my_tool.tools,  # utilize NPi tools
+            tool_choice="auto",
+            max_tokens=4096,
+        )
+        response_message = response.choices[0].message
+
+        # invoke the relevant NPi function based on the response
+        result = await my_tool.call(response_message.tool_calls)
+
+        print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Agent Mode: Tool Execution as an Standalone Agent
+
+Agent mode transforms NPi tools into independent AI agents capable of directly handling and responding to user prompts. In this mode, the tool will be converted to an agent that receives instructions, processes it internally using its defined functions, and returns the result as an output message. This mode simplifies the creation of an AI-powered programming interface for domain-specific scenarios and is recommended when integrating tools within Agentic AI frameworks.
+
+The Python snippet below illustrates how an NPi tool are wrapped into an agent using the `agent_wrapper` function:
+
+```python filename="main.py" {1, 4-5}
+from npiai import App, function, agent_wrapper
+
+async def main():
+    # wrap the tool as an agent
+    async with agent_wrapper(MyTool()) as agent:
+        result = await agent.chat("What's the 10-th fibonacci number?")
+        print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```

@@ -1,5 +1,7 @@
 {
   "tools-and-functions": "Tools and Functions",
   "agent": "Agent Tool",
-  "human-in-the-loop": "Human in the Loop"
+  "human-in-the-loop": "Human in the Loop",
+  "function-and-agent": "Function Mode and Agent Mode",
+  "combine-tools": "Combining Tools"
 }

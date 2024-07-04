@@ -27,13 +27,13 @@ Let's create a new tool to compute the nth Fibonacci number. Start by crafting a
 
 
 ```python filename="main.py"
-from npiai import App, function
+from npiai import FunctionTool, function
 
-class MyApp(App):
+class MyTool(FunctionTool):
     def __init__(self):
         super().__init__(
-            name='my_app',
-            description='test app',
+            name='my_tool',
+            description='test tool',
         )
 
     @function
@@ -57,15 +57,14 @@ You could use NPi tools in two different ways: `function mode` and `agent mode`.
 
 #### Function Mode: Integration with Existing AI Agents
 
-Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged
-as callable functions that the AI agent can invoke in response to queries. This integration allows developers to enrich
+Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to user prompts. This integration allows developers to enrich
 the AI's functionality by incorporating custom operations without altering the agent's core logic.
 
-```python filename="main.py" showLineNumbers {15, 21-22}
+```python filename="main.py" {4, 15, 21-22}
 from openai import OpenAI
 
 async def main():
-    async with MyApp() as my_app:
+    async with MyTool() as my_tool:
         client = OpenAI()
         messages = [
             {
@@ -76,14 +75,14 @@ async def main():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            tools=my_app.tools,  # use npi as a tool package
+            tools=my_tool.tools,  # use npi as a tool package
             tool_choice="auto",
             max_tokens=4096,
         )
         response_message = response.choices[0].message
 
         # call the tool function corresponding to the response message
-        result = await my_app.call(response_message.tool_calls)
+        result = await my_tool.call(response_message.tool_calls)
 
         print(result)
 
@@ -103,7 +102,7 @@ AI-powered programming interface for domain-specific scenarios. We suggest you u
 from npiai import App, function, agent_wrapper
 
 async def main():
-    async with agent_wrapper(MyApp()) as agent:
+    async with agent_wrapper(MyTool()) as agent:
         result = await agent.chat("What's the 10-th fibonacci number?")
         print(result)
 
