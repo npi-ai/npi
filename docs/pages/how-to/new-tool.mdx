@@ -1,0 +1,111 @@
+import { Steps } from 'nextra/components';
+
+## Create a New Tool
+
+This guide will walk you through creating a new `FunctionTool` to compute the nth Fibonacci number.
+
+<Steps>
+
+### Import the Required Modules
+
+Begin by importing the necessary modules to create the tool. Create a new Python file titled `main.py` and add the following import statements:
+
+```python filename="main.py"
+from npiai import FunctionTool, function
+```
+
+### Define the Tool Class
+
+Next, define the `MyTool` class that inherits from `FunctionTool`. In the class constructor, specify the tool's name and description.
+
+```python filename="main.py" {3-8}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+```
+
+### Implement the Fibonacci Function
+
+Add the `fibonacci` function to the `MyTool` class. This function calculates the nth Fibonacci number recursively.
+
+```python filename="main.py" {10-16}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+    def fibonacci(self, n):
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+```
+
+### Add Type Hints and Docstrings
+
+Type hints and docstrings are essential for NPi to generate function schemas. Add type hints to the `fibonacci` function's parameters, and include a docstring describing the function's purpose and arguments:
+
+```python filename="main.py" {10-16}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+```
+
+### Annotated the Function with `@function`
+
+Finally, annotate the `fibonacci` function with the `@function` decorator to indicate that it is a LLM-callable function within the tool.
+
+```python filename="main.py" {10}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+    @function
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+```
+
+</Steps>
