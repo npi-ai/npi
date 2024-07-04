@@ -3,5 +3,6 @@
   "agent": "Agent Tool",
   "human-in-the-loop": "Human in the Loop",
   "function-and-agent": "Function Mode and Agent Mode",
-  "combine-tools": "Combining Tools"
+  "combine-tools": "Combining Tools",
+  "schema-generation": "Schema Generation"
 }

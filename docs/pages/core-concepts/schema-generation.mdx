@@ -1,0 +1,54 @@
+import { Todo } from '@components/todo';
+
+<Todo />
+
+## Schema Generation
+
+NPi will parse and generate LLM-compatible function schemas from the type hints and the Google-style docstrings of the functions defined in your tool class. For example, consider the following tool class:
+
+```python filename="main.py" {10-27}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+    @function
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+```
+
+NPi will parse the type hints and docstring and generate the following JSON schema for the `fibonacci` function:
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "fibonacci",
+    "description": "Get the nth Fibonacci number.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "description": "The index of the Fibonacci number in the sequence."
+        }
+      },
+      "required": ["n"]
+    }
+  }
+}
+```
