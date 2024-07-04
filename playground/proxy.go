@@ -12,6 +12,7 @@ import (
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
 	"github.com/npi-ai/npi/server/model"
+	"github.com/npi-ai/npi/server/service"
 	gw "github.com/npi-ai/playground/go"
 	"github.com/rs/cors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,10 +31,9 @@ var (
 )
 
 type ProxyController struct {
-	tool         *mongo.Collection
-	toolInstance *mongo.Collection
-	authNPi2App  *mongo.Collection
-	userAuth     *mongo.Collection
+	authNPi2App *mongo.Collection
+	userAuth    *mongo.Collection
+	appSvc      *service.AppService
 }
 
 func (pc *ProxyController) run() error {
@@ -68,17 +68,8 @@ func (pc *ProxyController) run() error {
 			if err != nil {
 				return status.Error(codes.InvalidArgument, "invalid x-npiai-org-id")
 			}
-			result := pc.tool.FindOne(ctx, bson.M{
-				"name":   "playground",
-				"org_id": orgID,
-			})
-			if result.Err() != nil {
-				return status.Error(codes.NotFound, "instance not found")
-			}
-
-			tool := model.Tool{}
-			if err = result.Decode(&tool); err != nil {
-				log.Warn(ctx).Err(err).Msg("decode tool")
+			appCli, err := pc.appSvc.GetOrCreateOrgDefaultAppClient(ctx, orgID)
+			if err != nil {
 				return status.Error(codes.Internal, "internal error")
 			}
 
@@ -107,8 +98,8 @@ func (pc *ProxyController) run() error {
 					default:
 					}
 
-					result = pc.authNPi2App.FindOne(ctx, bson.M{
-						"app_id":     tool.AppClientID,
+					result := pc.authNPi2App.FindOne(ctx, bson.M{
+						"app_id":     appCli.ID,
 						"permission": permID,
 					})
 
@@ -164,25 +155,6 @@ func (pc *ProxyController) run() error {
 	return http.ListenAndServe(":8081", withCors)
 }
 
-func (pc *ProxyController) findCC(ctx context.Context, tool model.Tool) (*grpc.ClientConn, error) {
-	result := pc.toolInstance.FindOne(ctx, bson.M{
-		"_id": tool.HeadVersionID,
-	})
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-	ins := model.ToolInstance{}
-	if err := result.Decode(&ins); err != nil {
-		return nil, err
-	}
-	if ins.CurrentState != model.ResourceStatusRunning {
-		return nil, fmt.Errorf("instance not running")
-	}
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	return grpc.NewClient(ins.ServiceURL, opts...)
-}
-
 func main() {
 	flag.Parse()
 	log.Info().Str("Config", os.Getenv("DB_CONFIG")).Msg("--- Config ---")
@@ -195,10 +167,9 @@ func main() {
 	_ = yaml.Unmarshal(data, &dbCfg)
 	db.InitMongoDB(context.Background(), dbCfg)
 	pc := &ProxyController{
-		tool:         db.GetCollection(db.CollTools),
-		toolInstance: db.GetCollection(db.CollToolInstances),
-		authNPi2App:  db.GetCollection(db.CollAuthNPIToApp),
-		userAuth:     db.GetCollection(db.CollUserAuthorization),
+		appSvc:      service.NewAppService(),
+		authNPi2App: db.GetCollection(db.CollAuthNPIToApp),
+		userAuth:    db.GetCollection(db.CollUserAuthorization),
 	}
 	grpcServerEndpoint = os.Getenv("ENDPOINT")
 	if err = pc.run(); err != nil {
