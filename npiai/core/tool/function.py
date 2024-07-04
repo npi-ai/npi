@@ -223,7 +223,8 @@ class FunctionTool(BaseFunctionTool):
     async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         if app_name:
             fn_name = f'{app_name}_{fn_name}'
-        return await self._exec(fn_name, args)
+        ctx = Context('')
+        return await self._exec(ctx, fn_name, args)
 
     async def call(
             self,
