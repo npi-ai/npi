@@ -1,0 +1,108 @@
+## `FunctionTool`
+
+Use `FunctionTool` class to create a new tool that interacts directly with third-party software applications via their APIs.
+
+
+```python
+from npiai import FunctionTool
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='<Provide the name of your tool here>',
+            description='<Provide a brief description of your tool here>',
+            system_prompt='<Provide a system prompt for LLMs to interact with your tool here>',
+        )
+```
+
+### Attributes
+
+#### `name`
+
+- **Description:** The name of the tool.
+- **Returns:** `str`
+
+#### `description`
+
+- **Description:** A brief description of the tool.
+- **Returns:** `str`
+
+#### `system_prompt`
+
+- **Description:** A system prompt for LLMs to interact with the tool.
+- **Returns:** `str`
+
+#### `tools`
+
+- **Description:** A list containing the JSON schema of the functions registered with the tool.
+- **Returns:** `List[ChatCompletionToolParam]`. See the [Schema Generation](../core-concepts/schema-generation.mdx) section for more information.
+
+### Sync Methods
+
+#### `add_tool`
+
+- **Usage:**
+
+  ```python
+  tool.add_tool(tool_a, tool_b, agent_a, agent_b)
+  ```
+
+- **Description:** Adds tools or agents to the tool.
+- **Arguments:**
+  - `*tools (BaseTool)`: The tools to add. They can be either a `Tool` or an `Agent` returns by the `agent_wrapper()` function.
+- **Returns:** None
+
+#### `use_hitl`
+
+- **Usage:**
+
+  ```python
+  tool.use_hitl(hitl_handler)
+  ```
+
+- **Description:**  Attach the given HITL(human-in-the-loop) handler to this tool and all its sub-tools.
+- **Arguments:**
+  - `hitl (HITLHandler)`: The HITL handler to attach.
+- **Returns:** None
+
+### Async Methods
+
+#### `start`
+
+- **Usage:**
+
+  ```python
+  await tool.start()
+  ```
+
+- **Description:** Starts the tool.
+- **Arguments:** None
+- **Returns:** None
+
+#### `end`
+
+- **Usage:**
+
+  ```python
+  await tool.end()
+  ```
+
+- **Description:** Ends the tool.
+- **Arguments:** None
+- **Returns:** None
+
+#### `call`
+
+- **Usage:**
+
+  ```python
+  results = await tool.call(llm_response.tool_calls)
+  ```
+
+- **Description:** Calls the function corresponding to the LLM tool calls and returns the results.
+- **Arguments:**
+  - `tool_calls (List[ChatCompletionMessageToolCall])`: The tool calls from the LLM response.
+- **Returns:** `List[ChatCompletionMessageToolCall]`
+  - **role**: `"tool"`
+  - **tool_call_id (str)**: The ID of the tool call.
+  - **content (str)**: The result of the corresponding function call.

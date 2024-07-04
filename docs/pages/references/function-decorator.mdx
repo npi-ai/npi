@@ -1,0 +1,30 @@
+## `@function` decorator
+
+The `@function` decorator is used to define a function that can be called by the LLMs. This decorator is used in conjunction with the `FunctionTool` and `BrowserTool` classes to create tools.
+
+The JSON schema of a function annotated with the `@function` decorator is automatically generated using the type hints and docstring of the function. See the [Schema Generation](../core-concepts/schema-generation.mdx) section for more information.
+
+```python {10-22}
+from npiai import FunctionTool, function
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='my_tool',
+            description='test tool',
+        )
+
+    @function
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+```
