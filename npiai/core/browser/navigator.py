@@ -5,7 +5,6 @@ import re
 from textwrap import dedent
 from typing import Union, List, Literal, Tuple
 
-from litellm.types.completion import ChatCompletionMessageParam
 from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
@@ -328,9 +327,9 @@ class NavigatorAgent(BrowserAgentTool):
             case 'back-to-top':
                 result = await self._browser_app.back_to_top()
             case 'confirmation':
-                result = await self.hitl.confirm(self.name, action['description'])
+                result = await self.hitl.confirm(ctx, self.name, action['description'])
             case 'human-intervention':
-                result = await self.hitl.input(self.name, action['description'])
+                result = await self.hitl.input(ctx, self.name, action['description'])
             case 'done':
                 result = None
             case _:

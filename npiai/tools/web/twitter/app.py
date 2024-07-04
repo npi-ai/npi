@@ -106,11 +106,11 @@ class Twitter(BrowserTool):
     state_file: str = './credentials/twitter_state.json'
 
     def __init__(
-        self,
-        username: str = None,
-        password: str = None,
-        navigator_llm: LLM = None,
-        headless: bool = True,
+            self,
+            username: str = None,
+            password: str = None,
+            navigator_llm: LLM = None,
+            headless: bool = True,
     ):
         uname = username or os.environ.get('TWITTER_USERNAME', None)
         pwd = password or os.environ.get('TWITTER_PASSWORD', None)
@@ -131,7 +131,7 @@ class Twitter(BrowserTool):
         self._username = uname
         self._password = pwd
 
-        self.add(
+        self.add_tool(
             NavigatorAgent(llm=navigator_llm, playwright=self.playwright)
         )
 
@@ -192,10 +192,13 @@ class Twitter(BrowserTool):
                 raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
 
     async def _request_additional_credentials(self, cred_name: str) -> str:
-        raise await self.hitl.input(
-            self.name,
-            f'Please enter {cred_name} to continue the login process.',
-        )
+        raise UnauthorizedError(f'Unable to login to Twitter. Please replace username with {cred_name} and try again.')
+
+        # FIXME: how to request creds without context?
+        # return await self.hitl.input(
+        #     self.name,
+        #     f'Please enter {cred_name} to continue the login process.',
+        # )
 
     @function
     async def search(self, query: str, sort_by: Literal['hottest', 'latest'] = 'hottest'):

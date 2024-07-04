@@ -10,7 +10,7 @@ from google.protobuf.empty_pb2 import Empty
 from npiai import agent_wrapper, AgentTool, BrowserAgentTool
 from npiai.context import ContextManager, Context
 from npiai.tools import GitHub, Gmail, GoogleCalendar
-from npiai.tools.web import Chrome
+from npiai.tools.web import Chromium
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
 
@@ -18,6 +18,8 @@ from playground.proto import (
     playground_pb2 as pb,
     playground_pb2_grpc as pbgrpc,
 )
+
+from playground.hitl import PlaygroundHITL
 
 
 class Chat(pbgrpc.PlaygroundServicer):
@@ -28,17 +30,21 @@ class Chat(pbgrpc.PlaygroundServicer):
         self.agent_container: Dict[pb.AppType, AgentTool] = {}
 
     async def start(self):
-        self.agent_container[pb.GOOGLE_GMAIL] = agent_wrapper(Gmail())
-        self.agent_container[pb.GOOGLE_CALENDAR] = agent_wrapper(GoogleCalendar())
-        # self.agent_container[pb.TWITTER] = agent_wrapper(Twitter())
-        # self.agent_container[pb.DISCORD] = agent_wrapper(Discord())
-        self.agent_container[pb.GITHUB] = agent_wrapper(GitHub())
-        self.agent_container[pb.WEB_BROWSER] = agent_wrapper(Chrome())
-        # self.agent_container[pb.TWILIO] = agent_wrapper(Twilio())
-        # self.agent_container[pb.SLACK] = agent_wrapper(Slack())
+        tools = {
+            pb.GOOGLE_GMAIL: Gmail(),
+            pb.GOOGLE_CALENDAR: GoogleCalendar(),
+            # pb.TWITTER: Twitter(),
+            # pb.DISCORD: Discord(),
+            pb.GITHUB: GitHub(),
+            pb.WEB_BROWSER: Chromium(),
+            # pb.TWILIO: Twilio(),
+            # pb.SLACK: Slack(),
+        }
 
-        for app in self.agent_container.values():
-            await app.start()
+        for entry, tool in tools.items():
+            tool.use_hitl(PlaygroundHITL())
+            await tool.start()
+            self.agent_container[entry] = agent_wrapper(tool)
 
     async def shutdown(self):
         for app in self.agent_container.values():

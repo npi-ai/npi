@@ -10,12 +10,12 @@ from simplegmail.message import Message
 
 from npiai import FunctionTool, function
 from npiai.error import UnauthorizedError
-from .client import GmailClientWrapper
+from npiai.context import Context
 
 from google.oauth2.credentials import Credentials as GoogleCredentials
 from oauth2client.client import OAuth2Credentials
 
-from datetime import datetime
+from .client import GmailClientWrapper
 
 
 def convert_google_cred_to_oauth2_cred(google_credentials: GoogleCredentials) -> OAuth2Credentials:
@@ -283,6 +283,7 @@ class Gmail(FunctionTool):
     @function
     async def send_email(
             self,
+            ctx: Context,
             to: str,
             subject: str,
             message: str = None,
@@ -293,6 +294,7 @@ class Gmail(FunctionTool):
         Send an email.
 
         Args:
+            ctx: NPi context
             to: The email address the message being sent to.
             subject: The subject line of the email.
             message: The email content in markdown format.
@@ -300,6 +302,7 @@ class Gmail(FunctionTool):
             bcc: The list of email addresses to bcc.
         """
         approved = await self.hitl.confirm(
+            ctx,
             self.name,
             f'The following email will be sent to {to}: {message}'
         )

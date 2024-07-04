@@ -9,6 +9,8 @@ from google.oauth2.credentials import Credentials as GoogleCredentials
 
 from npiai import function, FunctionTool
 from npiai.error import UnauthorizedError
+from npiai.context import Context
+
 
 # https://developers.google.com/calendar/quickstart/python
 # API Reference: https://developers.google.com/calendar/api/v3/reference
@@ -33,14 +35,15 @@ class GoogleCalendar(FunctionTool):
         )
 
     @function
-    async def get_user_email(self, message: str) -> str:
+    async def get_user_email(self, ctx: Context, message: str) -> str:
         """
         Get the user's email address
 
         Args:
+            ctx: NPi context
             message: The message to ask the user for their email address
         """
-        return await self.hitl.input(self.name, message)
+        return await self.hitl.input(ctx, self.name, message)
 
     @function
     def get_today(self):
@@ -98,12 +101,12 @@ class GoogleCalendar(FunctionTool):
 
     @function
     def create_event(
-        self,
-        summary: str,
-        start_time: str,
-        end_time: str,
-        calendar_id: str = 'primary',
-        description: str = '',
+            self,
+            summary: str,
+            start_time: str,
+            end_time: str,
+            calendar_id: str = 'primary',
+            description: str = '',
     ) -> str:
         """
         Create and add an event to Google Calendar.

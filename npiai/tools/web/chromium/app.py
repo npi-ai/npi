@@ -2,12 +2,12 @@ from npiai.core import NavigatorAgent
 from npiai import LLM, function, BrowserTool
 
 __SYSTEM_PROMPT__ = """
-You are a general chrome-based autonomous agent helping user to finish any task on any webpage. For a given task,
+You are a general chromium-based autonomous agent helping user to finish any task on any webpage. For a given task,
  you should first go to the appropriate web page, and then pass the task to the navigator to fulfill it.
 """
 
 
-class Chrome(BrowserTool):
+class Chromium(BrowserTool):
     def __init__(self, navigator_llm: LLM = None, headless: bool = True):
         super().__init__(
             name='chrome',
@@ -25,7 +25,7 @@ class Chrome(BrowserTool):
     @function
     async def goto(self, url: str):
         """
-        Open the given URL in the chrome.
+        Open the given URL in chromium.
 
         Args:
             url: The URL to open.

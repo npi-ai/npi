@@ -1,7 +1,7 @@
 import asyncio
 
 from npiai import agent_wrapper
-from npiai.tools.discord import Discord
+from npiai.tools import Discord
 
 
 async def main():

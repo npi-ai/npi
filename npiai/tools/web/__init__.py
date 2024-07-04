@@ -1,4 +1,4 @@
-from .chrome import Chrome
+from .chromium import Chromium
 from .twitter import Twitter
 
-__all__ = ['Chrome', 'Twitter']
+__all__ = ['Chromium', 'Twitter']
