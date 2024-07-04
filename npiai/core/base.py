@@ -82,6 +82,9 @@ class BaseTool(ABC):
         else:
             return data
 
+    async def get_screenshot(self) -> str | None:
+        return None
+
     # context manager
     async def __aenter__(self):
         await self.start()

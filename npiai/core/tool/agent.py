@@ -146,6 +146,9 @@ class BrowserAgentTool(AgentTool):
         self._tool = tool
         super().__init__(tool, llm)
 
+    async def get_screenshot(self) -> str | None:
+        return await self._tool.get_screenshot()
+
     async def chat(
             self,
             message: str,
@@ -190,20 +193,20 @@ class BrowserAgentTool(AgentTool):
 
 
 @overload
-def agent_wrapper(app: FunctionTool, llm: LLM = None) -> AgentTool:
+def agent_wrapper(tool: FunctionTool, llm: LLM = None) -> AgentTool:
     ...
 
 
 @overload
-def agent_wrapper(app: BrowserTool, llm: LLM = None) -> BrowserAgentTool:
+def agent_wrapper(tool: BrowserTool, llm: LLM = None) -> BrowserAgentTool:
     ...
 
 
-def agent_wrapper(app: FunctionTool | BrowserTool, llm: LLM = None) -> AgentTool | BrowserAgentTool:
-    if isinstance(app, FunctionTool):
-        return AgentTool(app, llm)
+def agent_wrapper(tool: FunctionTool | BrowserTool, llm: LLM = None) -> AgentTool | BrowserAgentTool:
+    if isinstance(tool, BrowserTool):
+        return BrowserAgentTool(tool, llm)
 
-    if isinstance(app, BrowserTool):
-        return BrowserAgentTool(app, llm)
+    if isinstance(tool, FunctionTool):
+        return AgentTool(tool, llm)
 
-    raise TypeError(f'app must be an instance of App or BrowserApp')
+    raise TypeError(f'app must be an instance of FunctionTool or BrowserTool')

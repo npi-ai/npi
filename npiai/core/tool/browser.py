@@ -16,13 +16,13 @@ class MdConverter(MarkdownConverter):
 class BrowserTool(FunctionTool):
 
     def __init__(
-        self,
-        name: str,
-        description: str,
-        system_prompt: str = None,
-        playwright: PlaywrightContext = None,
-        use_screenshot: bool = True,
-        headless: bool = True,
+            self,
+            name: str,
+            description: str,
+            system_prompt: str = None,
+            playwright: PlaywrightContext = None,
+            use_screenshot: bool = True,
+            headless: bool = True,
     ):
         """
         Initialize a Browser App
@@ -60,7 +60,7 @@ class BrowserTool(FunctionTool):
         await super().end()
         await self.playwright.stop()
 
-    async def get_screenshot(self):
+    async def get_screenshot(self) -> str | None:
         """Get the screenshot of the current page"""
         if not self.playwright or not self.playwright.ready or self.playwright.page.url == 'about:blank':
             return None

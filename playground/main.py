@@ -152,14 +152,11 @@ class Chat(pbgrpc.PlaygroundServicer):
         cb.callback(result=req.action_result_request)
 
     async def run(self, app_type: pb.AppType, thread: Context):
-        app = None
         try:
-
             if app_type not in self.agent_container:
                 raise ValueError(f"App {app_type} not found")
-
             agent = self.agent_container[app_type]
-            thread.set_active_app(app)
+            thread.set_active_app(agent)
             result = await agent.chat(thread.instruction, thread)
             thread.finish(result)
         except UnauthorizedError as e:

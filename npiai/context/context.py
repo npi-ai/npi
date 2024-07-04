@@ -3,16 +3,13 @@ import datetime
 import uuid
 import json
 import asyncio
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 
-from litellm.types.completion import (
-    ChatCompletionMessageParam,
-)
+from litellm.types.completion import ChatCompletionMessageParam
 from npiai.core import callback
 
-
-# if TYPE_CHECKING:
-#     from npiai.core import App
+if TYPE_CHECKING:
+    from npiai.core import BaseTool
 
 
 class ThreadMessage:
@@ -80,7 +77,7 @@ class ThreadMessage:
 
 class Context:
     """the abstraction of chat context """
-    __active_app: Union['App', None] = None
+    __active_tool: Union['BaseTool', None] = None
     __last_screenshot: str | None = None
 
     def __init__(self, instruction: str) -> None:
@@ -95,8 +92,8 @@ class Context:
         self.__is_failed = False
         self.__failed_msg: str = ''
 
-    def set_active_app(self, app: Union['App', None]):
-        self.__active_app = app
+    def set_active_app(self, app: Union['BaseTool', None]):
+        self.__active_tool = app
 
     async def refresh_screenshot(self) -> str | None:
         """
@@ -106,11 +103,11 @@ class Context:
             None if no screenshot is available or the screenshot stays unchanged.
             Otherwise, return the latest screenshot.
         """
-        if not self.__active_app or self.is_finished():
+        if not self.__active_tool or self.is_finished():
             # TODO: raise errors?
             return None
 
-        screenshot = await self.__active_app.get_screenshot()
+        screenshot = await self.__active_tool.get_screenshot()
 
         if screenshot == self.__last_screenshot:
             return None
