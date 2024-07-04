@@ -1,4 +1,4 @@
-import { Steps } from 'nextra/components';
+import { Steps, Tabs, Tab } from 'nextra/components';
 
 ## Create a New Tool
 
@@ -81,7 +81,7 @@ class MyTool(FunctionTool):
 
 ### Annotated the Function with `@function`
 
-Finally, annotate the `fibonacci` function with the `@function` decorator to indicate that it is a LLM-callable function within the tool.
+Annotate the `fibonacci` function with the `@function` decorator to indicate that it is a LLM-callable function within the tool.
 
 ```python filename="main.py" {10}
 from npiai import FunctionTool, function
@@ -107,5 +107,72 @@ class MyTool(FunctionTool):
             return 1
         return self.fibonacci(n - 1) + self.fibonacci(n - 2)
 ```
+
+### Run the Tool
+
+Finally, we can now run the tool in `function mode` or `agent mode` to interact with it. Refer to the [Function Mode and Agent Mode](../core-concepts/function-and-agent.mdx) section for detailed instructions.
+
+<Tabs items={["Function Mode", "Agent Mode"]}>
+    <Tabs.Tab title="Function Mode">
+        ```python
+        async def main():
+            async with MyTool() as my_tool:
+                # do something with my_tool.tools
+                print(my_tool.tools)
+
+        if __name__ == '__main__':
+            import asyncio
+            asyncio.run(main())
+        ```
+    </Tabs.Tab>
+    <Tabs.Tab title="Agent Mode">
+        ```python
+        from npiai import agent_wrapper
+
+        async def main():
+            async with agent_wrapper(MyTool()) as agent:
+                await agent.chat('<anything you want to chat with the agent>')
+
+        if __name__ == '__main__':
+            import asyncio
+            asyncio.run(main())
+        ```
+    </Tabs.Tab>
+</Tabs>
+
+Note that the above example uses the [context manager](https://docs.python.org/3/reference/compound_stmts.html#with) to automatically starts and ends the tool. You can also manually start and stop the tool using the `start()` and `stop()` methods:
+
+<Tabs items={["Function Mode", "Agent Mode"]}>
+    <Tabs.Tab title="Function Mode">
+        ```python
+        async def main():
+            my_tool = MyTool()
+            await my_tool.start()
+            # do something with my_tool.tools
+            print(my_tool.tools)
+            await my_tool.end()
+
+        if __name__ == '__main__':
+            import asyncio
+            asyncio.run(main())
+        ```
+    </Tabs.Tab>
+    <Tabs.Tab title="Agent Mode">
+        ```python
+        from npiai import agent_wrapper
+
+        async def main():
+            agent = agent_wrapper(MyTool())
+            await agent.start()
+            await agent.chat('<anything you want to chat with the agent>')
+            await agent.end()
+
+        if __name__ == '__main__':
+            import asyncio
+            asyncio.run(main())
+        ```
+    </Tabs.Tab>
+</Tabs>
+
 
 </Steps>
