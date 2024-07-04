@@ -39,6 +39,7 @@ message Request {
     RequestCode code = 1;
     string request_id = 2;
     string thread_id = 3;
+    string authorization = 4;
     oneof request {
         ChatRequest chat_request = 10;
         ActionResultRequest action_result_request = 12;

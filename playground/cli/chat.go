@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -16,11 +17,16 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+var (
+	token string
+)
+
 func appCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chat",
 		Short: "chat with NPi Playground",
 	}
+	cmd.PersistentFlags().StringVarP(&token, "token", "t", "", "the token for NPi Playground")
 	cmd.AddGroup()
 	cmd.AddCommand(
 		gmailCommand(),
@@ -83,8 +89,8 @@ func twitterCommand() *cobra.Command {
 
 func discordCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "discord",
-		Short:   "chat with Discord",
+		Use:   "discord",
+		Short: "chat with Discord",
 		Run: func(cmd *cobra.Command, args []string) {
 			doRequest(api.AppType_DISCORD, args[0])
 		},
@@ -128,8 +134,9 @@ func doRequest(app api.AppType, instruction string) {
 	cli := api.NewPlaygroundClient(conn)
 
 	resp, err := cli.Chat(getMetadata(context.Background()), &api.Request{
-		Code:      api.RequestCode_CHAT,
-		RequestId: uuid.New().String(),
+		Code:          api.RequestCode_CHAT,
+		RequestId:     uuid.New().String(),
+		Authorization: base64.StdEncoding.EncodeToString([]byte(token)),
 		Request: &api.Request_ChatRequest{
 			ChatRequest: &api.ChatRequest{
 				Type:        app,

@@ -27,6 +27,5 @@ generate-go:
 	  --go-grpc-mock_opt=paths=source_relative playground.proto
 
 build-cmd:
-	echo ${HOME}
 	GOARCH=amd64 go build -trimpath -o bin/npi ${NPI_PROTO_ROOT}/cli
 	cp bin/npi ${HOME}/.local/bin

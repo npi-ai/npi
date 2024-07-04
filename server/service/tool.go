@@ -26,6 +26,7 @@ type ToolService struct {
 	s3                *db.S3
 	s3Bucket          string
 	toolEndpointRoot  string
+	appSvc            *AppService
 }
 
 func NewTool(toolAccessPoint string, cfg db.S3Config) *ToolService {
@@ -193,18 +194,33 @@ func (ctrl *ToolService) GetToolOverview(ctx *gin.Context) {
 		return
 	}
 	summary := api.ToolSummary{
-		ID:             instance.Metadata.ID,
-		Name:           instance.Metadata.Name,
-		Description:    instance.Metadata.Description,
-		Runtime:        instance.FunctionSpec.Runtime,
-		Dependencies:   instance.FunctionSpec.Dependencies,
-		Authentication: tool.Auth,
-		Endpoint:       fmt.Sprintf("%s/%s", ctrl.toolEndpointRoot, tool.ID.Hex()),
+		ID:           instance.Metadata.ID,
+		Name:         instance.Metadata.Name,
+		Description:  instance.Metadata.Description,
+		Runtime:      instance.FunctionSpec.Runtime,
+		Dependencies: instance.FunctionSpec.Dependencies,
+		Endpoint:     fmt.Sprintf("%s/%s", ctrl.toolEndpointRoot, tool.ID.Hex()),
 	}
 	summary.Runtime.Image = instance.Image
-	if summary.Authentication.Type == "" {
+
+	app, err := ctrl.appSvc.GetAppClient(tool.AppClientID)
+	if err != nil {
+		api.ResponseWithError(ctx, err)
+		return
+	}
+
+	switch tool.AuthMethod {
+	case model.AuthAPIKey:
+		summary.Authentication.Type = model.AuthAPIKey
+		summary.Authentication.APIKey = app.APIKey
+	case model.AuthOAuth:
+		summary.Authentication.Type = model.AuthOAuth
+		summary.Authentication.ClientID = app.ClientID
+		summary.Authentication.ClientSecret = app.Secrets
+	default:
 		summary.Authentication.Type = model.AuthNone
 	}
+
 	api.ResponseWithSuccess(ctx, summary)
 }
 

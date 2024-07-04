@@ -217,6 +217,9 @@
         "threadId": {
           "type": "string"
         },
+        "authorization": {
+          "type": "string"
+        },
         "chatRequest": {
           "$ref": "#/definitions/apiChatRequest"
         },

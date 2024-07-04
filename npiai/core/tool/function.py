@@ -161,14 +161,15 @@ class FunctionTool(BaseFunctionTool):
         @fapp.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
         async def root(full_path: str, request: Request):
             method = convert_camel_to_snake(full_path)
+            ctx = Context(instruction="")
             try:
                 match request.method:
                     case "POST":
                         args = await request.json()
-                        res = await self._exec(method, args)
+                        res = await self._exec(ctx, method, args)
                     case "GET":
                         args = {k: v for k, v in request.query_params.items()}
-                        res = await self._exec(method, args)
+                        res = await self._exec(ctx, method, args)
                     case _:
                         return JSONResponse({'error': 'Method not allowed'}, status_code=405)
                 try:
@@ -223,8 +224,8 @@ class FunctionTool(BaseFunctionTool):
     async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         if app_name:
             fn_name = f'{app_name}_{fn_name}'
-        ctx = Context('')
-        return await self._exec(ctx, fn_name, args)
+
+        return await self._exec(Context(), fn_name, args)
 
     async def call(
             self,
@@ -250,6 +251,7 @@ class FunctionTool(BaseFunctionTool):
             logger.info(call_msg)
             await ctx.send_msg(callback.Callable(call_msg))
 
+            res = None
             try:
                 res = await self._exec(ctx, fn_name, args)
             except Exception as e:
@@ -282,7 +284,8 @@ class FunctionTool(BaseFunctionTool):
                 args = {tool.ctx_param_name: ctx}
             else:
                 args[tool.ctx_param_name] = ctx
-
+        print(tool)
+        print(args)
         if args is None:
             return str(await tool.fn())
         return str(await tool.fn(**args))

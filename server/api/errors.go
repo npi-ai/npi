@@ -13,6 +13,7 @@ var (
 	ErrObjectID         = newErrorMessage(http.StatusBadRequest, 40003, "invalid object id")
 	ErrBalanceNotEnough = newErrorMessage(http.StatusBadRequest, 40004, "out of usage")
 	ErrInvitationExists = newErrorMessage(http.StatusBadRequest, 40005, "invitation already exists")
+	ErrFailedExchange   = newErrorMessage(http.StatusBadRequest, 40006, "failed to exchange an authorization code for a token")
 
 	ErrUnauthorized = newErrorMessage(http.StatusUnauthorized, 40101, "unauthorized")
 

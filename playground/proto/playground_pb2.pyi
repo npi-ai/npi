@@ -69,20 +69,22 @@ MULTIPLE_SELECTION: ActionType
 CONFIRMATION: ActionType
 
 class Request(_message.Message):
-    __slots__ = ("code", "request_id", "thread_id", "chat_request", "action_result_request", "empty")
+    __slots__ = ("code", "request_id", "thread_id", "authorization", "chat_request", "action_result_request", "empty")
     CODE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     THREAD_ID_FIELD_NUMBER: _ClassVar[int]
+    AUTHORIZATION_FIELD_NUMBER: _ClassVar[int]
     CHAT_REQUEST_FIELD_NUMBER: _ClassVar[int]
     ACTION_RESULT_REQUEST_FIELD_NUMBER: _ClassVar[int]
     EMPTY_FIELD_NUMBER: _ClassVar[int]
     code: RequestCode
     request_id: str
     thread_id: str
+    authorization: str
     chat_request: ChatRequest
     action_result_request: ActionResultRequest
     empty: _empty_pb2.Empty
-    def __init__(self, code: _Optional[_Union[RequestCode, str]] = ..., request_id: _Optional[str] = ..., thread_id: _Optional[str] = ..., chat_request: _Optional[_Union[ChatRequest, _Mapping]] = ..., action_result_request: _Optional[_Union[ActionResultRequest, _Mapping]] = ..., empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...) -> None: ...
+    def __init__(self, code: _Optional[_Union[RequestCode, str]] = ..., request_id: _Optional[str] = ..., thread_id: _Optional[str] = ..., authorization: _Optional[str] = ..., chat_request: _Optional[_Union[ChatRequest, _Mapping]] = ..., action_result_request: _Optional[_Union[ActionResultRequest, _Mapping]] = ..., empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...) -> None: ...
 
 class AppSchemaRequest(_message.Message):
     __slots__ = ("type",)

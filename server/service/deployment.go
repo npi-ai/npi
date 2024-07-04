@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	toolServingPort = 19140
+	toolServingPort = 9140
 )
 
 type DeploymentService struct {
