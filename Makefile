@@ -13,11 +13,6 @@ build-docker-playground:
 		-t ${DOCKER_REGISTRY}/playground:${IMAGE_TAG} \
 		-f build/playground.Dockerfile . --push
 
-docker-build-proxy:
-	GOOS=linux GOARCH=amd64 go build -C ${NPI_CMD_ROOT}/playground -trimpath -o bin/proxy  proxy.go
-	docker build -t ${DOCKER_REGISTRY}/proxy:latest -f build/proxy.Dockerfile ${NPI_CMD_ROOT}/playground/bin
-	docker push ${DOCKER_REGISTRY}/proxy:latest
-
 release:
 	poetry publish --build -u __token__ -p ${PYPI_TOKEN}
 	rm -rf dist
