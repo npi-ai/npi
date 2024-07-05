@@ -251,12 +251,12 @@ class FunctionTool(BaseFunctionTool):
             logger.info(call_msg)
             await ctx.send_msg(callback.Callable(call_msg))
 
-            res = None
             try:
                 res = await self._exec(ctx, fn_name, args)
             except Exception as e:
                 logger.error(e)
-                await ctx.send_msg(callback.Callable(f'Exception while executing {fn_name}: {e}'))
+                res = f'Exception while executing {fn_name}: {e}'
+                await ctx.send_msg(callback.Callable(res))
 
             logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
