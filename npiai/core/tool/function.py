@@ -284,8 +284,6 @@ class FunctionTool(BaseFunctionTool):
                 args = {tool.ctx_param_name: ctx}
             else:
                 args[tool.ctx_param_name] = ctx
-        print(tool)
-        print(args)
         if args is None:
             return str(await tool.fn())
         return str(await tool.fn(**args))
