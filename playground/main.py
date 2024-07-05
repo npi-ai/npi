@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from npiai import agent_wrapper, AgentTool, BrowserAgentTool
 from npiai.context import ContextManager, Context
 from npiai.tools import GitHub, Gmail, GoogleCalendar, Twilio
-from npiai.tools.web import Chrome, Twitter
+from npiai.tools.web import Chromium, Twitter
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
 
@@ -159,7 +159,7 @@ class Chat(pbgrpc.PlaygroundServicer):
                     account = authorization.split(":")
                     app = Twitter(username=account[0], password=account[1])
                 case pb.AppType.WEB_BROWSER:
-                    app = Chrome()
+                    app = Chromium()
                 case pb.AppType.TWILIO:
                     account = authorization.split(":")
                     app = Twilio(

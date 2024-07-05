@@ -17,7 +17,7 @@ type AppService struct {
 
 func NewAppService() *AppService {
 	return &AppService{
-		coll: db.GetCollection(db.CollOrganizations),
+		coll: db.GetCollection(db.CollAppClients),
 	}
 }
 
@@ -35,6 +35,9 @@ func (as *AppService) GetOrCreateOrgDefaultAppClient(ctx context.Context, id pri
 		cli.Base = model.NewBase(ctx)
 		cli.OrgDefault = true
 		cli.OrgID = id
+		if _, err = as.coll.InsertOne(ctx, cli); err != nil {
+			return cli, db.ConvertError(err)
+		}
 	} else {
 		if err := result.Decode(&cli); err != nil {
 			return cli, db.ConvertError(err)

@@ -22,6 +22,7 @@ const (
 	CollAuthUserToNPI     = "auth_user_npi"
 	CollAuthNPIToApp      = "auth_npi_app"
 	CollOrganizations     = "organizations"
+	CollAppClients        = "app_clients"
 )
 
 type MongoConfig struct {

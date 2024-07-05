@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"net/http"
 	"os"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v3"
 )
@@ -80,6 +80,7 @@ func (pc *ProxyController) run() error {
 					return status.Error(codes.InvalidArgument, "invalid request")
 				}
 
+				needAuth := true
 				if _req.GetChatRequest() != nil {
 					var permID int
 					switch _req.GetChatRequest().Type {
@@ -95,36 +96,40 @@ func (pc *ProxyController) run() error {
 						permID = model.AppDiscordAll.PermissionID
 					case gw.AppType_TWILIO:
 						permID = model.AppTwilioAll.PermissionID
+					case gw.AppType_TWITTER:
+						permID = model.AppXComAll.PermissionID
 					default:
+						needAuth = false
 					}
-
-					result := pc.authNPi2App.FindOne(ctx, bson.M{
-						"app_id":     appCli.ID,
-						"permission": permID,
-					})
-
-					if result.Err() != nil {
-						return status.Error(codes.Unauthenticated, "")
-					}
-
-					auth := model.AuthNPIToApp{}
-					if err = result.Decode(&auth); err != nil {
-						log.Warn(ctx).Err(err).Msg("decode authorization")
-						return status.Error(codes.Internal, "internal error")
-					}
-
-					result = pc.userAuth.FindOne(ctx, bson.M{
-						"_id": auth.AuthID,
-					})
-
-					if result.Err() != nil {
-						return status.Error(codes.Internal, "")
-					}
-
 					uAuth := model.UserAuthorization{}
-					if err = result.Decode(&uAuth); err != nil {
-						log.Warn(ctx).Err(err).Msg("decode UserAuthorization")
-						return status.Error(codes.Internal, "internal error")
+					if needAuth {
+						result := pc.authNPi2App.FindOne(ctx, bson.M{
+							"app_id":     appCli.ID,
+							"permission": permID,
+						})
+						println(appCli.ID.Hex())
+						if result.Err() != nil {
+							return status.Error(codes.Unauthenticated, "")
+						}
+
+						auth := model.AuthNPIToApp{}
+						if err = result.Decode(&auth); err != nil {
+							log.Warn(ctx).Err(err).Msg("decode authorization")
+							return status.Error(codes.Internal, "internal error")
+						}
+
+						result = pc.userAuth.FindOne(ctx, bson.M{
+							"_id": auth.AuthID,
+						})
+
+						if result.Err() != nil {
+							return status.Error(codes.Internal, "")
+						}
+
+						if err = result.Decode(&uAuth); err != nil {
+							log.Warn(ctx).Err(err).Msg("decode UserAuthorization")
+							return status.Error(codes.Internal, "internal error")
+						}
 					}
 					_req.Authorization = uAuth.Authorization()
 					req = _req
@@ -150,8 +155,8 @@ func (pc *ProxyController) run() error {
 		},
 		MaxAge: 300,
 	}).Handler(mux)
-	// Start HTTP server (and proxy calls to gRPC server endpoint)
-	fmt.Printf("Starting HTTP server on port 8081")
+
+	fmt.Printf("Starting HTTP server on port 8081\n")
 	return http.ListenAndServe(":8081", withCors)
 }
 
@@ -172,6 +177,9 @@ func main() {
 		userAuth:    db.GetCollection(db.CollUserAuthorization),
 	}
 	grpcServerEndpoint = os.Getenv("ENDPOINT")
+	if grpcServerEndpoint == "" {
+		grpcServerEndpoint = "localhost:9140"
+	}
 	if err = pc.run(); err != nil {
 		panic(err)
 	}

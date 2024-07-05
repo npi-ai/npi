@@ -7,5 +7,8 @@ COPY . /npi/
 WORKDIR /npi
 
 RUN poetry install
+ENV PATH="/root/.cache/pypoetry/virtualenvs/npiai-Gwe6qz7c-py3.11/bin:${PATH}"
+RUN playwright install-deps chromium
+RUN playwright install chromium
 
-ENTRYPOINT ["poetry", "run", "python", "playground/main.py"]
+ENTRYPOINT ["python", "playground/main.py"]

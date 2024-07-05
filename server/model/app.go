@@ -56,6 +56,11 @@ func (ua UserAuthorization) Authorization() string {
 		m := map[string]string{}
 		_ = json.Unmarshal(ua.Credentials, &m)
 		token = m["access_token"]
+	case AppSlack:
+	case AppTwilio:
+	case AppDiscord:
+	default:
+		token = string(ua.Credentials)
 	}
 	// TODO encrypt
 	return base64.StdEncoding.EncodeToString([]byte(token))
