@@ -139,22 +139,25 @@ class Chat(pbgrpc.PlaygroundServicer):
         cb.callback(result=req.action_result_request)
 
     @staticmethod
-    async def run(app_type: pb.AppType, authorization: str, thread: Context):
+    async def run(app_type: pb.AppType, authorization: str, ctx: Context):
         try:
-            app = None
             match app_type:
                 case pb.AppType.GITHUB:
                     app = GitHub(access_token=authorization)
                 case pb.AppType.GOOGLE_GMAIL:
-                    app = Gmail(creds=Credentials.from_authorized_user_info(
-                        info=json.loads(authorization),
-                        scopes="https://mail.google.com/"
-                    ))
+                    app = Gmail(
+                        creds=Credentials.from_authorized_user_info(
+                            info=json.loads(authorization),
+                            scopes="https://mail.google.com/"
+                        )
+                    )
                 case pb.AppType.GOOGLE_CALENDAR:
-                    app = GoogleCalendar(creds=Credentials.from_authorized_user_info(
-                        info=json.loads(authorization),
-                        scopes="https://www.googleapis.com/auth/calendar"
-                    ))
+                    app = GoogleCalendar(
+                        creds=Credentials.from_authorized_user_info(
+                            info=json.loads(authorization),
+                            scopes="https://www.googleapis.com/auth/calendar"
+                        )
+                    )
                 case pb.AppType.TWITTER:
                     account = authorization.split(":")
                     app = Twitter(username=account[0], password=account[1])
@@ -170,23 +173,20 @@ class Chat(pbgrpc.PlaygroundServicer):
                 case _:
                     raise ValueError(f"App {app_type} not found")
             agent = agent_wrapper(app)
-            await agent.start()
-            thread.set_active_app(app)
-            result = await agent.chat(thread.instruction, thread)
-            await agent.end()
-            thread.finish(result)
+            await agent.start(ctx)
+            ctx.set_active_app(app)
+            result = await agent.chat(ctx.instruction, ctx)
+            await agent.end(ctx)
+            ctx.finish(result)
         except UnauthorizedError as e:
-            thread.failed(str(e))
+            ctx.failed(str(e))
         except Exception as e:
             err_msg = ''.join(traceback.format_exception(e))
             logger.error(err_msg)
-            thread.failed(str(e))
+            ctx.failed(str(e))
             # raise e
         finally:
-            thread.set_active_app(None)
-            if isinstance(agent, BrowserAgentTool):
-                # release current session
-                await agent.goto_blank()
+            ctx.set_active_app(None)
 
 
 _cleanup_coroutines = []

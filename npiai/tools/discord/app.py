@@ -4,6 +4,7 @@ import os
 
 import discord
 
+from npiai.context import Context
 from npiai.utils import logger
 from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
@@ -54,12 +55,12 @@ class Discord(FunctionTool):
         self.client = discord.Client(intents=discord.Intents.default())
         self._access_token = token
 
-    async def start(self):
-        await super().start()
+    async def start(self, ctx: Context | None = None):
+        await super().start(ctx)
         await self.client.login(self._access_token)
 
-    async def end(self):
-        await super().end()
+    async def end(self, ctx: Context | None = None):
+        await super().end(ctx)
         await self.client.close()
 
     def parse_user(self, user: discord.User):

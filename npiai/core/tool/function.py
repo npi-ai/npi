@@ -138,12 +138,12 @@ class FunctionTool(BaseFunctionTool):
         for app in self._sub_tools:
             app.use_hitl(hitl)
 
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         """Start the tools"""
         if not self._started:
             self._started = True
             for tool in self._sub_tools:
-                await tool.start()
+                await tool.start(ctx)
 
     def server(self):
         """Start the server"""
@@ -199,12 +199,12 @@ class FunctionTool(BaseFunctionTool):
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)
 
-    async def end(self):
+    async def end(self, ctx: Context | None = None):
         """Stop and dispose the tools"""
         if self._started:
             self._started = False
             for app in self._sub_tools:
-                await app.end()
+                await app.end(ctx)
 
     def add_tool(
             self,

@@ -4,12 +4,10 @@ import signal
 import sys
 from typing import List, overload
 
-from litellm.types.completion import ChatCompletionMessageParam
 from fastapi import FastAPI, Request
 
 import uvicorn
 from npiai.llm import LLM, OpenAI
-from npiai.utils import logger
 from npiai.types import FunctionRegistration
 from npiai.context import Context, ThreadMessage
 from npiai.core import callback
@@ -33,7 +31,6 @@ class AgentTool(BaseAgentTool):
         # Wrap the chat function of this agent to FunctionRegistration
 
         def chat(message: str, ctx: Context):
-            # TODO: pass thread down
             return self.chat(message, ctx)
 
         fn_reg = FunctionRegistration(
@@ -59,11 +56,11 @@ class AgentTool(BaseAgentTool):
         # super().use_hitl(hitl)
         self._tool.use_hitl(hitl)
 
-    async def start(self):
-        await self._tool.start()
+    async def start(self, ctx: Context | None = None):
+        await self._tool.start(ctx)
 
-    async def end(self):
-        await self._tool.end()
+    async def end(self, ctx: Context | None = None):
+        await self._tool.end(ctx)
 
     async def server(self):
         """Start the server"""
@@ -91,12 +88,12 @@ class AgentTool(BaseAgentTool):
     async def chat(
             self,
             message: str,
-            thread: Context = None,
+            ctx: Context = None,
     ) -> str:
-        if thread is None:
-            thread = Context('')
+        if ctx is None:
+            ctx = Context()
 
-        msg = thread.fork(message)
+        msg = ctx.fork(message)
         if self._tool.system_prompt:
             msg.append(
                 {
@@ -112,7 +109,7 @@ class AgentTool(BaseAgentTool):
             }
         )
 
-        return await self._call_llm(thread, msg)
+        return await self._call_llm(ctx, msg)
 
     async def _call_llm(self, thread: Context, message: ThreadMessage) -> str:
         while True:
@@ -158,7 +155,7 @@ class BrowserAgentTool(AgentTool):
             ctx: Context = None,
     ) -> str:
         if ctx is None:
-            ctx = Context('')
+            ctx = Context()
 
         if not self._tool.use_screenshot:
             return await super().chat(message, ctx)
