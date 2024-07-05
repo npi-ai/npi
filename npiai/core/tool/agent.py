@@ -157,6 +157,9 @@ class BrowserAgentTool(AgentTool):
             message: str,
             ctx: Context = None,
     ) -> str:
+        if ctx is None:
+            ctx = Context('')
+
         if not self._tool.use_screenshot:
             return await super().chat(message, ctx)
 
