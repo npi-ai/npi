@@ -5,6 +5,7 @@ from playwright.async_api import ElementHandle
 
 from npiai.core.tool.function import FunctionTool, function
 from npiai.core.browser.playwright import PlaywrightContext
+from npiai.context import Context
 
 
 class MdConverter(MarkdownConverter):
@@ -49,15 +50,15 @@ class BrowserTool(FunctionTool):
         html = await self.playwright.page.evaluate('() => document.body.innerHTML')
         return MdConverter().convert(html)
 
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         """Start the Browser App"""
         if not self._started:
-            await super().start()
+            await super().start(ctx)
             await self.playwright.start()
 
-    async def end(self):
+    async def end(self, ctx: Context | None = None):
         """Dispose the chrome tools"""
-        await super().end()
+        await super().end(ctx)
         await self.playwright.stop()
 
     async def goto_blank(self):

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -122,47 +121,46 @@ func (bs *BuilderService) Build(ctx context.Context, md model.ToolMetadata) (str
 			WithMessage("Failed to write Dockerfile").WithError(err)
 	}
 
-	// 5. upload to S3
-	cmd := exec.Command("tar", "-czvf", "target.tar.gz", "target")
-	cmd.Dir = workDir
-	if _, err = cmd.CombinedOutput(); err != nil {
+	// 4. generate Dockerfile
+	buildSpec := fmt.Sprintf(codebuildTemplate)
+	if err = os.WriteFile(filepath.Join(targetDir, "buildspec.yml"), []byte(buildSpec), os.ModePerm); err != nil {
 		return "", tool, api.ErrInternal.
-			WithMessage("Failed to created target.tar.gz").WithError(err)
+			WithMessage("Failed to write Dockerfile").WithError(err)
 	}
-	data, err = os.ReadFile(filepath.Join(workDir, "target.tar.gz"))
+
+	// 5. upload to S3
+	//cmd := exec.Command("zip", "-r", "target.zip", "target/")
+	//cmd.Dir = workDir
+	//if output, err := cmd.CombinedOutput(); err != nil {
+	//	log.Warn().Str("output", string(output)).Msg("Failed to create target.zip")
+	//	return "", tool, api.ErrInternal.
+	//		WithMessage("Failed to created target.zip").WithError(err)
+	//}
+
+	if err = utils.ZipDir(filepath.Join(workDir, "target"), filepath.Join(workDir, "target.zip")); err != nil {
+		log.Warn(ctx).Err(err).Msg("Failed to zip target directory")
+		return "", tool, api.ErrInternal.WithMessage("Failed to zip target directory")
+	}
+
+	data, err = os.ReadFile(filepath.Join(workDir, "target.zip"))
 	if err != nil {
 		return "", tool, api.ErrInternal.
-			WithMessage("Failed to read target.tar.gz").WithError(err)
+			WithMessage("Failed to read target.zip").WithError(err)
 	}
-	if err = bs.s3Service.PutObject(ctx, filepath.Join(md.ID, "target.tar.gz"), bs.s3Bucket, data); err != nil {
+	if err = bs.s3Service.PutObject(ctx, filepath.Join(md.ID, "target.zip"), bs.s3Bucket, data); err != nil {
 		return "", tool, api.ErrInternal.
-			WithMessage("Failed to upload target.tar.gz to S3").WithError(err)
+			WithMessage("Failed to upload target.zip to S3").WithError(err)
 	}
 
 	log.Info().Str("id", md.ID).
 		Str("duration", time.Now().Sub(start).String()).
 		Msg("target file has been uploaded to S3")
 
-	// 6. build docker image, TODO remove from here? using a specific service?
-	imageURI := fmt.Sprintf("%s/cloud/tools:%s", bs.dockerRegistry, md.ID)
-	cmd = exec.Command("docker", "buildx", "build", "--platform", "linux/amd64",
-		"-t", imageURI, ".", "--load")
-	cmd.Dir = targetDir
-	if output, err := cmd.CombinedOutput(); err != nil {
-		println(string(output))
-		return "", tool, api.ErrInternal.
-			WithMessage("Failed to build docker image").WithError(err)
-	}
-
-	log.Info().Str("id", md.ID).
-		Str("duration", time.Now().Sub(start).String()).
-		Msg("docker image has been built successfully")
-
-	// 7. cleanup
+	// 6. cleanup
 	if err = os.RemoveAll(workDir); err != nil {
 		log.Warn().Str("path", workDir).Msg("Failed to remove work directory")
 	}
-	return imageURI, tool, nil
+	return filepath.Join(bs.s3Bucket, md.ID, "target.zip"), tool, nil
 }
 
 type ToolMetadata struct {
@@ -229,7 +227,7 @@ if __name__ == '__main__':
 
 `
 
-	dockerfileTemplate = `FROM npiai/python:3.12
+	dockerfileTemplate = `FROM 992297059634.dkr.ecr.us-west-2.amazonaws.com/python:3.12
 COPY . /npiai/tools
 
 SHELL ["/bin/bash", "-c"]
@@ -251,5 +249,28 @@ package-mode = false
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+`
+
+	codebuildTemplate = `version: 0.2
+reports:
+    toolspec:
+      files:
+        - "spec.yml"
+      file-format: "YAML"
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker run --rm --entrypoint poetry $IMAGE_REPO_NAME:$IMAGE_TAG run python main.py spec > spec.yml
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 `
 )

@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM python:3.10
+FROM --platform=$BUILDPLATFORM python:3.12
 
 LABEL maintainer="Wenfeng Wang <w@npi.ai>"
 

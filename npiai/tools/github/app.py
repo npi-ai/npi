@@ -10,6 +10,7 @@ from github.GithubObject import NotSet
 from typing import Union, TypeVar, List, Literal
 
 from npiai import FunctionTool, function
+from npiai.context import Context
 from npiai.error.auth import UnauthorizedError
 
 __PROMPT__ = """
@@ -52,11 +53,11 @@ class GitHub(FunctionTool):
 
         self.github_client: PyGithub | None = None
 
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         if self.token is None:
             raise UnauthorizedError('GitHub credentials are not found')
         self.github_client = PyGithub(auth=Auth.Token(self.token))
-        await super().start()
+        await super().start(ctx)
 
     @staticmethod
     def _comment_to_json(comment: Union[IssueComment, PullRequestComment]):

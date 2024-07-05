@@ -10,32 +10,23 @@ import (
 	"strings"
 )
 
-type Tool struct {
-	Base          `json:",inline" bson:",inline"`
-	OrgID         primitive.ObjectID `json:"org_id" bson:"org_id"`
-	Name          string             `json:"name" bson:"name"`
-	HeadVersionID primitive.ObjectID `json:"head_version_id" bson:"head_version_id"`
-	Auth          Authentication     `json:"auth" bson:"auth"`
-}
-
 type AuthType string
 
 const (
-	AuthNone   = AuthType("none")
-	AuthAPIKey = AuthType("api_key")
-	AuthOAuth  = AuthType("oauth")
+	AuthNone     = AuthType("none")
+	AuthAPIKey   = AuthType("api_key")
+	AuthOAuth    = AuthType("oauth")
+	AuthPassword = AuthType("password")
 )
 
-type Authentication struct {
-	Type   AuthType `json:"type" bson:"type"`
-	APIKey string   `json:"api_key" bson:"api_key"`
-	OAuth  OAuthApp `json:"oauth" bson:"oauth"`
-}
-
-type OAuthApp struct {
-	ClientID    string `json:"client_id" bson:"client_id"`
-	Secrets     string `json:"secrets" bson:"secrets"`
-	RedirectURL string `json:"redirect_url" bson:"redirect_url"`
+type Tool struct {
+	Base                `json:",inline" bson:",inline"`
+	OrgID               primitive.ObjectID `json:"org_id" bson:"org_id"`
+	HeadVersionID       primitive.ObjectID `json:"head_version_id" bson:"head_version_id"`
+	AppClientID         primitive.ObjectID `json:"client_id" bson:"client_id"`
+	AuthMethod          AuthType           `json:"auth_method" bson:"auth_method"`
+	Name                string             `json:"name" bson:"name"`
+	RequiredPermissions []int              `json:"-" bson:"required_permissions"`
 }
 
 type ToolEnv struct {
@@ -52,6 +43,7 @@ type ToolInstance struct {
 	Metadata     ToolMetadata       `json:"metadata" bson:"metadata"`
 	FunctionSpec ToolFunctionSpec   `json:"spec" bson:"spec"`
 	Image        string             `json:"image" bson:"image"`
+	OfficialTool bool               `json:"official_tool" bson:"official_tool"`
 	S3URI        string             `json:"-" bson:"s3_uri"`
 	ServiceURL   string             `json:"-" bson:"service_url"`
 	DeployName   string             `json:"-" bson:"deploy_name"` // TODO move to Tool

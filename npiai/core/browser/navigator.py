@@ -170,10 +170,10 @@ class NavigatorAgent(BrowserAgentTool):
         self.max_steps = max_steps
 
     # navigator uses shared playwright context, so we don't need to start it again here
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         pass
 
-    async def end(self):
+    async def end(self, ctx: Context | None = None):
         pass
 
     async def generate_user_prompt(self, task: str, history: List[Response]):

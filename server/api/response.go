@@ -27,11 +27,26 @@ func ResponseWithError(ctx *gin.Context, err error) {
 }
 
 type ToolSummary struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	Description    string               `json:"description"`
-	Runtime        model.Runtime        `json:"runtime"`
-	Dependencies   []model.Dependency   `json:"dependencies"`
-	Authentication model.Authentication `json:"authentication"`
-	Endpoint       string               `json:"endpoint"`
+	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	Runtime            model.Runtime      `json:"runtime"`
+	Dependencies       []model.Dependency `json:"dependencies"`
+	Authentication     Authentication     `json:"authentication"`
+	Endpoint           string             `json:"endpoint"`
+	RequiredPermission []string           `json:"-"`
+}
+
+type Authentication struct {
+	ClientID     string         `json:"client_id"`
+	Type         model.AuthType `json:"type"`
+	APIKey       string         `json:"api_key"`
+	ClientSecret string         `json:"client_secret"`
+}
+
+type ToolStatus struct {
+	Authorized          bool               `json:"authorized"`
+	Deployed            bool               `json:"deployed"`
+	ClientID            string             `json:"client_id"`
+	RequiredPermissions []model.Permission `json:"required_permissions"`
 }

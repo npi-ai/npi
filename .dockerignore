@@ -6,7 +6,7 @@
 
 credentials.json
 
-credentials/
+**/credentials
 
 **/bin
 

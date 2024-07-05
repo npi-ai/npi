@@ -2,15 +2,18 @@ import asyncio
 import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict
+import base64
+import json
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
+from google.oauth2.credentials import Credentials
+from dotenv import load_dotenv
 
 from npiai import agent_wrapper, AgentTool, BrowserAgentTool
 from npiai.context import ContextManager, Context
-from npiai.tools import GitHub, Gmail, GoogleCalendar
-from npiai.tools.web import Chromium
+from npiai.tools import GitHub, Gmail, GoogleCalendar, Twilio
+from npiai.tools.web import Chromium, Twitter
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
 
@@ -27,28 +30,6 @@ class Chat(pbgrpc.PlaygroundServicer):
 
     def __init__(self):
         self.ctx_manager = ContextManager()
-        self.agent_container: Dict[pb.AppType, AgentTool] = {}
-
-    async def start(self):
-        tools = {
-            pb.GOOGLE_GMAIL: Gmail(),
-            pb.GOOGLE_CALENDAR: GoogleCalendar(),
-            # pb.TWITTER: Twitter(),
-            # pb.DISCORD: Discord(),
-            pb.GITHUB: GitHub(),
-            pb.WEB_BROWSER: Chromium(),
-            # pb.TWILIO: Twilio(),
-            # pb.SLACK: Slack(),
-        }
-
-        for entry, tool in tools.items():
-            tool.use_hitl(PlaygroundHITL())
-            await tool.start()
-            self.agent_container[entry] = agent_wrapper(tool)
-
-    async def shutdown(self):
-        for app in self.agent_container.values():
-            await app.end()
 
     async def Chat(
             self,
@@ -62,8 +43,8 @@ class Chat(pbgrpc.PlaygroundServicer):
                 ctx = self.ctx_manager.new_thread(request.chat_request)
                 response.thread_id = ctx.id
                 response.code = pb.ResponseCode.SUCCESS
-                # ignore task result
-                _ = asyncio.create_task(self.run(request.chat_request.type, ctx))
+                decoded_bytes = base64.b64decode(request.authorization)
+                _ = asyncio.create_task(self.run(request.chat_request.type, decoded_bytes.decode('utf-8'), ctx))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -157,27 +138,55 @@ class Chat(pbgrpc.PlaygroundServicer):
             return
         cb.callback(result=req.action_result_request)
 
-    async def run(self, app_type: pb.AppType, thread: Context):
-        agent = None
+    @staticmethod
+    async def run(app_type: pb.AppType, authorization: str, ctx: Context):
         try:
-            if app_type not in self.agent_container:
-                raise ValueError(f"App {app_type} not found")
-            agent = self.agent_container[app_type]
-            thread.set_active_app(agent)
-            result = await agent.chat(thread.instruction, thread)
-            thread.finish(result)
+            match app_type:
+                case pb.AppType.GITHUB:
+                    app = GitHub(access_token=authorization)
+                case pb.AppType.GOOGLE_GMAIL:
+                    app = Gmail(
+                        creds=Credentials.from_authorized_user_info(
+                            info=json.loads(authorization),
+                            scopes="https://mail.google.com/"
+                        )
+                    )
+                case pb.AppType.GOOGLE_CALENDAR:
+                    app = GoogleCalendar(
+                        creds=Credentials.from_authorized_user_info(
+                            info=json.loads(authorization),
+                            scopes="https://www.googleapis.com/auth/calendar"
+                        )
+                    )
+                case pb.AppType.TWITTER:
+                    account = authorization.split(":")
+                    app = Twitter(username=account[0], password=account[1])
+                case pb.AppType.WEB_BROWSER:
+                    app = Chromium()
+                case pb.AppType.TWILIO:
+                    account = authorization.split(":")
+                    app = Twilio(
+                        account_sid=account[0],
+                        auth_token=account[1],
+                        from_number=account[2]
+                    )
+                case _:
+                    raise ValueError(f"App {app_type} not found")
+            agent = agent_wrapper(app)
+            await agent.start(ctx)
+            ctx.set_active_app(app)
+            result = await agent.chat(ctx.instruction, ctx)
+            await agent.end(ctx)
+            ctx.finish(result)
         except UnauthorizedError as e:
-            thread.failed(str(e))
+            ctx.failed(str(e))
         except Exception as e:
             err_msg = ''.join(traceback.format_exception(e))
             logger.error(err_msg)
-            thread.failed(str(e))
+            ctx.failed(str(e))
             # raise e
         finally:
-            thread.set_active_app(None)
-            if isinstance(agent, BrowserAgentTool):
-                # release current session
-                await agent.goto_blank()
+            ctx.set_active_app(None)
 
 
 _cleanup_coroutines = []
@@ -186,7 +195,6 @@ _cleanup_coroutines = []
 async def serve(address: str) -> None:
     server = grpc.aio.server(ThreadPoolExecutor())
     srv = Chat()
-    await srv.start()
 
     pbgrpc.add_PlaygroundServicer_to_server(srv, server)
     server.add_insecure_port(address)
@@ -197,7 +205,6 @@ async def serve(address: str) -> None:
 
     async def server_graceful_shutdown():
         logger.info("Starting graceful shutdown...")
-        await srv.shutdown()
         # Shuts down the server with 5 seconds of grace period. During the
         # grace period, the server won't accept new connections and allow
         # existing RPCs to continue within the grace period.
@@ -223,8 +230,6 @@ def main():
         if _cleanup_coroutines:
             asyncio.run(cleanup())
 
-
-from dotenv import load_dotenv
 
 if __name__ == "__main__":
     dotenv_path = os.path.join(os.path.dirname(__file__), 'credentials/.env')

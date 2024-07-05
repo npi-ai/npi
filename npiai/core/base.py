@@ -38,12 +38,12 @@ class BaseTool(ABC):
         ...
 
     @abstractmethod
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         """Start the tools"""
         ...
 
     @abstractmethod
-    async def end(self):
+    async def end(self, ctx: Context | None = None):
         """Stop and dispose the tools"""
         ...
 

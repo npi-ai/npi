@@ -80,7 +80,7 @@ class Context:
     __active_tool: Union['BaseTool', None] = None
     __last_screenshot: str | None = None
 
-    def __init__(self, instruction: str) -> None:
+    def __init__(self, instruction: str | None = None) -> None:
         self.id = str(uuid.uuid4())
         self.born_at = datetime.datetime.now()
         self.history: List[ThreadMessage | str] = []

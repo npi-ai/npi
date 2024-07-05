@@ -138,12 +138,12 @@ class FunctionTool(BaseFunctionTool):
         for app in self._sub_tools:
             app.use_hitl(hitl)
 
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         """Start the tools"""
         if not self._started:
             self._started = True
             for tool in self._sub_tools:
-                await tool.start()
+                await tool.start(ctx)
 
     def server(self):
         """Start the server"""
@@ -161,14 +161,15 @@ class FunctionTool(BaseFunctionTool):
         @fapp.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
         async def root(full_path: str, request: Request):
             method = convert_camel_to_snake(full_path)
+            ctx = Context(instruction="")
             try:
                 match request.method:
                     case "POST":
                         args = await request.json()
-                        res = await self._exec(method, args)
+                        res = await self._exec(ctx, method, args)
                     case "GET":
                         args = {k: v for k, v in request.query_params.items()}
-                        res = await self._exec(method, args)
+                        res = await self._exec(ctx, method, args)
                     case _:
                         return JSONResponse({'error': 'Method not allowed'}, status_code=405)
                 try:
@@ -198,12 +199,12 @@ class FunctionTool(BaseFunctionTool):
 
         uvicorn.run(fapp, host="0.0.0.0", port=18000)
 
-    async def end(self):
+    async def end(self, ctx: Context | None = None):
         """Stop and dispose the tools"""
         if self._started:
             self._started = False
             for app in self._sub_tools:
-                await app.end()
+                await app.end(ctx)
 
     def add_tool(
             self,
@@ -223,8 +224,8 @@ class FunctionTool(BaseFunctionTool):
     async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
         if app_name:
             fn_name = f'{app_name}_{fn_name}'
-        ctx = Context('')
-        return await self._exec(ctx, fn_name, args)
+
+        return await self._exec(Context(), fn_name, args)
 
     async def call(
             self,
@@ -254,7 +255,8 @@ class FunctionTool(BaseFunctionTool):
                 res = await self._exec(ctx, fn_name, args)
             except Exception as e:
                 logger.error(e)
-                await ctx.send_msg(callback.Callable(f'Exception while executing {fn_name}: {e}'))
+                res = f'Exception while executing {fn_name}: {e}'
+                await ctx.send_msg(callback.Callable(res))
 
             logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
@@ -282,7 +284,6 @@ class FunctionTool(BaseFunctionTool):
                 args = {tool.ctx_param_name: ctx}
             else:
                 args[tool.ctx_param_name] = ctx
-
         if args is None:
             return str(await tool.fn())
         return str(await tool.fn(**args))

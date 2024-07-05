@@ -7,6 +7,7 @@ from playwright.async_api import TimeoutError
 from markdownify import MarkdownConverter
 
 from npiai import function, BrowserTool
+from npiai.context import Context
 from npiai.core.browser import NavigatorAgent
 from npiai.utils import logger
 from npiai.error.auth import UnauthorizedError
@@ -135,12 +136,12 @@ class Twitter(BrowserTool):
             NavigatorAgent(llm=navigator_llm, playwright=self.playwright)
         )
 
-    async def start(self):
+    async def start(self, ctx: Context | None = None):
         if not self._started:
-            await super().start()
-            await self._login()
+            await super().start(ctx)
+            await self._login(ctx)
 
-    async def _login(self):
+    async def _login(self, ctx: Context | None = None):
         if os.path.exists(self.state_file):
             with open(self.state_file, 'r') as f:
                 state = json.load(f)
@@ -161,13 +162,13 @@ class Twitter(BrowserTool):
         await self.playwright.page.get_by_role('button', name='Next').click()
 
         # check if additional credentials (i.e, username) is required
-        await self._check_additional_credentials()
+        await self._check_additional_credentials(ctx)
 
         await self.playwright.page.get_by_label('Password', exact=True).fill(self._password)
         await self.playwright.page.get_by_test_id('LoginForm_Login_Button').click()
 
         # check again if additional credentials (i.e, phone number) is required
-        await self._check_additional_credentials()
+        await self._check_additional_credentials(ctx)
 
         # now we should be directed to twitter home
         await self.playwright.page.wait_for_url(__ROUTES__['home'])
@@ -177,13 +178,13 @@ class Twitter(BrowserTool):
         os.makedirs(save_dir, exist_ok=True)
         await self.playwright.context.storage_state(path=self.state_file)
 
-    async def _check_additional_credentials(self):
+    async def _check_additional_credentials(self, ctx: Context | None = None):
         await self.playwright.page.wait_for_timeout(1000)
         cred_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
         if await cred_input.count() != 0:
             label = self.playwright.page.locator('label:has(input[data-testid="ocfEnterTextTextInput"])')
             cred_name = await label.text_content()
-            cred = await self._request_additional_credentials(cred_name)
+            cred = await self._request_additional_credentials(cred_name, ctx)
             await cred_input.fill(cred)
             await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
 
@@ -191,14 +192,17 @@ class Twitter(BrowserTool):
             if await cred_input.count() != 0:
                 raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
 
-    async def _request_additional_credentials(self, cred_name: str) -> str:
-        raise UnauthorizedError(f'Unable to login to Twitter. Please replace username with {cred_name} and try again.')
+    async def _request_additional_credentials(self, cred_name: str, ctx: Context | None = None) -> str:
+        if ctx is None:
+            raise UnauthorizedError(
+                f'Unable to login to Twitter. Please replace username with {cred_name} and try again.'
+            )
 
-        # FIXME: how to request creds without context?
-        # return await self.hitl.input(
-        #     self.name,
-        #     f'Please enter {cred_name} to continue the login process.',
-        # )
+        return await self.hitl.input(
+            ctx,
+            self.name,
+            f'Please enter {cred_name} to continue the login process.',
+        )
 
     @function
     async def search(self, query: str, sort_by: Literal['hottest', 'latest'] = 'hottest'):

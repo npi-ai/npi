@@ -16,8 +16,13 @@ import (
 
 // below are general available
 const (
-	CollTools         = "tools"
-	CollToolInstances = "tool_instances"
+	CollTools             = "tools"
+	CollUserAuthorization = "user_authorizations"
+	CollToolInstances     = "tool_instances"
+	CollAuthUserToNPI     = "auth_user_npi"
+	CollAuthNPIToApp      = "auth_npi_app"
+	CollOrganizations     = "organizations"
+	CollAppClients        = "app_clients"
 )
 
 type MongoConfig struct {
