@@ -92,8 +92,8 @@ class Context:
         self.__is_failed = False
         self.__failed_msg: str = ''
 
-    def set_active_app(self, app: Union['BaseTool', None]):
-        self.__active_tool = app
+    def set_active_tool(self, tool: Union['BaseTool', None]):
+        self.__active_tool = tool
 
     async def refresh_screenshot(self) -> str | None:
         """
@@ -138,7 +138,7 @@ class Context:
         self.__result = msg
         self.__is_finished = True
         self.__last_screenshot = None
-        self.set_active_app(None)
+        self.set_active_tool(None)
         self.q.task_done()
 
     def failed(self, msg: str):

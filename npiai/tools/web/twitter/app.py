@@ -1,10 +1,13 @@
 import json
 import os
 import re
+import tempfile
+import pathlib
 from typing import Literal
 
 from playwright.async_api import TimeoutError
 from markdownify import MarkdownConverter
+from slugify import slugify
 
 from npiai import function, BrowserTool
 from npiai.context import Context
@@ -104,8 +107,6 @@ class Twitter(BrowserTool):
     _username: str
     _password: str
 
-    state_file: str = './credentials/twitter_state.json'
-
     def __init__(
             self,
             username: str = None,
@@ -142,8 +143,9 @@ class Twitter(BrowserTool):
             await self._login(ctx)
 
     async def _login(self, ctx: Context | None = None):
-        if os.path.exists(self.state_file):
-            with open(self.state_file, 'r') as f:
+        state_file = pathlib.Path(tempfile.gettempdir()) / f'{slugify(self._username)}/twitter_state.json'
+        if os.path.exists(state_file):
+            with open(state_file, 'r') as f:
                 state = json.load(f)
                 await self.playwright.context.add_cookies(state['cookies'])
             await self.playwright.page.goto(__ROUTES__['home'])
@@ -174,9 +176,9 @@ class Twitter(BrowserTool):
         await self.playwright.page.wait_for_url(__ROUTES__['home'])
 
         # save state
-        save_dir = os.path.dirname(self.state_file)
+        save_dir = os.path.dirname(state_file)
         os.makedirs(save_dir, exist_ok=True)
-        await self.playwright.context.storage_state(path=self.state_file)
+        await self.playwright.context.storage_state(path=state_file)
 
     async def _check_additional_credentials(self, ctx: Context | None = None):
         await self.playwright.page.wait_for_timeout(1000)

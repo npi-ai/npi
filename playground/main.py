@@ -175,8 +175,9 @@ class Chat(pbgrpc.PlaygroundServicer):
                 case _:
                     raise ValueError(f"Unsupported tool")
             agent = agent_wrapper(app)
+            agent.use_hitl(PlaygroundHITL())
+            ctx.set_active_tool(agent)
             await agent.start(ctx)
-            ctx.set_active_app(app)
             result = await agent.chat(ctx.instruction, ctx)
             await agent.end(ctx)
             ctx.finish(result)
@@ -188,7 +189,7 @@ class Chat(pbgrpc.PlaygroundServicer):
             ctx.failed(str(e))
             # raise e
         finally:
-            ctx.set_active_app(None)
+            ctx.set_active_tool(None)
 
 
 _cleanup_coroutines = []
