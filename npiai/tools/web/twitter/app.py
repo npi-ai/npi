@@ -5,7 +5,7 @@ import tempfile
 import pathlib
 from typing import Literal
 
-from playwright.async_api import TimeoutError
+from playwright.async_api import TimeoutError, Error, Locator
 from markdownify import MarkdownConverter
 from slugify import slugify
 
@@ -180,18 +180,27 @@ class Twitter(BrowserTool):
         os.makedirs(save_dir, exist_ok=True)
         await self.playwright.context.storage_state(path=state_file)
 
-    async def _check_additional_credentials(self, ctx: Context | None = None):
+    async def _get_additional_cred_input(self) -> Locator | None:
         await self.playwright.page.wait_for_timeout(1000)
         cred_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
-        if await cred_input.count() != 0:
+
+        try:
+            if await cred_input.count() != 0:
+                return cred_input
+        except Error:
+            return None
+
+    async def _check_additional_credentials(self, ctx: Context | None = None):
+        cred_input = await self._get_additional_cred_input()
+
+        if cred_input:
             label = self.playwright.page.locator('label:has(input[data-testid="ocfEnterTextTextInput"])')
             cred_name = await label.text_content()
             cred = await self._request_additional_credentials(cred_name, ctx)
             await cred_input.fill(cred)
             await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
 
-            await self.playwright.page.wait_for_timeout(1000)
-            if await cred_input.count() != 0:
+            if await self._get_additional_cred_input() is not None:
                 raise UnauthorizedError('Unable to login to Twitter. Please try again with the correct credentials.')
 
     async def _request_additional_credentials(self, cred_name: str, ctx: Context | None = None) -> str:
@@ -282,19 +291,16 @@ class Twitter(BrowserTool):
         Args:
             max_results: Maximum number of tweets to return. Pass -1 for no limit.
         """
-        scrollable = await self.is_scrollable()
+        try:
+            # match unvisited tweets only
+            tweets = self.playwright.page.locator('[data-testid="tweet"]:not([data-visited])')
+            await tweets.first.wait_for(state='attached', timeout=180_000)
 
-        if not scrollable:
-            # no more tweets
-            return 'No more tweets'
+            logger.debug(f'{await tweets.count()} tweets found.')
+        except TimeoutError:
+            return 'No tweets found.'
 
         results = []
-
-        # match unvisited tweets only
-        tweets = self.playwright.page.locator('[data-testid="tweet"]:not([data-visited])')
-        await tweets.first.wait_for(state='attached', timeout=180_000)
-
-        logger.debug(f'{await tweets.count()} tweets found.')
 
         for tweet in await tweets.all():
             try:
