@@ -1,9 +1,11 @@
 import asyncio
 import json
 import os
+from typing import Literal
 
 from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 
+from npiai.context import Context
 from npiai.utils import logger
 from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
@@ -67,6 +69,20 @@ class Slack(FunctionTool):
             messages.append(self._parse_raw_message(msg))
 
         return sorted(messages, key=lambda x: float(x['thread_id']))
+
+    @function
+    async def ask_for_id(self, ctx: Context, name: Literal['user', 'channel', 'thread']):
+        """
+        Ask the user to provide recipient's user id, channel id, or thread id.
+        Args:
+            ctx: NPi context.
+            name: The type of id to ask for.
+        """
+        return await self.hitl.input(
+            ctx,
+            self.name,
+            f"Please provide recipient's {name} ID to send messages to",
+        )
 
     @function
     async def list_channels(self):
