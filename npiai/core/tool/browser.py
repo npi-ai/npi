@@ -1,11 +1,12 @@
 import base64
 
 from markdownify import MarkdownConverter
-from playwright.async_api import ElementHandle
+from playwright.async_api import ElementHandle, Error
 
 from npiai.core.tool.function import FunctionTool, function
 from npiai.core.browser.playwright import PlaywrightContext
 from npiai.context import Context
+from npiai.utils import logger
 
 
 class MdConverter(MarkdownConverter):
@@ -72,8 +73,13 @@ class BrowserTool(FunctionTool):
         """Get the screenshot of the current page"""
         if not self.playwright or not self.playwright.ready or self.playwright.page.url == 'about:blank':
             return None
-        screenshot = await self.playwright.page.screenshot(caret='initial')
-        return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
+
+        try:
+            screenshot = await self.playwright.page.screenshot(caret='initial')
+            return 'data:image/png;base64,' + base64.b64encode(screenshot).decode()
+        except Error as e:
+            logger.error(e)
+            return None
 
     async def get_page_url(self):
         """Get the URL of the current page"""

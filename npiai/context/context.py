@@ -104,7 +104,6 @@ class Context:
             Otherwise, return the latest screenshot.
         """
         if not self.__active_tool or self.is_finished():
-            # TODO: raise errors?
             return None
 
         screenshot = await self.__active_tool.get_screenshot()
