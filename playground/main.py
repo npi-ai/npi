@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from npiai import agent_wrapper, AgentTool, BrowserAgentTool
 from npiai.context import ContextManager, Context
-from npiai.tools import GitHub, Gmail, GoogleCalendar, Twilio
+from npiai.tools import GitHub, Gmail, GoogleCalendar, Twilio, Discord
 from npiai.tools.web import Chromium, Twitter
 from npiai.utils import logger
 from npiai.error import UnauthorizedError
@@ -144,6 +144,8 @@ class Chat(pbgrpc.PlaygroundServicer):
             match app_type:
                 case pb.AppType.GITHUB:
                     app = GitHub(access_token=authorization)
+                case pb.AppType.DISCORD:
+                    app = Discord(access_token=authorization)
                 case pb.AppType.GOOGLE_GMAIL:
                     app = Gmail(
                         creds=Credentials.from_authorized_user_info(
@@ -171,7 +173,7 @@ class Chat(pbgrpc.PlaygroundServicer):
                         from_number=account[2]
                     )
                 case _:
-                    raise ValueError(f"App {app_type} not found")
+                    raise ValueError(f"Unsupported tool")
             agent = agent_wrapper(app)
             await agent.start(ctx)
             ctx.set_active_app(app)
