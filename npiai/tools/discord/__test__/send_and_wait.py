@@ -2,12 +2,14 @@ import asyncio
 
 from npiai import agent_wrapper
 from npiai.tools import Discord
+from npiai.hitl_handler import ConsoleHandler
 
 
 async def main():
-    async with agent_wrapper(Discord()) as discord:
-        return await discord.chat(
-            'Send a direct message to Dolphin (user id: 209243186332303362) asking if he is doing well, and wait for his reply.'
+    async with agent_wrapper(Discord()) as agent:
+        agent.use_hitl(ConsoleHandler())
+        return await agent.chat(
+            'Send a direct message to Dolphin asking if he is doing well, and wait for his reply.'
         )
 
 

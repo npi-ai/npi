@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from typing import Literal
 
 import discord
 
@@ -19,19 +20,19 @@ If not found, you should ask the user to enter the ID through the `ask_human` to
 
 Task: Send a DM to {{some_user}} and wait for their reply.
 Workflow:
-- call_human({ "message": "Please provide user ID for {{some_user}}" })
+- ask_for_id({ "name": "user" })
 - create_dm({ "user_id": "{{user_id}}" })
 - send_message({ "channel_id": "{{dm_channel_id}}", "content": "Hi there!" })
 - wait_for_reply({ "channel_id": "{{dm_channel_id}}", "message_id": "{{message_id}}" })
 
 Task: Get the latest message from {{some_channel}}.
 Workflow:
-- call_human({ "message": "Please provide channel ID for {{some_channel}}" })
+- ask_for_id({ "name": "channel" })
 - fetch_history({ "channel_id": "{{channel_id}}" })
 
 Task: Send a message to {{some_channel}}.
 Workflow:
-- call_human({ "message": "Please provide channel ID for {{some_channel}}" })
+- ask_for_id({ "name": "channel" })
 - send_message({ "channel_id": "{{channel_id}}", "content": "Hi there!" })
 """
 
@@ -79,6 +80,20 @@ class Discord(FunctionTool):
             'mentions': [self.parse_user(user) for user in msg.mentions],
             'mention_everyone': msg.mention_everyone,
         }
+
+    @function
+    async def ask_for_id(self, ctx: Context, name: Literal['user', 'channel', 'message']):
+        """
+        Ask the user to provide recipient's user id, channel id, or message id.
+        Args:
+            ctx: NPi context.
+            name: The type of id to ask for.
+        """
+        return await self.hitl.input(
+            ctx,
+            self.name,
+            f"Please provide recipient's {name} ID to send messages to",
+        )
 
     @function
     async def create_dm(self, user_id: int):
