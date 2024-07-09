@@ -1,7 +1,8 @@
-from typing import Callable, Optional, Awaitable, List, Dict, Any
+from typing import Callable, Optional, Awaitable, List, Dict, Any, Type
 from dataclasses import dataclass, asdict
 
 from openai.types.chat import ChatCompletionToolParam
+from pydantic import BaseModel
 
 from npiai.types.shot import Shot
 
@@ -15,6 +16,7 @@ class FunctionRegistration:
     name: str
     ctx_param_name: str
     schema: Optional[Dict[str, Any]] = None
+    model: Optional[Type[BaseModel]] = None
     few_shots: Optional[List[Shot]] = None
 
     def get_meta(self):
