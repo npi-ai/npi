@@ -1,13 +1,11 @@
 import functools
-from typing import List, Callable, TypeVar, Any
+from typing import List, Callable
 
 from langchain_core.tools import BaseToolkit, StructuredTool
 from langchain_core.pydantic_v1 import create_model, PrivateAttr, Field
 
 from npiai.core import BaseTool as NPiBaseTool
 from npiai.context import Context
-
-T = TypeVar('T')
 
 
 def unwrap_context(func: Callable, ctx_param_name: str | None) -> Callable:
