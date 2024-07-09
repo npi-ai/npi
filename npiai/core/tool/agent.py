@@ -32,9 +32,6 @@ class AgentTool(BaseAgentTool):
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
 
-        def chat(message: str, ctx: Context):
-            return self.chat(message, ctx)
-
         model = create_model(
             f'{self.name}__agent_model',
             message=(str, Field(
@@ -43,7 +40,7 @@ class AgentTool(BaseAgentTool):
         )
 
         fn_reg = FunctionRegistration(
-            fn=chat,
+            fn=self.chat,
             name='chat',
             ctx_param_name='ctx',
             description=self._tool.description,
