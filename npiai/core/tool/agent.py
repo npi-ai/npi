@@ -5,6 +5,7 @@ import sys
 from typing import List, overload
 
 from fastapi import FastAPI, Request
+from pydantic import create_model, Field
 
 import uvicorn
 from npiai.llm import LLM, OpenAI
@@ -15,6 +16,7 @@ from npiai.core.base import BaseAgentTool
 from npiai.core.hitl import HITL
 from npiai.core.tool.function import FunctionTool
 from npiai.core.tool.browser import BrowserTool
+from npiai.utils import sanitize_schema
 
 
 class AgentTool(BaseAgentTool):
@@ -33,21 +35,20 @@ class AgentTool(BaseAgentTool):
         def chat(message: str, ctx: Context):
             return self.chat(message, ctx)
 
+        model = create_model(
+            f'{self.name}__agent_model',
+            message=(str, Field(
+                description=f'The task you want {self._tool.name} to do or the message you want to chat with {self._tool.name}'
+            ))
+        )
+
         fn_reg = FunctionRegistration(
             fn=chat,
             name='chat',
             ctx_param_name='ctx',
             description=self._tool.description,
-            schema={
-                'type': 'object',
-                'properties': {
-                    'message': {
-                        'type': 'string',
-                        'description': f'The task you want {self._tool.name} to do or the message you want to chat with {self._tool.name}'
-                    },
-                },
-                'required': ['message'],
-            }
+            model=model,
+            schema=sanitize_schema(model),
         )
 
         return [fn_reg]

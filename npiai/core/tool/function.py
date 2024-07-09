@@ -1,15 +1,13 @@
 """The basic interface for NPi Apps"""
 import asyncio
 import dataclasses
-import functools
 import inspect
 import json
 import os
 import re
 import signal
 import sys
-from dataclasses import asdict
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Type
 import logging
 
 import yaml
@@ -37,6 +35,7 @@ def function(
         name: Optional[str] = None,
         description: Optional[str] = None,
         schema: Dict[str, Any] = None,
+        model: Optional[Type[BaseTool]] = None,
         few_shots: Optional[List[Shot]] = None,
 ):
     """
@@ -47,6 +46,7 @@ def function(
         name: Tool name. The tool function name will be used if not given.
         description: Tool description. This value will be inferred from the tool's docstring if not given.
         schema: Tool parameters schema. This value will be inferred from the tool's type hints if not given.
+        model: Pydantic model for tool schema. This value will be built from the schema if not given.
         few_shots: Predefined working examples.
 
     Returns:
@@ -61,15 +61,12 @@ def function(
                 name=name,
                 description=description,
                 schema=schema,
+                model=model,
                 few_shots=few_shots,
             )
         )
 
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
-
-        return wrapper
+        return fn
 
     # called as `@function`
     if callable(tool_fn):
@@ -128,7 +125,7 @@ class FunctionTool(BaseFunctionTool):
 
     def use_hitl(self, hitl: HITL):
         """
-        Attach the given HITL handler to this tools and all its sub apps
+        Attach the given HITL handler to this tool and all its sub apps
 
         Args:
             hitl: HITL handler
@@ -309,10 +306,11 @@ class FunctionTool(BaseFunctionTool):
                 )
 
             # parse schema
+            tool_model = tool_meta.model
             tool_schema = tool_meta.schema
             ctx_param_name = None
 
-            if not tool_schema and len(params) > 0:
+            if not tool_model and len(params) > 0:
                 # get parameter descriptions
                 param_descriptions = {}
                 for p in docstr.params:
@@ -329,8 +327,10 @@ class FunctionTool(BaseFunctionTool):
                         description=param_descriptions.get(p.name, ''),
                     ))
 
-                model = create_model(f'{tool_name}_model', **param_fields)
-                tool_schema = sanitize_schema(model)
+                tool_model = create_model(f'{tool_name}_model', **param_fields)
+
+            if not tool_schema and tool_model:
+                tool_schema = sanitize_schema(tool_model)
 
             # parse examples
             tool_few_shots = tool_meta.few_shots
@@ -361,6 +361,7 @@ class FunctionTool(BaseFunctionTool):
                     ctx_param_name=ctx_param_name,
                     description=tool_desc.strip(),
                     schema=tool_schema,
+                    model=tool_model,
                     few_shots=tool_few_shots,
                 )
             )
