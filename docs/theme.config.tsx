@@ -3,7 +3,7 @@ import { DocsThemeConfig } from 'nextra-theme-docs';
 
 const config: DocsThemeConfig = {
   logo: <span>NPi AI</span>,
-  logoLink: 'https://www.npi.ai',
+  logoLink: 'https://www.npi.ai/docs',
   project: {
     link: 'https://github.com/npi-ai/npi',
   },

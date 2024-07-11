@@ -1,10 +1,12 @@
 {
   "index": "Quick Start",
+  "cloud": "NPi Cloud",
   "examples": "Examples",
   "core-concepts": "Core Concepts",
   "how-to": "How To Guides",
-  "references": "SDK References",
-  "official-tools": "Official Tools References",
+  "integration": "Integration",
+  "official-tools": "Official Tools",
+  "references": "Tool References",
   "playground": {
     "title": "Playground",
     "type": "page",
