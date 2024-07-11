@@ -13,6 +13,14 @@ func (s Set[T]) Add(element T) {
 	s[element] = struct{}{}
 }
 
+func (s Set[T]) Values() []T {
+	values := make([]T, 0, len(s))
+	for key := range s {
+		values = append(values, key)
+	}
+	return values
+}
+
 // Remove removes an element from the set
 func (s Set[T]) Remove(element T) {
 	delete(s, element)

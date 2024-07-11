@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/codebuild/types"
 	"strings"
 
-	//"github.com/aws/aws-sdk-go-v2/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/codebuild"
+	"github.com/aws/aws-sdk-go-v2/service/codebuild/types"
 	"github.com/npi-ai/npi/server/api"
 	"github.com/npi-ai/npi/server/db"
 	"github.com/npi-ai/npi/server/log"
@@ -252,7 +251,6 @@ func (tc *toolReconciler) BuildingHandler(ctx context.Context, toolInstance mode
 	return db.ConvertError(err)
 }
 
-// DeployingHandler TODO add env
 func (tc *toolReconciler) DeployingHandler(ctx context.Context, toolInstance model.ToolInstance) error {
 	name := utils.GenerateRandomString(12, false, false, false)
 	if err := tc.deploySvc.CreateDeployment(ctx, name, toolInstance.Image, toolInstance.FunctionSpec.Env); err != nil {

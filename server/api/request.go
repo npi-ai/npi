@@ -33,7 +33,7 @@ type MoveAfterForm struct {
 
 type InviteNewMemberForm struct {
 	Email string `json:"email" binding:"required,email"`
-	Role  string `json:"role" binding:"required,oneof=owner admin writer reader"`
+	Role  string `json:"role" binding:"required,oneof=owner admin member"`
 }
 
 type UpdateMembershipForm struct {
@@ -41,5 +41,5 @@ type UpdateMembershipForm struct {
 }
 
 type DeleteMembersForm struct {
-	UserIDs []string `json:"user_ids" binding:"required"`
+	MemberIDs []string `json:"member_ids" binding:"required"`
 }

@@ -21,20 +21,21 @@ func NewAppService() *AppService {
 	}
 }
 
-func (as *AppService) GetOrCreateOrgDefaultAppClient(ctx context.Context, id primitive.ObjectID) (model.AppClient, error) {
+func (as *AppService) GetOrCreateUserDefaultAppClient(ctx context.Context, id primitive.ObjectID, createIfNotExist bool) (model.AppClient, error) {
 	result := as.coll.FindOne(ctx, bson.M{
-		"org_id":      id,
-		"org_default": true,
+		"user_id":      id,
+		"user_default": true,
 	})
 	cli := model.AppClient{}
 	if result.Err() != nil {
 		err := db.ConvertError(result.Err())
-		if !api.IsErrNotFound(err) {
+		if !createIfNotExist || !api.IsErrNotFound(err) {
 			return cli, err
 		}
+
 		cli.Base = model.NewBase(ctx)
-		cli.OrgDefault = true
-		cli.OrgID = id
+		cli.UserDefault = true
+		cli.UserID = id
 		if _, err = as.coll.InsertOne(ctx, cli); err != nil {
 			return cli, db.ConvertError(err)
 		}

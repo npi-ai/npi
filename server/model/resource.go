@@ -60,6 +60,8 @@ const (
 	ResourceStatusQueued       = ResourceStatus("queued")
 	ResourceStatusDeploying    = ResourceStatus("deploying")
 	ResourceStatusRunning      = ResourceStatus("running")
+	ResourceStatusProcessing   = ResourceStatus("processing")
+	ResourceStatusProcessed    = ResourceStatus("processed")
 	ResourceStatusDeleteMarked = ResourceStatus("delete_marked")
 	ResourceStatusDeleting     = ResourceStatus("deleting")
 	ResourceStatusDeleted      = ResourceStatus("deleted")

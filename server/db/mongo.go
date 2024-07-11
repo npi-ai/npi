@@ -19,6 +19,7 @@ const (
 	CollTools             = "tools"
 	CollUserAuthorization = "user_authorizations"
 	CollToolInstances     = "tool_instances"
+	CollAPIKey            = "api_keys"
 	CollAuthUserToNPI     = "auth_user_npi"
 	CollAuthNPIToApp      = "auth_npi_app"
 	CollOrganizations     = "organizations"

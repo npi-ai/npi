@@ -21,9 +21,10 @@ const (
 
 type Tool struct {
 	Base                `json:",inline" bson:",inline"`
-	OrgID               primitive.ObjectID `json:"org_id" bson:"org_id"`
+	TenantID            primitive.ObjectID `json:"tenant_id" bson:"tenant_id"`
 	HeadVersionID       primitive.ObjectID `json:"head_version_id" bson:"head_version_id"`
 	AppClientID         primitive.ObjectID `json:"client_id" bson:"client_id"`
+	APIKeyID            primitive.ObjectID `json:"api_key_id" bson:"api_key_id"`
 	AuthMethod          AuthType           `json:"auth_method" bson:"auth_method"`
 	Name                string             `json:"name" bson:"name"`
 	RequiredPermissions []int              `json:"-" bson:"required_permissions"`
@@ -38,7 +39,7 @@ type ToolEnv struct {
 type ToolInstance struct {
 	BaseResource `json:",inline" bson:",inline"`
 	ToolID       primitive.ObjectID `json:"tool_id" bson:"tool_id"`
-	OrgID        primitive.ObjectID `json:"org_id" bson:"org_id"`
+	TenantID     primitive.ObjectID `json:"tenant_id" bson:"tenant_id"`
 	Version      string             `json:"version" bson:"version"`
 	Metadata     ToolMetadata       `json:"metadata" bson:"metadata"`
 	FunctionSpec ToolFunctionSpec   `json:"spec" bson:"spec"`
@@ -73,6 +74,7 @@ func (t *ToolInstance) OpenAPISchema() []byte {
 	var v3Model = v3.Document{
 		Version: "3.1.0",
 		Info: &base.Info{
+			Version:        "1.0.0",
 			Title:          t.Metadata.Name,
 			Description:    t.Metadata.Description,
 			TermsOfService: "https://www.npi.ai/terms",
@@ -89,7 +91,7 @@ func (t *ToolInstance) OpenAPISchema() []byte {
 		},
 		Servers: []*v3.Server{
 			{
-				URL: fmt.Sprintf("https://%s.tools.npi.ai", t.Metadata.ID),
+				URL: fmt.Sprintf("https://tools.npi.ai/%s", t.Metadata.ID),
 			},
 		},
 		Paths: &v3.Paths{
@@ -99,7 +101,8 @@ func (t *ToolInstance) OpenAPISchema() []byte {
 
 	for _, f := range t.FunctionSpec.Functions {
 		v3Model.Paths.PathItems.Set(
-			fmt.Sprintf("/%s/%s", t.Metadata.Name, changeSnakeToCamel(f.Name)),
+			// TODO add name prefix?
+			fmt.Sprintf("/%s", changeSnakeToCamel(f.Name)),
 			f.OpenAPISchema())
 	}
 
@@ -222,11 +225,25 @@ func (f *Function) OpenAPISchema() *v3.PathItem {
 
 	content := orderedmap.New[string, *v3.MediaType]()
 	properties := orderedmap.New[string, *base.SchemaProxy]()
-	for _, para := range f.Parameters.Properties {
-		properties.Set(para.Name, base.CreateSchemaProxy(&base.Schema{
+	for name, para := range f.Parameters.Properties {
+		schema := &base.Schema{
 			Type:        []string{para.Type.Name()},
 			Description: para.Description,
-		}))
+		}
+		if para.Type.Name() == "array" {
+			itemSchema := &base.Schema{
+				Type: []string{"string"}, // Adjust according to how you get the item type
+				// Add more fields if needed, e.g., Description, Properties, etc.
+			}
+			schemaProxy := base.CreateSchemaProxy(itemSchema)
+			dynamicValue := &base.DynamicValue[*base.SchemaProxy, bool]{
+				N: 0, // Assuming you want to set the A value
+				A: schemaProxy,
+				B: true, // Set B to nil or the default value if needed
+			}
+			schema.Items = dynamicValue
+		}
+		properties.Set(name, base.CreateSchemaProxy(schema))
 	}
 	content.Set("application/json", &v3.MediaType{
 		Schema: base.CreateSchemaProxy(&base.Schema{
