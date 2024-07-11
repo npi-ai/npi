@@ -9,7 +9,9 @@ const withNextra = require('nextra')({
       [
         remarkCodeHike,
         {
-          theme: 'one-dark-pro'
+          lineNumbers: true,
+          showCopyButton: true,
+          theme: 'material-default'
         },
       ]
     ],
