@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/npi-ai/npi",
   "dependencies": {
+    "@code-hike/mdx": "^0.9.0",
     "jotai": "^2.8.0",
     "next": "^14.2.2",
     "next-plausible": "^3.12.0",
