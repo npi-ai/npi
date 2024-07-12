@@ -92,7 +92,13 @@ const config: DocsThemeConfig = {
           href="/"
           className="inline-flex items-center gap-2 hover:underline"
         >
-          <Image src="/images/logo.svg" alt="NPi AI" width={16} height={16} />
+          <Image
+            src="/images/logo.svg"
+            alt="NPi AI"
+            width={16}
+            height={16}
+            className="dark:invert"
+          />
           NPi AI &copy; {new Date().getFullYear()}
         </Link>
       )
