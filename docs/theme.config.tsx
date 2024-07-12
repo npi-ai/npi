@@ -1,9 +1,9 @@
+import Logo from '@components/logo'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { DocsThemeConfig, useConfig } from 'nextra-theme-docs'
 import React from 'react'
-import LogoFull from './public/images/logo-full.svg'
 
 const defaultMeta = {
   title: 'NPi AI',
@@ -12,7 +12,7 @@ const defaultMeta = {
 }
 
 const config: DocsThemeConfig = {
-  logo: <Image src={LogoFull} alt="NPi AI" width={100} />,
+  logo: <Logo width={100} />,
   project: {
     link: 'https://github.com/npi-ai/npi',
   },
