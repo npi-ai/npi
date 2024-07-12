@@ -14,6 +14,7 @@ export default function Logo({
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
+  // avoid hydration mismatch
   useEffect(() => setMounted(true), [])
 
   if (!mounted) return null
