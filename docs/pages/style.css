@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --shiki-token-comment: rgb(0 0 0 / 0.5);
 }

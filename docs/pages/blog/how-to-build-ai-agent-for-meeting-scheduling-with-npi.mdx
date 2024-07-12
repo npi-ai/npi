@@ -1,0 +1,166 @@
+---
+title: "How to use NPi building an AI Agent for meeting scheduling"
+date: 2024/05/08
+description: "Learn how to build an AI Agent for meeting scheduling with NPi in one minute."
+tag: NPi, HITL, Multiagent
+author: Daofeng Wu
+slug: how-to-build-ai-agent-for-meeting-scheduling-with-npi
+searchable: false
+---
+
+## Introduction
+
+In today's fast-paced world, scheduling meetings can be a time-consuming task, especially when coordinating between different parties' calendars and communication preferences. This complex task, however, can be easily fulfilled with [NPi](https://github.com/npi-ai/npi), a powerful natural language programming interface that seamlessly orchestrates multi-app agents. A multi-app agent is essentially an AI-powered program that can interact with multiple applications to perform a complex task. For example, in the context of scheduling meetings, an agent may need to check calendars for availability, send emails to invitees, and receive human feedback all within its workflow. In this blog, we'll demonstrate the surprisingly simple creation of this agent, namely the **Calendar Negotiator**, with NPi in minutes.
+
+## Preparation
+
+### Setup the NPi Server
+
+Before starting, we need to follow the [Quick Start](https://www.npi.ai/docs#quick-start) guides to install the `npi` program and setup a NPi server in our environment.
+
+### Get Google Workspace OAuth Credentials
+
+Follow this guide to create a desktop app and download your oauth secret file: https://developers.google.com/workspace/guides/create-credentials#desktop-app
+
+### Authorize Access
+
+Grant access to Gmail and Google Calendar using the following command:
+
+```
+npi auth google gmail --secret-file <path-to-secret-file>
+npi auth google calendar --secret-file <path-to-secret-file>
+```
+
+## Task Breakdown
+
+### Step 1: Understand the Task
+
+The first step is to clearly define what the agent should achieve. In our case, the Calendar Negotiator should obtain recipient's email addresses, check calendar availability, negotiating meeting times, and ultimately creating calendar events. During this process, it may also ask the user for necessary information or confirmation.
+
+### Step 2: Choose the Appropriate Apps
+
+Based on the previous analysis, we need the following three apps to achieve this task:
+
+1. `Google Calendar`: To check or create calendar events.
+2. `Gmail`: To send and receive emails.
+3. `Human Feedback`: To ask for human interference.
+
+Now, let's import the necessary packages.
+
+```py
+# this agent uses OpenAI's services
+from openai import OpenAI
+
+# the basic structure for creating our NPi agent
+from npiai.core import Agent
+# the apps needed for this task
+from npiai.app.google import Gmail, Calendar
+from npiai.app.human_feedback import ConsoleFeedback
+```
+
+### Step 3: Write the Prompt
+
+To ensure a Large Language Model (LLM) can smoothly execute a task, a well-structured and detailed prompt may include the following elements[^1]:
+
+1. **Task Description:** Clearly define the task objective so the LLM understands what is expected.
+2. **Step-by-Step Instructions:** Break down the task into sequential steps that the LLM should follow. This makes complex tasks more manageable and reduces ambiguity.
+3. **Must-Follow Rules:** State any specific constraints or rules that the LLM must adhere to when completing the task. These guidelines help standardize the response regardless of the LLM's interpretive flexibility.
+4. **Examples:** Provide a clear, completed example that is relevant to the task. This illustrates both the process and the expected outcome.
+
+Below is an example prompt for the Calendar Negotiator:
+
+```py
+PROMPT = """
+Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.
+
+You can use the tools to help you to schedule the meeting.
+
+The tools you can use are: Google Calendar, Google Gmail, and Human Feedback.
+
+## Instructions
+
+You need to follow the instructions below step by step to schedule the meeting:
+
+1. Ask for the attendee's email address if not provided.
+2. Look for the user's available time slots from on Google Calendar if not provided.
+3. If the previous step fails, ask the user for available time slots.
+4. After the available time slots are determined, you should send an email to the attendee.
+5. Wait for the attendee's reply to the email you sent. Do not proceed if the reply is not received.
+6. If the proposed dates are not available for the attendee, try again to schedule a new date.
+7. If the conversation reaches an agreement, you should create an event on the user's calendar.
+8. If email not provided, you can use 'console_feedback' to ask for providing email.
+
+## Rules
+
+Here are some rules for you to fulfill the task:
+
+1. You can only schedule the meeting with the user's available time.
+2. You must follow user's task.
+3. The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
+3. If you think you need to ask the user for more information to fill the properties, you can use the Human Feedback tool to ask the user for more information.
+4. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Human Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
+
+## Example
+Task: Schedule a meeting with test@gmail.com on Friday
+Steps:
+- google_calendar("check the {user_email_address} availability on Friday")
+- gmail("send an email to test@gmail.com asking their availability on Friday")
+- gmail("wait for response from test@gmail.com")
+- human_feedback("are you sure to schedule a meeting with test@gmail.com on Friday at {time}?")
+- google_calendar("create an event on Friday")
+"""
+```
+
+### Step 4: Initialize the Agent
+
+The creation of a multi-app agent in NPi is quite simple: you only need to pass the apps to the agent using `agent.use()` method.
+
+```py
+negotiator = Agent(
+    # a distinguished name for this agent
+    agent_name='calendar_negotiator',
+    # a brief description for this agent
+    description='Schedule meetings with others using gmail and google calendar',
+    # the prompt explained in the previous section
+    prompt=PROMPT,
+    # LLM service we want to use
+    llm=OpenAI(),
+)
+
+# orchestrate the apps!
+negotiator.use(Calendar(), Gmail(), ConsoleFeedback())
+```
+
+### Step 5: Run the Task
+
+Now we come to the final step: tell the agent the specific task. This can also be achieved easily by the `agent.run()` method:
+
+```py
+negotiator.run("Schedule a meeting with Daofeng next week")
+```
+
+Really simple, isn't it? You may also read the task from user input like:
+
+```py
+negotiator.use(Calendar(), Gmail(), ConsoleFeedback())
+print('Negotiator: What\'s your task for me?')
+task = input('User: ')
+negotiator.run(task)
+```
+
+## Working Demo
+
+Here is a working demo for this Calendar Negotiator. You can find the source code in our repository: https://github.com/npi-ai/npi/blob/main/examples/calendar_negotiator/main.py
+
+import { YouTubeComponent } from '@components/youtube';
+
+<YouTubeComponent videoId={'F_Bh30eMdFo'}></YouTubeComponent>
+
+## Conclusion
+
+This blog introduces the simple implementation of the Calendar Negotiator, a NPi-powered multi-app agent designed to streamline the meeting scheduling process. If you like to learn more about NPi, please check our repository here: https://github.com/npi-ai/npi
+
+
+#### References
+
+[^1]: [Prompt design strategies](https://ai.google.dev/gemini-api/docs/prompting-strategies)

@@ -1,0 +1,92 @@
+---
+title: "AI Agent is approaching to production ready by leverage emerging managed infrastructure"
+date: 2024/06/10
+description: "The latest trends in AI agent development and the Top 4 Open-source AI Agent tools in 2024."
+tag: AI Agent Landscape, Multiagent, Insights, Open Source, AI Trends
+author: Wells Wang<w@npi.ai>
+slug: ai-agent-is-approaching-to-production-ready
+coverImage: https://static.npi.ai/ai-agent-infra-after.png
+searchable: false
+---
+
+<div style={{display: 'flex', justifyContent: 'space-around', alignItems: 'center'}}>
+    <img src='/images/ai-agent-infra-before.png' alt="before-arch" style={{width: '50%'}}/>
+    <p>vs</p>
+    <img src='/images/ai-agent-infra-after.png' alt="after-arch" style={{width: '50%'}}/>
+</div>
+
+
+Madrona Venture, an investor in companies like Amazon, Snowflake, and UiPath, posted an insightful article **[The Rise of AI Agent Infrastructure](https://www.madrona.com/the-rise-of-ai-agent-infrastructure/)** by Jon Turow
+on June 5th, detailing the latest trends in AI agent development.
+
+As an AI Agent developer, I found this article to be the one of best I’ve read in 2024, echoing many of my own views.
+I strongly recommend anyone involved with AI agents spend 10 minutes reading it.
+
+Here are some highlights from my personal perspective and understanding of the article:
+
+1. **AI agent workloads are shifting from self-hosted to managed services.**
+
+2. **More specialized AI agent development tools are emerging, helping developers build more robust agents.**
+
+These trends are familiar to us all. About fifteen years ago, we began migrating our workloads from private data centers
+to the cloud, embracing various cloud-native development tools like S3, SQS, RDS, Redis, MongoDB, Snowflake, Okta,
+and more, instead of maintaining our own infrastructure.
+
+From Ed Huang, the co-founder and CTO of PingCAP, I learned a valuable software engineering philosophy: "**Make it work,
+then make it right, and finally, make it fast.**" I believe AI agents will follow a similar process.
+
+In the past 18 months, we are struggled with building reliable AI Agent for **lacking best practices, and no specified
+products**. Thus, we had to build everything from scratch to make AI Agents work. Products like LangChain were the best
+choice of this stage.
+
+As we're exploring deeper, we try to make AI agents work right and faster, which involving more code tasks to accomplish.
+As a result, this led to the common patterns are rapidly recognized by the industry: *Fine-tuning*, *RAG*, *Evaluation*,
+*multi-agent collaboration*, and *tool use*(also known as function calling). But each of these patterns are packed with technical
+details and are evolving quickly, making it challenging to keep up with the latest advancements. **Attempting to maintain all
+this infrastructure would be a massive technical overhead and financial cost.**
+
+At this time, we naturally recall our past successes story: we desire more composable specific tools within best practices.
+Integrating these tools into our products then focus on business-critical value, enabling us to build a product that satisfies our users quickly and effectively.
+
+Therefore, we witness the emergence of a flourishing ecosystem of specialized tools.
+Each tool will focus on addressing specific problems in AI agent development, replacing the previous all-in-one solutions,
+giving developers more space and flexibility to make AI agents work right and faster.
+
+Otherwise, I would like to select 4 high-potential open-source tools from Madrona Venture's landscape you may interest, There are:
+
+### NPi - Function calling API platform
+
+- Website: https://www.npi.ai
+- GitHub: https://github.com/npi-ai/npi
+- Introduction: Platform providing Tool-use APIs to empower AI agents with the ability to operate and interact with a
+diverse array of software tools and applications.
+- Use-case: make your AI Agent can control various software in minutes to get thing done.
+- About: NPi will release Cloud Preview in the end of June, 2024, but you can try it out now on the https://try.npi.ai.
+
+### E2B.dev - Secure sandboxes for AI-generated code execution
+
+- Website: https://www.e2b.dev
+- GitHub: https://github.com/e2b-dev/E2B
+- Introduction: Python & JS/TS SDK for adding code interpreting to your AI app
+- Use-case: Code interpreter is a powerful tool for LLM, E2B let your Agent can execute real-time generated code in a
+safe way.
+
+### CrewAI - Multiagents Orchestration Framework
+
+- Website: https://www.crewai.com
+- GitHub: https://github.com/joaomdmoura/crewai
+- Introduction: Framework for orchestrating role-playing, autonomous AI agents. By fostering collaborative intelligence,
+CrewAI empowers agents to work together seamlessly, tackling complex tasks.
+- Use-cases: Multiagents is the cutting-edge technology in LLM-based Agent, CrewAI is the best tool for multiagents
+collaboration
+
+### Agentops - Agent observability toolkits
+
+- Website: https://www.agentops.ai
+- GitHub: https://github.com/AgentOps-AI/agentops
+- Introduction: Python SDK for agent monitoring, LLM cost tracking, benchmarking, and more. Integrates with most LLMs
+and agent frameworks like CrewAI, Langchain, and Autogen
+- Use-case: Build reliable AI agents with monitoring, testing, and replay analytics. No more black boxes and prompt guessing.
+
+If you enjoy with this post and would like to discuss more, you could find me by [Email](mailto:w@npi.ai), [X.com](https://x.com/wellswfwang),
+or [LinkedIn](https://www.linkedin.com/in/wenfeng-wang-a63899b6/).

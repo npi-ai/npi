@@ -1,24 +1,22 @@
 {
-  "index": "Quick Start",
-  "examples": "Examples",
-  "core-concepts": "Core Concepts",
-  "how-to": "How To Guides",
-  "references": "SDK References",
-  "official-tools": "Official Tools References",
-  "playground": {
-    "title": "Playground",
+  "index": {
+    "title": "Introduction",
     "type": "page",
-    "href": "https://try.npi.ai/"
+    "display": "hidden"
+  },
+  "docs": {
+    "title": "Docs",
+    "type": "page"
+  },
+  "examples": {
+    "title": "Examples",
+    "type": "page"
   },
   "blog": {
     "title": "Blog",
     "type": "page",
-    "href": "https://www.npi.ai/blog"
-  },
-  "contact": {
-    "title": "Contact ↗",
-    "type": "page",
-    "href": "https://twitter.com/npi_ai",
-    "newWindow": true
+    "theme": {
+      "sidebar": false
+    }
   }
 }
