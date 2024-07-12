@@ -1,33 +1,35 @@
 ---
 title: NPi AI
-description: Welcome to NPi AI
 ---
 
-import { Callout, Steps, Tabs } from 'nextra/components';
+<header className="flex flex-col gap-2 items-center justify-center">
+  <img src="/images/logo-full.svg" alt="NPi AI" width={300} />
+  <h1 className="text-2xl font-semibold text-slate-500 text-center">Empower AI to Get Things Done for You</h1>
+</header>
 
-## What is NPi?
 
 NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"**, is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools and applications.
 
-## Quick Start
+<nav className="text-center my-4">
+  [Getting Started](/docs/getting-started)
+  |
+  [Examples](/examples)
+  |
+  [NPi Cloud](https://npiai.dev)
+</nav>
 
-<Steps>
-
-### Installation
-
-Begin by installing the NPi AI package via pip:
+## Installation
 
 ```sh
 pip install npiai
 ```
 
-### Create a New Tool
+## One-Minute Quick Start
 
 Let's create a new tool to compute the nth Fibonacci number. Start by crafting a new Python file titled `main.py` and insert the following snippet:
 
-
-```python filename="main.py"
-from npiai import FunctionTool, function
+```py filename="main.py" showLineNumbers
+from npiai import FunctionTool, function, agent_wrapper
 
 class MyTool(FunctionTool):
     def __init__(self):
@@ -49,57 +51,6 @@ class MyTool(FunctionTool):
         if n == 1:
             return 1
         return self.fibonacci(n - 1) + self.fibonacci(n - 2)
-```
-
-### Run the Tool
-
-You could use NPi tools in two different ways: `function mode` and `agent mode`. Let's explore both modes.
-
-#### Function Mode: Integration with Existing AI Agents
-
-Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to user prompts. This integration allows developers to enrich
-the AI's functionality by incorporating custom operations without altering the agent's core logic.
-
-```python filename="main.py" {4, 15, 21-22}
-from openai import OpenAI
-
-async def main():
-    async with MyTool() as my_tool:
-        client = OpenAI()
-        messages = [
-            {
-                "role": "user",
-                "content": "What's the 10-th fibonacci number?",
-            }
-        ]
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            tools=my_tool.tools,  # use npi as a tool package
-            tool_choice="auto",
-            max_tokens=4096,
-        )
-        response_message = response.choices[0].message
-
-        # call the tool function corresponding to the response message
-        result = await my_tool.call(response_message.tool_calls)
-
-        print(result)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-#### Agent Mode: Tool Execution as an Agent
-
-Agent mode allows an NPi tools to serve as an independent AI agents that can directly take plain queries and generate
-responses. In this mode, the tool will be converted to an agent that receives instructions, processes it internally
-using its defined functions, and returns the result as an output message. This mode simplifies the creation of an
-AI-powered programming interface for domain-specific scenarios. We suggest you use tool with this mode in your Agentic AI applications.
-
-```python filename="main.py" {1, 4-5}
-from npiai import App, function, agent_wrapper
 
 async def main():
     async with agent_wrapper(MyTool()) as agent:
@@ -110,4 +61,17 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-</Steps>
+Now, run the tool:
+
+```sh
+python main.py
+```
+
+You should see the output `55` in the console. That's it! You've successfully created and run your first NPi tool. 🎉
+
+## Next Steps
+
+- [Read the Documentation](/docs)
+- [Explore More Examples](/examples)
+- [Join NPi Cloud](https://npiai.dev)
+- [Contribute to NPi AI](https://github.com/npi-ai/npi)
