@@ -1,6 +1,6 @@
 // modified from https://github.com/vercel/swr-site/blob/01ab74e8ce302d6c6a108b09d9c3ea01c53db90c/components/blog-index.js
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useRouter } from 'next/router'
 import { getPagesUnderRoute } from 'nextra/context'
 
 function PostList({ tag }: { tag?: string }) {
@@ -58,15 +58,16 @@ function PostList({ tag }: { tag?: string }) {
 }
 
 export default function TaggedPosts() {
-  const param = useParams<{ tag?: string }>()
+  const router = useRouter()
+  const tag = router.query.tag as string | undefined
 
   return (
     <>
       <h1 className="my-10 text-center text-4xl font-extrabold md:text-5xl">
-        Posts Tagged with “{param?.tag}”
+        Posts Tagged with “{tag}”
       </h1>
 
-      <PostList tag={param?.tag} />
+      <PostList tag={tag} />
     </>
   )
 }
