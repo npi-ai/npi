@@ -53,11 +53,15 @@ class GitHub(FunctionTool):
 
         self.github_client: PyGithub | None = None
 
-    async def start(self, ctx: Context | None = None):
+    @classmethod
+    def from_context(cls, ctx: Context) -> 'GitHub':
+        return GitHub(access_token=ctx.authorization())
+
+    async def start(self):
         if self.token is None:
             raise UnauthorizedError('GitHub credentials are not found')
         self.github_client = PyGithub(auth=Auth.Token(self.token))
-        await super().start(ctx)
+        await super().start()
 
     @staticmethod
     def _comment_to_json(comment: Union[IssueComment, PullRequestComment]):

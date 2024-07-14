@@ -24,7 +24,7 @@ def load_google_credentials(secret_file: str, token_file: str, scopes: List[str]
             flow = InstalledAppFlow.from_client_secrets_file(
                 client_secrets_file=secret_file, scopes=scopes
             )
-            creds = flow.run_local_server(port=19140,redirect_uri_trailing_slash=False)
+            creds = flow.run_local_server(port=8088, redirect_uri_trailing_slash=False)
         # Save the credentials for the next run
         with open(token_file, 'w') as token:
             token.write(creds.to_json())
@@ -34,7 +34,7 @@ def load_google_credentials(secret_file: str, token_file: str, scopes: List[str]
 
 def load_gmail_credentials(config_file: str | None = None):
     if config_file is None:
-        config_file = os.getenv('CONFIG_FILE', ".")
+        config_file = os.getenv('CONFIG_FILE', "..")
     return load_google_credentials(
         secret_file='/'.join([config_file, 'credentials/google.json']),
         token_file='/'.join([config_file, 'credentials/gmail_token.json']),
@@ -44,7 +44,7 @@ def load_gmail_credentials(config_file: str | None = None):
 
 def load_google_calendar_credentials(config_file: str | None = None):
     if config_file is None:
-        config_file = os.getenv('CONFIG_FILE', ".")
+        config_file = os.getenv('CONFIG_FILE', "..")
     return load_google_credentials(
         secret_file='/'.join([config_file, 'credentials/google.json']),
         token_file='/'.join([config_file, 'credentials/gc_token.json']),

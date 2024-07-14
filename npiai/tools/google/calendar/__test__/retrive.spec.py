@@ -10,7 +10,7 @@ async def main():
     credentials = Credentials.from_authorized_user_file('gc_token.json')
 
     async with agent_wrapper(GoogleCalendar(credentials)) as gc:
-        return await gc.chat(message='get the incoming 10 events')
+        return await gc.chat(instruction='get the incoming 10 events')
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ class PlaygroundHITL(HITL):
         )
         cb.action.action_id = cb.id()
 
-        await ctx.send_msg(cb)
+        await ctx.send(cb)
         res = await cb.wait()
 
         return res.is_approved()
@@ -28,7 +28,7 @@ class PlaygroundHITL(HITL):
         )
         cb.action.action_id = cb.id()
 
-        await ctx.send_msg(cb)
+        await ctx.send(cb)
         res = await cb.wait()
 
         return res.result.action_result

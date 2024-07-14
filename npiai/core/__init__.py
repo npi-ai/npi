@@ -1,4 +1,4 @@
-from npiai.core.browser import  PlaywrightContext, NavigatorAgent
+from npiai.core.browser import PlaywrightContext, NavigatorAgent
 from .hitl import HITL
 from .base import BaseTool
 

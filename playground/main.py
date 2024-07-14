@@ -101,7 +101,7 @@ class Chat(pbgrpc.PlaygroundServicer):
             self.ctx_manager.release(req.thread_id)
         else:
             resp.code = pb.ResponseCode.MESSAGE
-            cb = await thread.fetch_msg()
+            cb = await thread.fetch()
             if cb is None:
                 if thread.is_finished():
                     resp.code = pb.ResponseCode.FINISHED

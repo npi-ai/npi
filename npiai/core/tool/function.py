@@ -1,22 +1,14 @@
 """The basic interface for NPi Apps"""
-import asyncio
 import dataclasses
 import inspect
 import json
-import os
 import re
-import signal
-import sys
 from typing import Dict, List, Optional, Any, Type
-import logging
 
 import yaml
-import uvicorn
-from fastapi import HTTPException
+
 from pydantic import Field, create_model
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from litellm.types.completion import ChatCompletionToolMessageParam
+from litellm.types.completion import ChatCompletionToolMessageParam, ChatCompletionMessageParam
 from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
@@ -91,10 +83,6 @@ class FunctionTool(BaseFunctionTool):
     _started: bool = False
 
     @property
-    def tools(self):
-        return self._tools
-
-    @property
     def functions(self):
         return list(self._fn_map.values())
 
@@ -118,7 +106,7 @@ class FunctionTool(BaseFunctionTool):
         self._sub_tools = []
 
         self._register_tools()
-        super().__init__(self.name, self.description, self.provider)
+        super().__init__(self.name, self.description, self.provider, self._fn_map, )
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
@@ -135,73 +123,19 @@ class FunctionTool(BaseFunctionTool):
         for app in self._sub_tools:
             app.use_hitl(hitl)
 
-    async def start(self, ctx: Context | None = None):
+    async def start(self):
         """Start the tools"""
         if not self._started:
             self._started = True
             for tool in self._sub_tools:
-                await tool.start(ctx)
+                await tool.start()
 
-    def server(self):
-        """Start the server"""
-        asyncio.run(self.start())
-        if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
-            print("Server mode is disabled, if you want to run the server, set env NPIAI_TOOL_SERVER_MODE=true")
-            print("Exiting...")
-            return
-
-        fapp = FastAPI()
-
-        def convert_camel_to_snake(name: str) -> str:
-            return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
-
-        @fapp.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-        async def root(full_path: str, request: Request):
-            method = convert_camel_to_snake(full_path)
-            ctx = Context(instruction="")
-            try:
-                match request.method:
-                    case "POST":
-                        args = await request.json()
-                        res = await self._exec(ctx, method, args)
-                    case "GET":
-                        args = {k: v for k, v in request.query_params.items()}
-                        res = await self._exec(ctx, method, args)
-                    case _:
-                        return JSONResponse({'error': 'Method not allowed'}, status_code=405)
-                try:
-                    return JSONResponse(content=json.loads(res))
-                except json.JSONDecodeError as e:
-                    return res
-            except Exception as e:
-                logging.error(f"Failed to process request: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail="Internal Server Error")
-
-        def signal_handler(sig, frame):
-            print(f"Signal {sig} received, shutting down...")
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:  # 'RuntimeError: There is no current event loop...'
-                loop = None
-
-            tsk = loop.create_task(self.end())
-            # while not tsk.done():
-            #     time.sleep(1)
-            print("Shutdown complete")
-            sys.exit(0)
-
-        signal.signal(signal.SIGINT, signal_handler)
-        # signal.signal(signal.SIGKILL, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-
-        uvicorn.run(fapp, host="0.0.0.0", port=18000)
-
-    async def end(self, ctx: Context | None = None):
+    async def end(self):
         """Stop and dispose the tools"""
         if self._started:
             self._started = False
             for app in self._sub_tools:
-                await app.end(ctx)
+                await app.end()
 
     def add_tool(
             self,
@@ -218,20 +152,20 @@ class FunctionTool(BaseFunctionTool):
                 scoped_fn_reg = dataclasses.replace(fn_reg, name=f'{tool.name}_{fn_reg.name}')
                 self._add_function(scoped_fn_reg)
 
-    async def debug(self, app_name: str = None, fn_name: str = None, args: Dict[str, Any] = None) -> str:
+    async def debug(self, session: Context | None = None, app_name: str = None, fn_name: str = None,
+                    args: Dict[str, Any] = None) -> str:
         if app_name:
             fn_name = f'{app_name}_{fn_name}'
 
-        return await self._exec(Context(), fn_name, args)
+        return await self.exec(session, fn_name, args)
 
     async def call(
             self,
             tool_calls: List[ChatCompletionMessageToolCall],
-            ctx: Context = None,
-    ) -> List[ChatCompletionToolMessageParam]:
-        if ctx is None:
-            ctx = Context('')
-
+            session: Context | None = None,
+    ) -> List[ChatCompletionMessageParam]:
+        if session is None:
+            session = Context()
         results: List[ChatCompletionToolMessageParam] = []
 
         for call in tool_calls:
@@ -246,14 +180,14 @@ class FunctionTool(BaseFunctionTool):
                 call_msg += '()'
 
             logger.info(call_msg)
-            await ctx.send_msg(callback.Callable(call_msg))
+            await session.send(callback.Callable(call_msg))
 
             try:
-                res = await self._exec(ctx, fn_name, args)
+                res = await self.exec(session, fn_name, args)
             except Exception as e:
                 logger.error(e)
                 res = f'Exception while executing {fn_name}: {e}'
-                await ctx.send_msg(callback.Callable(res))
+                await session.send(callback.Callable(res))
 
             logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
 
@@ -266,24 +200,6 @@ class FunctionTool(BaseFunctionTool):
             )
 
         return results
-
-    async def _exec(self, ctx: Context, fn_name: str, args: Dict[str, Any] = None) -> str:
-        if fn_name not in self._fn_map:
-            raise RuntimeError(
-                f'[{self.name}]: function `{fn_name}` not found. Available functions: {self._fn_map.keys()}'
-            )
-
-        tool = self._fn_map[fn_name]
-
-        # add context param
-        if tool.ctx_param_name is not None:
-            if args is None:
-                args = {tool.ctx_param_name: ctx}
-            else:
-                args[tool.ctx_param_name] = ctx
-        if args is None:
-            return str(await tool.fn())
-        return str(await tool.fn(**args))
 
     def _register_tools(self):
         """
