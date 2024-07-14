@@ -114,15 +114,6 @@ class Twitter(BrowserTool):
             navigator_llm: LLM = None,
             headless: bool = True,
     ):
-        uname = username or os.environ.get('TWITTER_USERNAME', None)
-        pwd = password or os.environ.get('TWITTER_PASSWORD', None)
-
-        if uname is None:
-            raise UnauthorizedError('No Twitter username provided.')
-
-        if pwd is None:
-            raise UnauthorizedError('No Twitter password provided.')
-
         super().__init__(
             name='twitter',
             description='retrieve and manage tweets',
@@ -130,17 +121,24 @@ class Twitter(BrowserTool):
             headless=headless,
         )
 
-        self._username = uname
-        self._password = pwd
+        self._username = username or os.environ.get('TWITTER_USERNAME', None)
+        self._password = password or os.environ.get('TWITTER_PASSWORD', None)
+        self.ctx = None
 
         self.add_tool(
             NavigatorAgent(llm=navigator_llm, playwright=self.playwright)
         )
 
-    async def start(self, ctx: Context | None = None):
+    async def start(self):
+        if self._username is None:
+            raise UnauthorizedError('No Twitter username provided.')
+
+        if self._password is None:
+            raise UnauthorizedError('No Twitter password provided.')
+
         if not self._started:
-            await super().start(ctx)
-            await self._login(ctx)
+            await super().start()
+            await self._login(self.ctx)
 
     async def _login(self, ctx: Context | None = None):
         state_file = pathlib.Path(tempfile.gettempdir()) / f'{slugify(self._username)}/twitter_state.json'

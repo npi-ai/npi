@@ -31,18 +31,18 @@ class Slack(FunctionTool):
     _user_id: str = None
 
     def __init__(self, access_token: str = None):
-        token = access_token or os.environ.get('SLACK_ACCESS_TOKEN', None)
-
-        if token is None:
-            raise UnauthorizedError("Slack credentials are not found")
-
+        self._access_token = access_token or os.environ.get('SLACK_ACCESS_TOKEN', None)
         super().__init__(
             name='slack',
             description='Send/Retrieve messages to/from Slack channels',
             system_prompt=__PROMPT__,
         )
 
-        self.client = AsyncWebClient(token=token)
+    async def start(self):
+        if self._access_token is None:
+            raise UnauthorizedError("Slack credentials are not found")
+
+        self.client = AsyncWebClient(token=self._access_token)
 
     async def _get_user_id(self) -> str:
         if not self._user_id:

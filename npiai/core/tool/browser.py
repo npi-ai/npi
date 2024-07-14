@@ -51,21 +51,21 @@ class BrowserTool(FunctionTool):
         html = await self.playwright.page.evaluate('() => document.body.innerHTML')
         return MdConverter().convert(html)
 
-    async def start(self, ctx: Context | None = None):
+    async def start(self):
         """Start the Browser App"""
         if not self._started:
-            await super().start(ctx)
+            await super().start()
             await self.playwright.start()
 
-    async def end(self, ctx: Context | None = None):
+    async def end(self):
         """Dispose the chrome tools"""
-        await super().end(ctx)
+        await super().end()
         await self.playwright.stop()
 
     async def goto_blank(self):
         """
         Go to about:blank page
-        This can be used as a cleanup function when a session finishes
+        This can be used as a cleanup function when a context finishes
         """
         await self.playwright.page.goto('about:blank')
 

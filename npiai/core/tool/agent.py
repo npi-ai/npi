@@ -1,22 +1,20 @@
 import os
-import asyncio
-import signal
-import sys
 from typing import List, overload
 
-from fastapi import FastAPI, Request
 from pydantic import create_model, Field
 
-import uvicorn
 from npiai.llm import LLM, OpenAI
 from npiai.types import FunctionRegistration
-from npiai.context import Context, ThreadMessage
-from npiai.core import callback
-from npiai.core.base import BaseAgentTool
+from npiai.core.base import BaseAgentTool, Context, Task
 from npiai.core.hitl import HITL
 from npiai.core.tool.function import FunctionTool
 from npiai.core.tool.browser import BrowserTool
 from npiai.utils import sanitize_schema
+
+from litellm.types.completion import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
 
 
 class AgentTool(BaseAgentTool):
@@ -31,11 +29,11 @@ class AgentTool(BaseAgentTool):
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
-
         model = create_model(
-            f'{self.name}__agent_model',
-            message=(str, Field(
-                description=f'The task you want {self._tool.name} to do or the message you want to chat with {self._tool.name}'
+            f'{self.name}_agent_model',
+            instruction=(str, Field(
+                description=f'The task you want {self._tool.name} to do or '
+                            f'the message you want to chat with {self._tool.name}'
             ))
         )
 
@@ -43,7 +41,9 @@ class AgentTool(BaseAgentTool):
             fn=self.chat,
             name='chat',
             ctx_param_name='ctx',
-            description=self._tool.description,
+            description=f"This is an api of an AI Assistant, named {self.name}, the abilities of the assistant is:\n "
+                        f"{self.description}\n"
+                        f"You can use this function to direct the assistant to accomplish task for you.",
             model=model,
             schema=sanitize_schema(model),
         )
@@ -54,85 +54,49 @@ class AgentTool(BaseAgentTool):
         # super().use_hitl(hitl)
         self._tool.use_hitl(hitl)
 
-    async def start(self, ctx: Context | None = None):
-        await self._tool.start(ctx)
+    async def start(self):
+        await self._tool.start()
 
-    async def end(self, ctx: Context | None = None):
-        await self._tool.end(ctx)
-
-    async def server(self):
-        """Start the server"""
-        await self.start()
-        if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
-            return
-
-        fapp = FastAPI()
-
-        @fapp.api_route("/chat", methods=["POST"])
-        async def root(request: Request):
-            args = await request.json()
-            return self.chat(args['message'])
-
-        def signal_handler(sig, frame):
-            print(f"Signal {sig} received, shutting down.")
-            asyncio.create_task(self.end())
-            sys.exit(0)
-
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-
-        uvicorn.run(fapp, host="0.0.0.0", port=18000)
+    async def end(self):
+        await self._tool.end()
 
     async def chat(
             self,
-            message: str,
-            ctx: Context = None,
+            ctx: Context,
+            instruction: str,
     ) -> str:
-        if ctx is None:
-            ctx = Context()
-
-        msg = ctx.fork(message)
+        task = Task(goal=instruction)
+        ctx = ctx.fork(task)
         if self._tool.system_prompt:
-            msg.append(
-                {
-                    'role': 'system',
-                    'content': self._tool.system_prompt,
-                }
-            )
+            await task.record([
+                ChatCompletionSystemMessageParam(role='system', content=self._tool.system_prompt)
+                # {'role': 'system', 'content': self._tool.system_prompt}
+            ])
 
-        msg.append(
-            {
-                'role': 'user',
-                'content': message,
-            }
-        )
+        await task.record([
+            ChatCompletionUserMessageParam(role='user', content=instruction)
+            # {'role': 'user', 'content': instruction}
+        ])
+        return await self._call_llm(ctx, task)
 
-        return await self._call_llm(ctx, msg)
-
-    async def _call_llm(self, thread: Context, message: ThreadMessage) -> str:
+    async def _call_llm(self, session: Context, task: Task) -> str:
         while True:
             response = await self.llm.completion(
-                messages=message.raw(),
+                messages=task.conversations(),
                 tools=self._tool.tools,
                 tool_choice='auto',
                 max_tokens=4096,
             )
+            await task.record([response.choices[0].message])
 
             response_message = response.choices[0].message
-
-            message.append(response_message)
-
-            if response_message.content:
-                # logger.info(response_message.content)
-                await thread.send_msg(callback.Callable(response_message.content))
-
             tool_calls = response_message.get('tool_calls', None)
 
             if tool_calls is None:
                 return response_message.content
 
-            results = await self._tool.call(tool_calls, thread)
-            message.extend(results)
+            results = await self._tool.call(tool_calls, session)
+            await task.record(results)
 
 
 class BrowserAgentTool(AgentTool):
@@ -149,48 +113,38 @@ class BrowserAgentTool(AgentTool):
 
     async def chat(
             self,
-            message: str,
-            ctx: Context = None,
+            ctx: Context,
+            instruction: str,
     ) -> str:
-        if ctx is None:
-            ctx = Context()
-
         if not self._tool.use_screenshot:
-            return await super().chat(message, ctx)
+            return await super().chat(ctx, instruction)
 
         screenshot = await self._tool.get_screenshot()
 
         if not screenshot:
-            return await super().chat(message, ctx)
+            return await super().chat(ctx, instruction)
 
-        msg = ctx.fork(message)
+        task = Task(goal=instruction)
+        ctx = ctx.fork(task)
         if self._tool.system_prompt:
-            msg.append(
+            await task.record([ChatCompletionSystemMessageParam(role='system', content=self._tool.system_prompt)])
+
+        await task.record([ChatCompletionUserMessageParam(
+            role='user',
+            content=[
                 {
-                    'role': 'system',
-                    'content': self._tool.system_prompt,
-                }
-            )
-
-        msg.append(
-            {
-                'role': 'user',
-                'content': [
-                    {
-                        'type': 'text',
-                        'text': message,
+                    'type': 'text',
+                    'text': instruction,
+                },
+                {
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': screenshot,
                     },
-                    {
-                        'type': 'image_url',
-                        'image_url': {
-                            'url': screenshot,
-                        },
-                    },
-                ]
-            }
-        )
+                },
+            ])])
 
-        return await self._call_llm(ctx, msg)
+        return await self._call_llm(ctx, task)
 
 
 @overload

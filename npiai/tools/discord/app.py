@@ -42,10 +42,7 @@ class Discord(FunctionTool):
     _access_token: str
 
     def __init__(self, access_token: str = None):
-        token = access_token or os.environ.get('DISCORD_ACCESS_TOKEN', None)
-
-        if token is None:
-            raise UnauthorizedError('Discord credentials are not found')
+        self._access_token = access_token or os.environ.get('DISCORD_ACCESS_TOKEN', None)
 
         super().__init__(
             name='discord',
@@ -54,14 +51,16 @@ class Discord(FunctionTool):
         )
 
         self.client = discord.Client(intents=discord.Intents.default())
-        self._access_token = token
 
-    async def start(self, ctx: Context | None = None):
-        await super().start(ctx)
+    async def start(self):
+        if self._access_token is None:
+            raise UnauthorizedError('Discord credentials are not found')
+
+        await super().start()
         await self.client.login(self._access_token)
 
-    async def end(self, ctx: Context | None = None):
-        await super().end(ctx)
+    async def end(self):
+        await super().end()
         await self.client.close()
 
     def parse_user(self, user: discord.User):

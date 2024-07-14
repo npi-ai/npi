@@ -1,4 +1,5 @@
-from .context import ThreadMessage, Context
-from .manager import ContextManager
+from npiai.core.context import Context
 
-__all__ = ['ThreadMessage', 'Context', 'ContextManager']
+__all__ = [
+    'Context',
+]

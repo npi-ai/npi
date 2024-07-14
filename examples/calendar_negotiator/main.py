@@ -7,7 +7,7 @@ from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
 from npiai import OpenAI
 
-from examples.utils import load_gmail_credentials, load_google_calendar_credentials
+from examples.calendar_negotiator.utils import load_gmail_credentials, load_google_calendar_credentials
 
 PROMPT = """
 Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.

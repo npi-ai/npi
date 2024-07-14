@@ -12,7 +12,7 @@ from typing_extensions import NotRequired, TypedDict
 from npiai.core import callback
 from npiai.llm import LLM
 from npiai.utils import logger
-from npiai.context import Context, ThreadMessage
+from npiai.core.base import Context, Task
 from npiai.core.browser import PlaywrightContext
 from npiai.core.tool.browser import BrowserTool
 from npiai.core.tool.agent import BrowserAgentTool
@@ -170,10 +170,10 @@ class NavigatorAgent(BrowserAgentTool):
         self.max_steps = max_steps
 
     # navigator uses shared playwright context, so we don't need to start it again here
-    async def start(self, ctx: Context | None = None):
+    async def start(self):
         pass
 
-    async def end(self, ctx: Context | None = None):
+    async def end(self):
         pass
 
     async def generate_user_prompt(self, task: str, history: List[Response]):
@@ -224,23 +224,20 @@ class NavigatorAgent(BrowserAgentTool):
             ]
         }
 
-    async def chat(self, message: str, ctx: Context = None) -> str:
+    async def chat(self, ctx: Context, instruction: str) -> str:
         history: List[Response] = []
 
         step = 0
 
         while True:
-            if ctx is None:
-                ctx = Context("")
-            msg = ctx.fork(message)
-
+            msg = ctx.fork(instruction)
             msg.append(
                 {
                     'role': 'system',
                     'content': self._browser_app.system_prompt,
                 }
             )
-            msg.append(await self.generate_user_prompt(message, history))
+            msg.append(await self.generate_user_prompt(instruction, history))
 
             response_str = await self._call_llm(ctx, msg)
             response = _parse_response(response_str)
@@ -265,7 +262,7 @@ class NavigatorAgent(BrowserAgentTool):
             if step > self.max_steps:
                 return f'Maximum number of steps reached. Last response was: {response_str}'
 
-    async def _call_llm(self, thread: Context, message: ThreadMessage) -> str:
+    async def _call_llm(self, ctx: Context, message: Task) -> str:
         """
         Call llm for one round with the given prompts
 
@@ -276,13 +273,13 @@ class NavigatorAgent(BrowserAgentTool):
             response message
         """
         response = await self.llm.completion(
-            messages=message.raw(),
+            messages=message.conversations(),
             max_tokens=4096,
         )
 
         response_message = response.choices[0].message
 
-        message.append(response_message)
+        message.record(response_message)
 
         if not response_message.content:
             raise Exception(f'{self.name}: No response message')
@@ -311,7 +308,7 @@ class NavigatorAgent(BrowserAgentTool):
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
         logger.info(call_msg)
-        await ctx.send_msg(callback.Callable(call_msg))
+        await ctx.send(callback.Callable(call_msg))
 
         match action['type']:
             case 'click':

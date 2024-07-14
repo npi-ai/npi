@@ -36,7 +36,6 @@ def convert_google_cred_to_oauth2_cred(google_credentials: GoogleCredentials) ->
 
 
 class Gmail(FunctionTool):
-    gmail_client: GmailClientWrapper
 
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__(
@@ -44,15 +43,23 @@ class Gmail(FunctionTool):
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
             system_prompt='You are a Gmail Agent helping users to manage their emails',
         )
-        if creds is None:
+        self.creds = creds
+        self.gmail_client = None
+
+    async def start(self):
+        if self.creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
-            creds = GoogleCredentials.from_authorized_user_file(cred_file, "https://mail.google.com/")
+            self.creds = GoogleCredentials.from_authorized_user_file(
+                filename=cred_file,
+                scopes="https://mail.google.com/"
+            )
 
         self.gmail_client = GmailClientWrapper(
-            _creds=convert_google_cred_to_oauth2_cred(creds)
+            _creds=convert_google_cred_to_oauth2_cred(self.creds)
         )
+        await super().start()
 
     def _get_messages_from_ids(self, message_ids: List[str]) -> List[Message]:
         emails: List[Message] = []
@@ -150,7 +157,7 @@ class Gmail(FunctionTool):
         Args:
             to: The email address the message being sent to.
             subject: The subject line of the email.
-            message: The email content in markdown format.
+            message: The email content in Markdown format.
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
@@ -184,7 +191,7 @@ class Gmail(FunctionTool):
             to: The email address the message being sent to.
             subject: The subject line of the email.
             recipient_id: The ID of the recipient being replied to. You can find this in the "Sender ID: ..." line of the email.
-            message: The reply message in markdown format. You should also quote the email being replied to.
+            message: The reply message in Markdown format. You should also quote the email being replied to.
                 For example, given the following message:
                     Message ID: 18eaefa2c6b35409
                     Thread ID: 18eaf09f637a31a9
@@ -233,7 +240,7 @@ class Gmail(FunctionTool):
             to: The email address the message being sent to.
             subject: The subject line of the email.
             recipient_id: The ID of the recipient being replied to. You can find this in the "Sender ID: ..." line of the email.
-            message: The reply message in markdown format. You should also quote the email being replied to.
+            message: The reply message in Markdown format. You should also quote the email being replied to.
                 For example, given the following message:
                     Message ID: 18eaefa2c6b35409
                     Thread ID: 18eaf09f637a31a9
@@ -297,12 +304,12 @@ class Gmail(FunctionTool):
             ctx: NPi context
             to: The email address the message being sent to.
             subject: The subject line of the email.
-            message: The email content in markdown format.
+            message: The email content in Markdown format.
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
         approved = await self.hitl.confirm(
-            ctx,
+            # ctx,
             self.name,
             f'The following email will be sent to {to}: {message}'
         )

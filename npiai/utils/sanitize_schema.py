@@ -1,9 +1,9 @@
-from typing import Dict, Any
+from typing import Dict, Any, Type
 
 from pydantic import BaseModel
 
 
-def sanitize_schema(model: BaseModel) -> Dict[str, Any]:
+def sanitize_schema(model: Type[BaseModel]) -> Dict[str, Any]:
     schema = model.model_json_schema()
 
     # remove unnecessary title

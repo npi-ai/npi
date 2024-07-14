@@ -24,15 +24,23 @@ class GoogleCalendar(FunctionTool):
             system_prompt='You are an assistant interacting with Google Calendar API. '
                           'Your job is the selecting the best function based the tool list.',
         )
-        if creds is None:
+
+        self.creds = creds
+        self.service = None
+
+    async def start(self):
+        if self.creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
-            creds = GoogleCredentials.from_authorized_user_file(cred_file, "'https://www.googleapis.com/auth/calendar")
-
+            self.creds = GoogleCredentials.from_authorized_user_file(
+                filename=cred_file,
+                scopes="https://www.googleapis.com/auth/calendar"
+            )
         self.service = build(
-            'calendar', 'v3', credentials=creds
+            'calendar', 'v3', credentials=self.creds
         )
+        await super().start()
 
     @function
     async def get_user_email(self, ctx: Context, message: str) -> str:
