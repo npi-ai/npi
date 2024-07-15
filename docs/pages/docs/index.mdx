@@ -26,7 +26,7 @@ pip install npiai
 Let's create a new tool to compute the nth Fibonacci number. Start by crafting a new Python file titled `main.py` and insert the following snippet:
 
 
-```python filename="main.py"
+```python filename="my_tool.py"
 from npiai import FunctionTool, function
 
 
@@ -61,7 +61,7 @@ You could use NPi tools in two different ways: `function mode` and `agent mode`.
 Function mode enables the integration of NPi tools with existing LLM-based AI application. In this mode, tools are packaged
 as callable functions that the AI agent can invoke in response to user prompts, the chosen of functions will be decided by user-side agent.
 
-```python filename="main.py"
+```python filename="function.py"
 import asyncio
 import json
 import os
@@ -115,7 +115,7 @@ responses. In this mode, the tool receives instructions, do `in-tool planning` t
 and returns the result as an output message. This mode simplify the problem-solving for domain-specific questions.
 We suggest you use this mode in your Agentic AI applications.
 
-```python filename="main.py"
+```python filename="agent.py"
 import asyncio
 
 from npiai import agent, Context
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 ```
 
 ```sh
-The answer: The 10th Fibonacci number is 55.
+The 10th Fibonacci number is 55.
 ```
 
 </Steps>

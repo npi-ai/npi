@@ -26,7 +26,8 @@ class Container:
 
         @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
         async def root(full_path: str, request: Request):
-            ctx = Context.from_request(req=request)
+            # ctx = Context.from_request(req=request)
+            ctx = Context()
             tool = ctx.get_tool()
             if tool is None:
                 tool = self.tool_cls.from_context(ctx=ctx)

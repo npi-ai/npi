@@ -9,7 +9,6 @@ from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
 
-from npiai.core import callback
 from npiai.llm import LLM
 from npiai.utils import logger
 from npiai.context import Context, Task
@@ -308,7 +307,7 @@ class NavigatorAgent(BrowserAgentTool):
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
         logger.info(call_msg)
-        await ctx.send(callback.Callable(call_msg))
+        await ctx.send(call_msg)
 
         match action['type']:
             case 'click':

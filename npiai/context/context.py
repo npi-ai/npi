@@ -2,16 +2,10 @@
 import datetime
 import uuid
 import asyncio
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union
 
 from fastapi import Request
 from litellm.types.completion import ChatCompletionMessageParam
-
-from npiai.core import callback
-
-
-# if TYPE_CHECKING:
-#     # from npiai.core import BaseTool
 
 
 class Task:
@@ -29,9 +23,9 @@ class Task:
         """add a message to the context"""
         self.dialogues.extend(msgs)
 
-        for msg in msgs:
-            if msg.get('content'):
-                await self._session.send(callback.Callable(msg.get('content')))
+        # for msg in msgs:
+        #     if msg.get('content'):
+        #         await self._session.send(callback.Callable(msg.get('content')))
 
     def set_session(self, session: 'Context') -> None:
         self._session = session
@@ -49,12 +43,12 @@ class Context:
         # self._task = task
         self.id = str(uuid.uuid4())
         self.q = asyncio.Queue()
-        self.cb_dict: dict[str, callback.Callable] = {}
+        # self.cb_dict: dict[str, callback.Callable] = {}
         self.__is_finished = False
         self.__result: str = ''
         self.__is_failed = False
         self.__failed_msg: str = ''
-        self.__active_tool: Union[BaseTool, None] = None
+        self.__active_tool = None
         self.__request = req
 
     def authorization(self) -> str:
@@ -94,12 +88,12 @@ class Context:
 
         return screenshot
 
-    async def send(self, cb: callback.Callable) -> None:
+    async def send(self, cb) -> None:
         """send a message to the context"""
-        self.cb_dict[cb.id()] = cb
+        # self.cb_dict[cb.id()] = cb
         await self.q.put(cb)
 
-    async def fetch(self) -> callback.Callable:
+    async def fetch(self):
         """receive a message"""
         while not self.is_failed() and not self.is_finished():
             try:
@@ -109,8 +103,9 @@ class Context:
             except asyncio.QueueEmpty:
                 await asyncio.sleep(0.01)
 
-    def get_callback(self, cb_id: str) -> callback.Callable:
-        return self.cb_dict[cb_id]
+    def get_callback(self, cb_id: str):
+        pass
+        # return self.cb_dict[cb_id]
 
     def finish(self, msg: str):
         self.__result = msg
@@ -137,10 +132,6 @@ class Context:
 
     def retrieve(self, msg: str) -> str:
         pass
-
-    @classmethod
-    def from_request(cls, req: Request) -> 'Context':
-        return Context(req=req)
 
     def bind(self, tool):
         self.__active_tool = tool

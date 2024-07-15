@@ -1,7 +1,5 @@
 from .context import Context
 
-from playground.proto import playground_pb2
-
 
 class ContextManager:
     """the manager of the context"""
@@ -9,7 +7,7 @@ class ContextManager:
     def __init__(self):
         self.threads = {}
 
-    def new_thread(self, req: playground_pb2.ChatRequest) -> Context:
+    def new_thread(self, req) -> Context:
         """create a context"""
         th = Context()
         self.threads[th.id] = th

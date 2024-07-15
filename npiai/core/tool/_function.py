@@ -17,7 +17,6 @@ from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 from npiai.context import Context
-from npiai.core import callback
 
 __NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
 
@@ -180,14 +179,14 @@ class FunctionTool(BaseFunctionTool):
                 call_msg += '()'
 
             logger.info(call_msg)
-            await session.send(callback.Callable(call_msg))
+            await session.send(call_msg)
 
             try:
                 res = await self.exec(session, fn_name, args)
             except Exception as e:
                 logger.error(e)
                 res = f'Exception while executing {fn_name}: {e}'
-                await session.send(callback.Callable(res))
+                await session.send(res)
 
             logger.debug(f'[{self.name}]: function `{fn_name}` returned:\n {res}')
 
