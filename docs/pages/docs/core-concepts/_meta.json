@@ -1,7 +1,10 @@
 {
   "tools-and-functions": "Tools and Functions",
   "agent": "Agent Tool",
-  "human-in-the-loop": "Human in the Loop",
+  "human-in-the-loop": {
+    "title": "Human in the Loop",
+    "display": "hidden"
+  },
   "function-and-agent": "Function Mode and Agent Mode",
   "schema-generation": "Schema Generation"
 }

@@ -2,6 +2,7 @@
   "index": "Getting Started",
   "core-concepts": "Core Concepts",
   "how-to": "How To Guides",
-  "references": "SDK References",
-  "official-tools": "Official Tools References"
+  "integrations": "Integrations",
+  "tool-development": "Tool Development",
+  "official-tools": "Official Tools"
 }

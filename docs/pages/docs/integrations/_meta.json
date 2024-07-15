@@ -1,0 +1,8 @@
+{
+  "openai-assistant": "OpenAI Assistant",
+  "langchain": "LangChain",
+  "crewai": {
+    "title": "Crew AI",
+    "display": "hidden"
+  }
+}
