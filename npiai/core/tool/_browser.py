@@ -3,8 +3,8 @@ import base64
 from markdownify import MarkdownConverter
 from playwright.async_api import ElementHandle, Error
 
-from npiai.core.tool.function import FunctionTool, function
-from npiai.core.browser.playwright import PlaywrightContext
+from npiai.core.tool._function import FunctionTool, function
+from npiai.core.browser._playwright import PlaywrightContext
 from npiai.context import Context
 from npiai.utils import logger
 

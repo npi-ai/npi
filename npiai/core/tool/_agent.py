@@ -8,8 +8,8 @@ from npiai.types import FunctionRegistration
 from npiai.context import Context, Task
 from npiai.core.base import BaseAgentTool
 from npiai.core.hitl import HITL
-from npiai.core.tool.function import FunctionTool
-from npiai.core.tool.browser import BrowserTool
+from npiai.core.tool._function import FunctionTool
+from npiai.core.tool._browser import BrowserTool
 from npiai.utils import sanitize_schema
 
 from litellm.types.completion import (

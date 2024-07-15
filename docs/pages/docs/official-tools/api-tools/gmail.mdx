@@ -68,8 +68,8 @@ The Gmail Tool allows you to streamline your email management tasks.
             from npiai.tools import Gmail
 
             async def main():
-                async with agent.wrap(Gmail(gmail_creds)) as agent:
-                    await agent.chat('get latest email in the inbox')
+                async with agent.wrap(Gmail(gmail_creds)) as agent_tool:
+                    await agent_tool.chat('get latest email in the inbox')
             ```
         </Tabs.Tab>
     </Tabs>

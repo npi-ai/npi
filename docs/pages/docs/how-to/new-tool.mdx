@@ -130,8 +130,8 @@ Finally, we can now run the tool in `function mode` or `agent mode` to interact 
         from npiai import agent
 
         async def main():
-            async with agent.wrap(MyTool()) as agent:
-                await agent.chat('<anything you want to chat with the agent>')
+            async with agent.wrap(MyTool()) as agent_tool:
+                await agent_tool.chat('<anything you want to chat with the agent>')
 
         if __name__ == '__main__':
             import asyncio
