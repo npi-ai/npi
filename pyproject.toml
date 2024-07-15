@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "npiai"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["wenfeng <w@npi.ai>"]
 readme = "README.md"
