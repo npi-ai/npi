@@ -14,8 +14,8 @@ from npiai.llm import LLM
 from npiai.utils import logger
 from npiai.context import Context, Task
 from npiai.core.browser import PlaywrightContext
-from npiai.core.tool.browser import BrowserTool
-from npiai.core.tool.agent import BrowserAgentTool
+from npiai.core.tool._browser import BrowserTool
+from npiai.core.tool._agent import BrowserAgentTool
 
 __PROMPT__ = """
 Imagine that you are imitating humans doing web navigation for a task step by step. I will provide you with the following context and you should call the best tool to fulfill the task.

@@ -1,4 +1,4 @@
-from npiai.core.tool.agent import agent_wrapper as wrap
+from npiai.core.tool import wrap
 
 __all__ = [
     'wrap',

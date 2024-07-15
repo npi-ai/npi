@@ -46,8 +46,8 @@ from npiai import agent
 
 async def main():
     # wrap the tool as an agent
-    async with agent.wrap(MyTool()) as agent:
-        result = await agent.chat("What's the 10-th fibonacci number?")
+    async with agent.wrap(MyTool()) as agent_tool:
+        result = await agent_tool.chat("What's the 10-th fibonacci number?")
         print(result)
 
 if __name__ == "__main__":
