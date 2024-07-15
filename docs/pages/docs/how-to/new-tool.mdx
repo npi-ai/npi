@@ -127,10 +127,10 @@ Finally, we can now run the tool in `function mode` or `agent mode` to interact 
     </Tabs.Tab>
     <Tabs.Tab title="Agent Mode">
         ```python
-        from npiai import agent_wrapper
+        from npiai import agent
 
         async def main():
-            async with agent_wrapper(MyTool()) as agent:
+            async with agent.wrap(MyTool()) as agent:
                 await agent.chat('<anything you want to chat with the agent>')
 
         if __name__ == '__main__':
@@ -159,10 +159,10 @@ Note that the above example uses the [context manager](https://docs.python.org/3
     </Tabs.Tab>
     <Tabs.Tab title="Agent Mode">
         ```python
-        from npiai import agent_wrapper
+        from npiai import agent
 
         async def main():
-            agent = agent_wrapper(MyTool())
+            agent = agent.wrap(MyTool())
             await agent.start()
             await agent.chat('<anything you want to chat with the agent>')
             await agent.end()

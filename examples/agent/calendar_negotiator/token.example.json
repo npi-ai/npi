@@ -1,0 +1,14 @@
+{
+    "token": "TOKEN",
+    "refresh_token": "TOKEN",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "client_id": "CLIENT_ID",
+    "client_secret": "CLIENT_SECRET",
+    "scopes": [
+        "https://mail.google.com/",
+        "https://www.googleapis.com/auth/calendar"
+    ],
+    "universe_domain": "googleapis.com",
+    "account": "",
+    "expiry": "2024-07-15T04:50:26.297178Z"
+}

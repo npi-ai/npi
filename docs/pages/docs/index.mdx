@@ -29,11 +29,12 @@ Let's create a new tool to compute the nth Fibonacci number. Start by crafting a
 ```python filename="main.py"
 from npiai import FunctionTool, function
 
+
 class MyTool(FunctionTool):
     def __init__(self):
         super().__init__(
-            name='my_tool',
-            description='test tool',
+            name='Fibonacci',
+            description='My first NPi tool',
         )
 
     @function
@@ -55,17 +56,24 @@ class MyTool(FunctionTool):
 
 You could use NPi tools in two different ways: `function mode` and `agent mode`. Let's explore both modes.
 
-#### Function Mode: Integration with Existing AI Agents
+#### Function Mode
 
-Function mode enables the integration of NPi tools with existing LLM-based AI agents. In this mode, tools are packaged as callable functions that the AI agent can invoke in response to user prompts. This integration allows developers to enrich
-the AI's functionality by incorporating custom operations without altering the agent's core logic.
+Function mode enables the integration of NPi tools with existing LLM-based AI application. In this mode, tools are packaged
+as callable functions that the AI agent can invoke in response to user prompts, the chosen of functions will be decided by user-side agent.
 
-```python filename="main.py" {4, 15, 21-22}
+```python filename="main.py"
+import asyncio
+import json
+import os
+
 from openai import OpenAI
+from my_tool import MyTool
+
 
 async def main():
-    async with MyTool() as my_tool:
-        client = OpenAI()
+    async with MyTool() as tool:
+        print(f'The schema of the tool is\n\n {json.dumps(tool.tools, indent=2)}')
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         messages = [
             {
                 "role": "user",
@@ -75,39 +83,64 @@ async def main():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            tools=my_tool.tools,  # use npi as a tool package
+            tools=tool.tools,
             tool_choice="auto",
             max_tokens=4096,
         )
         response_message = response.choices[0].message
-
-        # call the tool function corresponding to the response message
-        result = await my_tool.call(response_message.tool_calls)
-
-        print(result)
+        if response_message.tool_calls:
+            result = await tool.call(tool_calls=response_message.tool_calls)
+            print(f'The result of calling\n\n {json.dumps(result, indent=2)}')
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### Agent Mode: Tool Execution as an Agent
+```json
+[
+  {
+    "role": "tool",
+    "name": "fibonacci",
+    "tool_call_id": "call_UhkeQxrVr2LQoJOfUdR9WPdw",
+    "content": "55"
+  }
+]
+```
 
-Agent mode allows an NPi tools to serve as an independent AI agents that can directly take plain queries and generate
-responses. In this mode, the tool will be converted to an agent that receives instructions, processes it internally
-using its defined functions, and returns the result as an output message. This mode simplifies the creation of an
-AI-powered programming interface for domain-specific scenarios. We suggest you use tool with this mode in your Agentic AI applications.
+#### Agent Mode
 
-```python filename="main.py" {1, 4-5}
-from npiai import FunctionTool, function, agent_wrapper
+Agent mode allows an NPi tools to serve as an independent Tool agents that can directly take plain queries and generate
+responses. In this mode, the tool receives instructions, do `in-tool planning` to decide the sequence of function calling,
+and returns the result as an output message. This mode simplify the problem-solving for domain-specific questions.
+We suggest you use this mode in your Agentic AI applications.
+
+```python filename="main.py"
+import asyncio
+
+from npiai import agent, Context
+from my_tool import MyTool
+
 
 async def main():
-    async with agent_wrapper(MyTool()) as agent:
-        result = await agent.chat("What's the 10-th fibonacci number?")
+    async with agent.wrap(MyTool()) as tool:
+        # make sure you have set the OPENAI_API_KEY in your environment variables
+        result = await tool.chat(ctx=Context(), instruction="What's the 10-th fibonacci number?")
         print(result)
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+```sh
+The answer: The 10th Fibonacci number is 55.
 ```
 
 </Steps>
+
+## What's Next?
+
+1. [How NPi can work with OpenAI Assistant API?](integration/openai-assistant)
+2. [How NPi can work with LangChain?](integration/langchain)
+3. [How Function Tool Works?](./references/function-tool)
+4. [How Agent Tool Works?](./references/agent-tool)

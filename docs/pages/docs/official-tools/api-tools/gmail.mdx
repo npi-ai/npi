@@ -4,7 +4,7 @@ import { FeatureRequest } from '@components/feature-request';
 
 # Gmail
 
-The Gmail App allows you to streamline your email management tasks.
+The Gmail Tool allows you to streamline your email management tasks.
 
 ## Setup
 
@@ -54,8 +54,7 @@ The Gmail App allows you to streamline your email management tasks.
     <Tabs items={["Function Mode", "Agent Mode"]}>
         <Tabs.Tab title="Function Mode">
             ```python
-            from npiai import App
-            from npiai.app import Gmail
+            from npiai.tools import Gmail
 
             async def main():
                 async with Gmail(gmail_creds) as gmail:
@@ -65,11 +64,11 @@ The Gmail App allows you to streamline your email management tasks.
         </Tabs.Tab>
         <Tabs.Tab title="Agent Mode">
             ```python
-            from npiai import App, agent_wrapper
-            from npiai.app import Gmail
+            from npiai import agent
+            from npiai.tools import Gmail
 
             async def main():
-                async with agent_wrapper(Gmail(gmail_creds)) as agent:
+                async with agent.wrap(Gmail(gmail_creds)) as agent:
                     await agent.chat('get latest email in the inbox')
             ```
         </Tabs.Tab>

@@ -137,7 +137,7 @@ class GmailClientWrapper(Gmail):
                     userId=user_id, id=message_ref['id']
                 ).execute()['message']
             else:
-                message = self.service.users().dialogues().get(
+                message = self.service.users().messages().get(
                     userId=user_id, id=message_ref['id']
                 ).execute()
 
@@ -354,7 +354,7 @@ class GmailClientWrapper(Gmail):
         )
 
         try:
-            req = self.service.users().dialogues().send(userId='me', body=msg)
+            req = self.service.users().messages().send(userId='me', body=msg)
             res = req.execute()
             return self._build_message_from_ref(user_id, res, 'reference')
 
@@ -411,7 +411,7 @@ class GmailClientWrapper(Gmail):
             while remaining > 0:
                 retrieve_count = min(500, remaining)
 
-                response = self.service.users().dialogues().list(
+                response = self.service.users().messages().list(
                     userId=user_id,
                     q=query,
                     labelIds=labels_ids,
@@ -503,7 +503,7 @@ class GmailClientWrapper(Gmail):
         """
 
         try:
-            res = self.service.users().dialogues().get(userId='me', id=message_id).execute()
+            res = self.service.users().messages().get(userId='me', id=message_id).execute()
             return self._build_message_from_ref(user_id='me', message_ref=res, attachments='reference')
         except HttpError as error:
             # Pass along the error

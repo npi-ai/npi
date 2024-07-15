@@ -12,7 +12,7 @@ from typing_extensions import NotRequired, TypedDict
 from npiai.core import callback
 from npiai.llm import LLM
 from npiai.utils import logger
-from npiai.core.base import Context, Task
+from npiai.context import Context, Task
 from npiai.core.browser import PlaywrightContext
 from npiai.core.tool.browser import BrowserTool
 from npiai.core.tool.agent import BrowserAgentTool
@@ -279,7 +279,7 @@ class NavigatorAgent(BrowserAgentTool):
 
         response_message = response.choices[0].message
 
-        message.record(response_message)
+        message.step(response_message)
 
         if not response_message.content:
             raise Exception(f'{self.name}: No response message')

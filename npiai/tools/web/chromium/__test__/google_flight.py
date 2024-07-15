@@ -1,10 +1,10 @@
 import asyncio
-from npiai import agent_wrapper
+from npiai import agent
 from npiai.tools.web.chromium import Chromium
 
 
 async def main():
-    async with agent_wrapper(Chromium(headless=False)) as browser:
+    async with agent.wrap(Chromium(headless=False)) as browser:
         return await browser.chat(
             'Book a one-way flight from ATL to LAX on 4/20 using Google Flights.'
         )

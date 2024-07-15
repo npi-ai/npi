@@ -1,56 +1,14 @@
 import asyncio
-import json
-import os
 
-from openai import OpenAI
-
-from npiai import agent, FunctionTool
-from npiai.tools import GitHub
-
-
-class MyTool(FunctionTool):
-    def __init__(self):
-        super().__init__(
-            name='my_tool',
-            description='my first tool for OpenAI Function calling',
-        )
-        self.add_tool(
-            # Get your Access token at https://github.com/settings/tokens
-            agent.wrap(GitHub(access_token=os.environ.get('GITHUB_ACCESS_TOKEN', None)))
-        )
+from npiai import agent, Context
+from my_tool import MyTool
 
 
 async def main():
-    # make sure you have set the OPENAI_API_KEY in your environment variables
-
-    async with MyTool() as tool:
-        # schemas
-        print(json.dumps(tool.tools, indent=2))
-
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        messages = [
-            {
-                "role": "user",
-                "content": "what's the title of the PR #1 of npi-ai/npi",
-            }
-        ]
-        while True:
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-                tools=tool.tools,  # use agent as a functions tool
-                tool_choice="auto",
-                max_tokens=4096,
-            )
-
-            response_message = response.choices[0].message
-
-            if response_message.tool_calls:
-                messages.append(response_message)
-                messages.extend(await tool.call(tool_calls=response_message.tool_calls))
-            else:
-                print(response_message.content)
-                break
+    async with agent.wrap(MyTool()) as tool:
+        # make sure you have set the OPENAI_API_KEY in your environment variables
+        result = await tool.chat(ctx=Context(), instruction="What's the 10-th fibonacci number?")
+        print(f"The answer: {result}")
 
 
 if __name__ == "__main__":

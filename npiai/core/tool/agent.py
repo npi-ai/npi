@@ -5,7 +5,8 @@ from pydantic import create_model, Field
 
 from npiai.llm import LLM, OpenAI
 from npiai.types import FunctionRegistration
-from npiai.core.base import BaseAgentTool, Context, Task
+from npiai.context import Context, Task
+from npiai.core.base import BaseAgentTool
 from npiai.core.hitl import HITL
 from npiai.core.tool.function import FunctionTool
 from npiai.core.tool.browser import BrowserTool
@@ -68,14 +69,12 @@ class AgentTool(BaseAgentTool):
         task = Task(goal=instruction)
         ctx = ctx.fork(task)
         if self._tool.system_prompt:
-            await task.record([
+            await task.step([
                 ChatCompletionSystemMessageParam(role='system', content=self._tool.system_prompt)
-                # {'role': 'system', 'content': self._tool.system_prompt}
             ])
 
-        await task.record([
+        await task.step([
             ChatCompletionUserMessageParam(role='user', content=instruction)
-            # {'role': 'user', 'content': instruction}
         ])
         return await self._call_llm(ctx, task)
 
@@ -87,7 +86,7 @@ class AgentTool(BaseAgentTool):
                 tool_choice='auto',
                 max_tokens=4096,
             )
-            await task.record([response.choices[0].message])
+            await task.step([response.choices[0].message])
 
             response_message = response.choices[0].message
             tool_calls = response_message.get('tool_calls', None)
@@ -96,7 +95,7 @@ class AgentTool(BaseAgentTool):
                 return response_message.content
 
             results = await self._tool.call(tool_calls, session)
-            await task.record(results)
+            await task.step(results)
 
 
 class BrowserAgentTool(AgentTool):
@@ -127,9 +126,9 @@ class BrowserAgentTool(AgentTool):
         task = Task(goal=instruction)
         ctx = ctx.fork(task)
         if self._tool.system_prompt:
-            await task.record([ChatCompletionSystemMessageParam(role='system', content=self._tool.system_prompt)])
+            await task.step([ChatCompletionSystemMessageParam(role='system', content=self._tool.system_prompt)])
 
-        await task.record([ChatCompletionUserMessageParam(
+        await task.step([ChatCompletionUserMessageParam(
             role='user',
             content=[
                 {
