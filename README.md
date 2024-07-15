@@ -16,110 +16,140 @@ NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agent
 
 [📢 Join our community on Discord](https://discord.gg/wdskUcKc): Let's build NPi together 👻 !
 
-## Quickstart
 
-### Installation
+NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"**, is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools and applications.
 
-#### Command Line Tool
+<nav className="text-center my-4">
+  [Getting Started](/docs)
+  |
+  [Examples](/examples)
+  |
+  [NPi Cloud(coming soon)](#)
+</nav>
 
-Download the binary from the following links.
-
-```sh
-# For macOS
-curl -O https://s.npi.ai/cli/latest/darwin/npi
-
-# For Linux
-curl -O https://s.npi.ai/cli/latest/linux/npi
-
-```
-
-Then move it to `/usr/local/bin` or any other directory in your `PATH`:
+## Installation
 
 ```sh
-chmod +x npi
-sudo mv npi /usr/local/bin
+pip install npiai
 ```
 
-Verify the installation by running `npi version`. If you see the output similar to the following, you are all set:
+## One-Minute Quick Start
 
-```json
-{
-   "BuildDate": "2024-05-15_16:26:11-0500",
-   "GitCommit": "8341471",
-   "Platform": "linux/amd64",
-   "Version": "v0.0.3"
-}
+Let's create a new tool to compute the nth Fibonacci number. Start by crafting a new Python file titled `main.py` and insert the following snippet:
+
+```py filename="main.py" showLineNumbers {9,12-13,19-22,33,44,51}
+import os
+import json
+import asyncio
+
+from openai import OpenAI
+from npiai import FunctionTool, function
+
+
+class MyTool(FunctionTool):
+    def __init__(self):
+        super().__init__(
+            name='Fibonacci',
+            description='My first NPi tool',
+        )
+
+    @function
+    def fibonacci(self, n: int) -> int:
+        """
+        Get the nth Fibonacci number.
+
+        Args:
+            n: The index of the Fibonacci number in the sequence.
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        return self.fibonacci(n - 1) + self.fibonacci(n - 2)
+
+
+async def main():
+    async with MyTool() as tool:
+        print(f'The schema of the tool is\n\n {json.dumps(tool.tools, indent=2)}')
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        messages = [
+            {
+                "role": "user",
+                "content": "What's the 10-th fibonacci number?",
+            }
+        ]
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=tool.tools,  # use My as functions package
+            tool_choice="auto",
+            max_tokens=4096,
+        )
+        response_message = response.choices[0].message
+        if response_message.tool_calls:
+            result = await tool.call(tool_calls=response_message.tool_calls)
+            print(f'The result of function\n\n {json.dumps(tool.tools, indent=2)}')
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-#### Setting Up NPi Server
-
-> [!TIP]
-> If Docker is not yet installed on your system, refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) for setup instructions.
-
-
-Replace `YOUR_OAI_KEY` with your actual OpenAI API Key, then execute:
+Now, run the tool:
 
 ```sh
-docker run -d --name npi --pull always \
-    -p 9140:9140 \
-    -e OPENAI_API_KEY=YOUR_OAI_KEY npiai/npi
+python main.py
 ```
 
-Confirm server connectivity by running `npi connect test`, it may take a few seconds. If you receive a `NPi Server is operational!` message, the
-setup is
-successful. Otherwise, consult the logs with `docker logs npi` and report issues
-to [NPi GitHub Repository](https://github.com/npi-ai/npi/issues/new).
+You will see the function result in [OpenAI function calling format](https://platform.openai.com/docs/guides/function-calling/function-calling):
 
-### Try the GitHub App
-
-#### Authorize NPi to access your GitHub account
-
-Generate a new token via [GitHub Tokens Page](https://github.com/settings/tokens) for NPi, you may need to grant the `repo` scope so that NPi can access
-repositories on behalf of you. ([Read more about scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps))
-
-![img.png](docs/assets/github-token-grant-repo.png)
-
-Then, authorize NPi's access to your GitHub account with the following command:
-
-```sh
-npi auth github --access-token YOUR_GITHUB_ACCESS_TOKEN
+```json {6}
+[
+  {
+    "role": "tool",
+    "name": "fibonacci",
+    "tool_call_id": "call_4KItpriZmoGxXgDloI5WOtHm",
+    "content": 55
+  }
+]
 ```
 
-#### Support the NPi Repository
+`content: 55` is the result of function calling, and the schema：
 
-Easily star and fork the NPi Repository using:
-
-```sh
-npi tools github "what's the first PR of npi-ai/npi, include the access url, and output with json format"
-
-# if you like npi, star us for support
-npi tools github "star npi-ai/npi"
+```json {6, 9-12}
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "fibonacci",
+      "description": "Get the nth Fibonacci number.",
+      "parameters": {
+        "properties": {
+          "n": {
+            "description": "The index of the Fibonacci number in the sequence.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n"
+        ],
+        "type": "object"
+      }
+    }
+  }
+]
 ```
 
-#### Clean up
+The high-lighted part is automatically parsed from code.
 
-1. Stop and remove the NPi container:
-    ```sh
-    docker stop npi
-    docker rm npi
-    ```
-2. Revoke your GitHub access token by revisiting: [GitHub Tokens Page](https://github.com/settings/tokens).
+That's it! You've successfully created and run your first NPi tool. 🎉
 
-## Python SDK
+## Next Steps
 
-[NPI Python SDK](https://github.com/npi-ai/client-python)
-
-## Multi-app Agent Examples
-
-1. [Calendar Negotiator](examples/agent/calendar_negotiator/main.py)
-2. [Twitter Discord](examples/agent/twitter_discord_crawler/main.py)
-3. [GitHub Notifier](examples/github_notifier/main.py)
-
-More: [https://www.npi.ai/docs/examples](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme)
-
-## Roadmap
-
-[https://www.npi.ai/docs/roadmap](https://www.npi.ai/docs/roadmap?utm_source=github&utm_campaign=readme)
+- [Read the Documentation](/docs)
+- [Explore More Examples](/examples)
+- [NPi Cloud(coming soon)](#)
+- [Contribute to NPi AI](https://github.com/npi-ai/npi)
 
 ## License
 
