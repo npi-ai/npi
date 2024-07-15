@@ -308,14 +308,14 @@ class Gmail(FunctionTool):
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
-        approved = await self.hitl.confirm(
-            # ctx,
-            self.name,
-            f'The following email will be sent to {to}: {message}'
-        )
-
-        if not approved:
-            return 'The email could not be sent due to user rejection'
+        # approved = await self.hitl.confirm(
+        #     ctx=ctx,
+        #     tool_name=self.name,
+        #     message=f'The following email will be sent to {to}:\n {message}'
+        # )
+        #
+        # if not approved:
+        #     return 'The email could not be sent due to user rejection'
 
         msg = self.gmail_client.send_message(
             sender='',

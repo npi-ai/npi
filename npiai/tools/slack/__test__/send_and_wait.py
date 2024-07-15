@@ -1,12 +1,12 @@
 import asyncio
 
-from npiai import agent_wrapper
+from npiai import agent
 from npiai.tools import Slack
 from npiai.hitl_handler import ConsoleHandler
 
 
 async def main():
-    async with agent_wrapper(Slack()) as slack:
+    async with agent.wrap(Slack()) as slack:
         slack.use_hitl(ConsoleHandler())
 
         return await slack.chat(

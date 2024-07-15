@@ -1,13 +1,13 @@
-## `agent_wrapper`
+## `npiai.agent.wrap`
 
-The `agent_wrapper` function is a utility function that wraps an NPi tool to create an agent. This function is used to convert a tool into an agent that can directly take plain prompts and generate responses. The agent mode simplifies the creation of an AI-powered programming interface for domain-specific scenarios. We suggest you use tools with this mode in your Agentic AI applications.
+The `npiai.agent.wrap` function is a utility function that wraps an NPi tool to create an agent. This function is used to convert a tool into an agent that can directly take plain prompts and generate responses. The agent mode simplifies the creation of an AI-powered programming interface for domain-specific scenarios. We suggest you use tools with this mode in your Agentic AI applications.
 
 - **Usage:**
 
   ```python
-  from npiai import agent_wrapper
+  from npiai import agent
 
-  agent = agent_wrapper(tool, llm_client)
+  agent = agent.wrap(tool, llm_client)
   ```
 
 - **Arguments:**

@@ -189,13 +189,14 @@ class FunctionTool(BaseFunctionTool):
                 res = f'Exception while executing {fn_name}: {e}'
                 await session.send(callback.Callable(res))
 
-            logger.debug(f'[{self.name}]: function `{fn_name}` returned: {res}')
+            logger.debug(f'[{self.name}]: function `{fn_name}` returned:\n {res}')
 
             results.append(
                 ChatCompletionToolMessageParam(
                     role='tool',
+                    name=fn_name,
                     tool_call_id=call.id,
-                    content=res,
+                    content=str(res),
                 )
             )
 

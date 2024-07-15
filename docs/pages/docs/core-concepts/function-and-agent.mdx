@@ -39,14 +39,14 @@ if __name__ == "__main__":
 
 Agent mode transforms NPi tools into independent AI agents capable of directly handling and responding to user prompts. In this mode, the tool will be converted to an agent that receives instructions, processes it internally using its defined functions, and returns the result as an output message. This mode simplifies the creation of an AI-powered programming interface for domain-specific scenarios and is recommended when integrating tools within Agentic AI frameworks.
 
-The Python snippet below illustrates how an NPi tool are wrapped into an agent using the `agent_wrapper` function:
+The Python snippet below illustrates how an NPi tool are wrapped into an agent using the `npiai.agent.wrap` function:
 
 ```python filename="main.py" {1, 4-5}
-from npiai import App, function, agent_wrapper
+from npiai import agent
 
 async def main():
     # wrap the tool as an agent
-    async with agent_wrapper(MyTool()) as agent:
+    async with agent.wrap(MyTool()) as agent:
         result = await agent.chat("What's the 10-th fibonacci number?")
         print(result)
 

@@ -111,8 +111,8 @@ npi tools github "star npi-ai/npi"
 
 ## Multi-app Agent Examples
 
-1. [Calendar Negotiator](examples/calendar_negotiator/main.py)
-2. [Twitter Discord](examples/twitter_discord_crawler/main.py)
+1. [Calendar Negotiator](examples/agent/calendar_negotiator/main.py)
+2. [Twitter Discord](examples/agent/twitter_discord_crawler/main.py)
 3. [GitHub Notifier](examples/github_notifier/main.py)
 
 More: [https://www.npi.ai/docs/examples](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme)

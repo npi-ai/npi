@@ -63,7 +63,7 @@ When combining tools in agent mode, the sub-tool's functions are not automatical
 The Python code snippet below demonstrates how to combine two tools in agent mode. In this case, the sub-tool is wrapped as an agent and only the agent's `chat` function is visible to the parent tool.
 
 ```python filename="agent_mode.py" {29-31, 48}
-from npiai import App, agent_wrapper, function
+from npiai import FunctionTool, agent, function
 
 class MySubTool(FunctionTool):
     def __init__(self):
@@ -92,7 +92,7 @@ class MyTool(FunctionTool):
         )
 
         self.add_tool(
-            agent_wrapper(MySubTool())
+            agent.wrap(MySubTool())
         )
 
     @function
@@ -108,7 +108,6 @@ class MyTool(FunctionTool):
 
 
 async def main():
-    async with App() as app:
-        async with MyTool() as my_tool:
-            print(agent.unpack_functions())  # [multiply(), my_sub_tool__agent__chat()]
+    async with MyTool() as my_tool:
+        print(agent.unpack_functions())  # [multiply(), my_sub_tool__agent__chat()]
 ```

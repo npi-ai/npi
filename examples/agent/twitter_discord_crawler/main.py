@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from npiai import FunctionTool, agent_wrapper
+from npiai import FunctionTool, agent
 from npiai.hitl_handler import ConsoleHandler
 from npiai.tools import Discord
 from npiai.tools.web import Twitter
@@ -39,19 +39,19 @@ class TwitterDiscordCrawler(FunctionTool):
         self.use_hitl(ConsoleHandler())
 
         self.add_tool(
-            agent_wrapper(Twitter(headless=False)),
-            agent_wrapper(Discord()),
+            agent.wrap(Twitter(headless=False)),
+            agent.wrap(Discord())
         )
 
 
 async def run():
     llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
 
-    async with agent_wrapper(TwitterDiscordCrawler(), llm=llm) as agent:
+    async with agent.wrap(TwitterDiscordCrawler(), llm=llm) as tool:
         print("Twitter Crawler: What's your task for me?")
         task = input('User: ')
         print('')
-        await agent.chat(task)
+        await tool.chat(task)
 
 
 def main():

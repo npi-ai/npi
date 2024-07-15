@@ -10,7 +10,7 @@ from google.protobuf.empty_pb2 import Empty
 from google.oauth2.credentials import Credentials
 from dotenv import load_dotenv
 
-from npiai import agent_wrapper, AgentTool, BrowserAgentTool
+from npiai import agent
 from npiai.context import ContextManager, Context
 from npiai.tools import GitHub, Gmail, GoogleCalendar, Twilio, Discord
 from npiai.tools.web import Chromium, Twitter
@@ -44,7 +44,9 @@ class Chat(pbgrpc.PlaygroundServicer):
                 response.thread_id = ctx.id
                 response.code = pb.ResponseCode.SUCCESS
                 decoded_bytes = base64.b64decode(request.authorization)
-                _ = asyncio.create_task(self.run(request.chat_request.type, decoded_bytes.decode('utf-8'), ctx))
+
+                _ = asyncio.create_task(self.run(request.chat_request.type, decoded_bytes.decode('utf-8'),
+                                                 ctx, request.chat_request.instruction))
             except Exception as err:
                 err_msg = ''.join(traceback.format_exception(err))
                 print(err_msg)
@@ -139,7 +141,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         cb.callback(result=req.action_result_request)
 
     @staticmethod
-    async def run(app_type: pb.AppType, authorization: str, ctx: Context):
+    async def run(app_type: pb.AppType, authorization: str, ctx: Context, instruction: str):
         try:
             match app_type:
                 case pb.AppType.GITHUB:
@@ -174,12 +176,12 @@ class Chat(pbgrpc.PlaygroundServicer):
                     )
                 case _:
                     raise ValueError(f"Unsupported tool")
-            agent = agent_wrapper(app)
-            agent.use_hitl(PlaygroundHITL())
-            ctx.set_active_tool(agent)
-            await agent.start(ctx)
-            result = await agent.chat(ctx.instruction, ctx)
-            await agent.end(ctx)
+            tool = agent.wrap(app)
+            tool.use_hitl(PlaygroundHITL())
+            ctx.bind(tool)
+            await tool.start()
+            result = await tool.chat(ctx=ctx, instruction=instruction)
+            await tool.end()
             ctx.finish(result)
         except UnauthorizedError as e:
             ctx.failed(str(e))
@@ -189,7 +191,8 @@ class Chat(pbgrpc.PlaygroundServicer):
             ctx.failed(str(e))
             # raise e
         finally:
-            ctx.set_active_tool(None)
+            # ctx.set_active_tool(None)
+            pass
 
 
 _cleanup_coroutines = []

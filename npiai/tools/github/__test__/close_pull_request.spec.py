@@ -1,11 +1,11 @@
 import asyncio
 
-from npiai import agent_wrapper
-from npiai import GitHub
+from npiai import agent
+from npiai.tools import GitHub
 
 
 async def main():
-    async with agent_wrapper(GitHub()) as github:
+    async with agent.wrap(GitHub()) as github:
         return await github.chat('Close all pull requests in idiotWu/npi-test')
 
 
