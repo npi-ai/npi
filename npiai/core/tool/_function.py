@@ -1,4 +1,4 @@
-"""The basic interface for NPi Apps"""
+"""The basic interface for NPi Tools"""
 import dataclasses
 import inspect
 import json
