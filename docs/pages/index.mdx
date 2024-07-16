@@ -74,7 +74,7 @@ async def main():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            tools=tool.tools,  # use My as functions package
+            tools=tool.tools,  # use tool as functions package
             tool_choice="auto",
             max_tokens=4096,
         )

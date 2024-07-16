@@ -81,7 +81,7 @@ async def main():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            tools=tool.tools,  # use My as functions package
+            tools=tool.tools,  # use tool as functions package
             tool_choice="auto",
             max_tokens=4096,
         )
@@ -140,8 +140,6 @@ You will see the function result in [OpenAI function calling format](https://pla
 ]
 ```
 
-The high-lighted part is automatically parsed from code.
-
 That's it! You've successfully created and run your first NPi tool. 🎉
 
 ## Next Steps
@@ -149,7 +147,6 @@ That's it! You've successfully created and run your first NPi tool. 🎉
 - [Read the Documentation](/docs)
 - [Explore More Examples](/examples)
 - [NPi Cloud(coming soon)](#)
-- [Contribute to NPi AI](https://github.com/npi-ai/npi)
 
 ## License
 
