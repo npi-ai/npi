@@ -12,7 +12,7 @@ const defaultMeta = {
 }
 
 const config: DocsThemeConfig = {
-  logo: <Logo width={100} />,
+  logo: <Logo height={30} />,
   project: {
     link: 'https://github.com/npi-ai/npi',
   },
