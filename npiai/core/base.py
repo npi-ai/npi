@@ -1,6 +1,6 @@
 import datetime
-from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Union
+from abc import ABC, ABCMeta, abstractmethod
+from typing import List, Dict, Any
 
 from litellm.types.completion import ChatCompletionToolMessageParam
 from litellm.types.utils import ChatCompletionMessageToolCall
@@ -11,7 +11,37 @@ from npiai.context import Context
 from npiai.core.hitl import HITL
 
 
-class BaseTool(ABC):
+#
+# class CombinedMeta(ABCMeta, type):
+#     def __init__(cls, name, bases, attrs):
+#         super().__init__(name, bases, attrs)
+#
+#         # Skip the check for the base class itself
+#         if not any(isinstance(base, CombinedMeta) for base in bases):
+#             return
+#
+#         # Get the required variables from the parent classes
+#         parent_vars = {k for base in bases for k, v in base.__dict__.items() if
+#                        not k.startswith('__') and not callable(v)}
+#         subclass_vars = set(attrs.keys())
+#
+#         # Find the missing overrides
+#         missing_overrides = parent_vars - subclass_vars
+#         if missing_overrides:
+#             raise TypeError(f"Subclasses must override variables: {', '.join(missing_overrides)}")
+
+
+class BaseTool(ABC):  #, metaclass=CombinedMeta
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> 'BaseTool':
+        # bind the tool to the Context
+        raise NotImplementedError("subclasses must implement this method for npi cloud hosting")
+
+    @classmethod
+    @abstractmethod
+    def get_name(cls) -> str:
+        pass
 
     def __init__(self, name: str = "", description: str = "", provider: str = 'npiai',
                  fn_map: Dict[str, FunctionRegistration] | None = None):
@@ -51,11 +81,6 @@ class BaseTool(ABC):
     async def end(self):
         """Stop and dispose the tools"""
         ...
-
-    @classmethod
-    def from_context(cls, ctx: Context) -> 'BaseTool':
-        # bind the tool to the Context
-        raise NotImplementedError("subclasses must implement this method for npi cloud hosting")
 
     async def exec(self, ctx: Context, fn_name: str, args: Dict[str, Any] = None):
         time1 = datetime.datetime.now()

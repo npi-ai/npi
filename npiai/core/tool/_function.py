@@ -70,7 +70,7 @@ def function(
 class FunctionTool(BaseFunctionTool):
     """The basic interface for the natural language programming interface"""
 
-    name: str
+    name: str = "FunctionTool"
     description: str
     system_prompt: Optional[str]
     provider: str

@@ -41,6 +41,7 @@ def _default_not_set(value: _T) -> _T | 'NotSet':
 
 class GitHub(FunctionTool):
     github_client: PyGithub
+    name: str = 'github'
 
     def __init__(self, access_token: str = None):
         self.token = access_token or os.environ.get('GITHUB_ACCESS_TOKEN', None)
@@ -55,7 +56,12 @@ class GitHub(FunctionTool):
 
     @classmethod
     def from_context(cls, ctx: Context) -> 'GitHub':
-        return GitHub(access_token=ctx.authorization())
+        auth = ctx.authorization()
+        return GitHub(access_token=auth)
+
+    @classmethod
+    def get_name(cls) -> str:
+        return GitHub.name
 
     async def start(self):
         if self.token is None:

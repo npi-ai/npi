@@ -7,6 +7,8 @@ from typing import List, Union
 from fastapi import Request
 from litellm.types.completion import ChatCompletionMessageParam
 
+from npiai.cloud import Client
+
 
 class Task:
     """the message wrapper of a message in the context"""
@@ -38,21 +40,22 @@ class Task:
 class Context:
     __last_screenshot: str | None = None
 
-    def __init__(self, req: Request | None = None) -> None:
-        # self._parent_session = parent
-        # self._task = task
+    def __init__(self, req: Request | None = None, client: Client | None = None) -> None:
+        if not client:
+            client = Client()
+        self.client = client
         self.id = str(uuid.uuid4())
         self.q = asyncio.Queue()
-        # self.cb_dict: dict[str, callback.Callable] = {}
         self.__is_finished = False
         self.__result: str = ''
         self.__is_failed = False
         self.__failed_msg: str = ''
         self.__active_tool = None
         self.__request = req
+        self.__permission_id = req.headers.get('x-npi-permission-id')
 
     def authorization(self) -> str:
-        return self.__request.headers.get('Authorization')
+        return self.client.get_credentials(self.__permission_id)
 
     def entry(self):
         pass

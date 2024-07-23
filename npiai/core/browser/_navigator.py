@@ -146,6 +146,7 @@ def _parse_response(response: str) -> Union[Response, None]:
 
 
 class NavigatorAgent(BrowserAgentTool):
+    name: str = 'navigator'
 
     def __init__(
             self,

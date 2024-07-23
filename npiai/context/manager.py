@@ -1,3 +1,5 @@
+from fastapi import Request
+
 from .context import Context
 
 
@@ -5,13 +7,13 @@ class ContextManager:
     """the manager of the context"""
 
     def __init__(self):
-        self.threads = {}
+        self.contexts = {}
 
-    def new_thread(self, req) -> Context:
+    def from_request(self, req: Request) -> Context:
         """create a context"""
-        th = Context()
-        self.threads[th.id] = th
-        return th
+        ctx = Context(req=req)
+        self.contexts[ctx.id] = ctx
+        return ctx
 
     def get_thread(self, tid: str) -> Context:
         """get a context by id"""

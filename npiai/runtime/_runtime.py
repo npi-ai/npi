@@ -5,36 +5,38 @@ import re
 import json
 import logging
 import signal
-from typing import Dict
+from typing import List
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from npiai.context import Context, ContextManager
+from npiai.context import ContextManager
 from npiai.core.base import BaseTool
 
 
 class ToolRuntime:
-    def __init__(self, tool_cls: Dict[str, BaseTool.__class__], port: int = 9140):
-        self.tool_cls = tool_cls
+    def __init__(self, tool_cls: List[BaseTool.__class__], port: int = 9140):
+        self.tools = {}
+        for tool in tool_cls:
+            self.tools[tool.get_name()] = tool
         self.port = port
         self.app = FastAPI()
         self.ctx_mgr = ContextManager()
 
-    async def run(self):
-        await self._start()
+    def run(self):
+        self._start()
 
     def get_tool(self, name: str) -> BaseTool.__class__:
-        if name not in self.tool_cls:
+        if name not in self.tools:
             raise ValueError(f"Tool {name} not found")
 
-        return self.tool_cls[name]
+        return self.tools[name]
 
-    async def _start(self):
+    def _start(self):
         """Start the server"""
-        if not bool(os.environ.get("NPIAI_TOOL_SERVER_MODE")):
-            print("Server mode is disabled, if you want to run the server, set env NPIAI_TOOL_SERVER_MODE=true")
+        if not bool(os.environ.get("NPIAI_SERVICE_MODE")):
+            print("Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
             print("Exiting...")
             return
 
@@ -46,7 +48,7 @@ class ToolRuntime:
             method = convert_camel_to_snake(full_path)
             try:
                 ctx = self.ctx_mgr.from_request(request)
-                tool_cls = self.tool_cls[tool_name]
+                tool_cls = self.get_tool(tool_name)
                 tool = tool_cls.from_context(ctx)
                 match request.method:
                     case "POST":
