@@ -9,7 +9,7 @@ from github.PullRequest import PullRequest
 from github.GithubObject import NotSet
 from typing import Union, TypeVar, List, Literal
 
-from npiai import FunctionTool, function
+from npiai import FunctionTool, function, utils
 from npiai.context import Context
 from npiai.error.auth import UnauthorizedError
 
@@ -56,6 +56,8 @@ class GitHub(FunctionTool):
 
     @classmethod
     def from_context(cls, ctx: Context) -> 'GitHub':
+        if not utils.is_cloud_env():
+            raise RuntimeError('GitHub tool can only be initialized in the NPi cloud environment')
         auth = ctx.authorization()
         return GitHub(access_token=auth)
 

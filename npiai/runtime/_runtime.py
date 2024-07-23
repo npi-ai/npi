@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
 
+from npiai import utils
 from npiai.context import ContextManager
 from npiai.core.base import BaseTool
 
@@ -35,10 +36,8 @@ class ToolRuntime:
 
     def _start(self):
         """Start the server"""
-        if not bool(os.environ.get("NPIAI_SERVICE_MODE")):
-            print("Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
-            print("Exiting...")
-            return
+        if not utils.is_cloud_env():
+            raise RuntimeError("Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
 
         def convert_camel_to_snake(name: str) -> str:
             return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
