@@ -33,9 +33,9 @@ Both Function Calling and RAG aim to supplement the prompt with context, whether
 
 ### Function Calling in LLMs
 
-**Function Calling** in large language models (LLMs) is a technique that allows these models to extend their functionality by interfacing with external APIs and tools. `This capability enables LLMs to break free from their text-based limitations and interact with the real world, performing actions, controlling devices, and retrieving information from databases.`
+**Function Calling** in large language models (LLMs) allows these models to extend their functionality by interfacing with external APIs and tools. `This capability enables LLMs to break free from their text-based limitations and interact with the real world, performing actions, controlling devices, and retrieving information from databases.`
 
-By providing the LLM with a set of functions or tools, along with their descriptions and usage instructions, the model can intelligently select the appropriate functions to accomplish a given task. This process is known as Function Calling, or sometimes tool use or API calling.
+By providing the LLM with a set of functions, along with their descriptions and usage instructions, the model can intelligently select the appropriate functions to accomplish a given task. This process is known as Function Calling, or sometimes tool use or API calling.
 
 Function calling allows LLMs to generate structured outputs, such as JSON objects or programming language instructions, which can be reliably read by other processes. This structured output is crucial for integrating LLMs into data pipelines and ensuring that the generated data can be used for downstream processing.
 
@@ -45,13 +45,13 @@ Function calling has emerged as a significant technique, particularly in models 
 
 ### How Function Calling Works
 
-Applications typically invoke the LLM with function-calling capabilities twice: once to map the prompt into the target function name and its input arguments, and again to send the output of the invoked function to generate the final response. This two-step process ensures that the model can accurately and efficiently perform the required tasks.
+Agent typically invoke the LLM with function-calling capabilities twice: once to map the prompt into the target function name and its input arguments, and again to send the output of the invoked function to generate the final response. This two-step process ensures that the model can accurately and efficiently perform the required tasks.
 
 ![how-function-calling-works](/images/how-function-calling-works.png)
 
 The process begins when a user submits a prompt to an application responsible for handling communication between the user and the model. This application also provides the model with one or more tool or function definitions. The model then selects the appropriate function to execute based on the user prompt.
 
-Once the model identifies the suitable function, it returns the function name and the necessary values to the application. The application then executes the function and returns the API response to the model. The model uses this response to generate the final output, which is then delivered back to the user through the application.
+Once the model identifies the suitable function, it returns the function name and the necessary values to the application. The application then executes the function and returns the invocation result to the model. The model uses this response to generate the final output, which is then delivered back to the user through the application.
 
 For example, a query like `What is the weather like in San Francisco?` can be converted into a function call such as `get_current_weather('San Francisco', 'fahrenheit')`.
 
@@ -61,7 +61,7 @@ This technique is particularly useful for creating conversational agents that ca
 
 ### Applications of Function Calling
 
-Function calling in large language models (LLMs) has revolutionized the development of conversational agents. By enabling these models to interface with external APIs, developers can create chatbots that provide more relevant and useful responses. For instance, a chatbot can answer complex questions by calling external knowledge bases or APIs, such as retrieving the current weather in a specific location.
+Function calling has revolutionized the development of conversational agents. By enabling these models to interface with external APIs, developers can create chatbots that provide more relevant and useful responses. For instance, a chatbot can answer complex questions by calling external knowledge bases or APIs, such as retrieving the current weather in a specific location.
 
 Another significant application of Function Calling is in natural language understanding. LLMs can convert natural language into structured JSON data, extract structured data from text, and perform tasks like Named entity recognition, Sentiment analysis, and Keyword extraction. This capability enhances the model's ability to process and understand human language in a more structured and actionable manner.
 
