@@ -144,8 +144,8 @@ That's it! You've successfully created and run your first NPi tool. 🎉
 
 ## Next Steps
 
-- [Read the Documentation](/docs)
-- [Explore More Examples](/examples)
+- [Read the Documentation](https://www.npi.ai/docs)
+- [Explore More Examples](https://www.npi.ai/examples)
 - [NPi Cloud(coming soon)](#)
 
 ## License
