@@ -11,27 +11,7 @@ from npiai.context import Context
 from npiai.core.hitl import HITL
 
 
-#
-# class CombinedMeta(ABCMeta, type):
-#     def __init__(cls, name, bases, attrs):
-#         super().__init__(name, bases, attrs)
-#
-#         # Skip the check for the base class itself
-#         if not any(isinstance(base, CombinedMeta) for base in bases):
-#             return
-#
-#         # Get the required variables from the parent classes
-#         parent_vars = {k for base in bases for k, v in base.__dict__.items() if
-#                        not k.startswith('__') and not callable(v)}
-#         subclass_vars = set(attrs.keys())
-#
-#         # Find the missing overrides
-#         missing_overrides = parent_vars - subclass_vars
-#         if missing_overrides:
-#             raise TypeError(f"Subclasses must override variables: {', '.join(missing_overrides)}")
-
-
-class BaseTool(ABC):  #, metaclass=CombinedMeta
+class BaseTool(ABC):
 
     @classmethod
     def from_context(cls, ctx: Context) -> 'BaseTool':
@@ -100,7 +80,8 @@ class BaseTool(ABC):  #, metaclass=CombinedMeta
                 args[fn.ctx_param_name] = ctx
         if args is None:
             re = await fn.fn()
-        re = await fn.fn(**args)
+        else:
+            re = await fn.fn(**args)
         time2 = datetime.datetime.now()
         # print(f"Time taken to execute the function: {time2 - time1}")
         return re

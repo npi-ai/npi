@@ -9,16 +9,14 @@ class ContextManager:
     def __init__(self):
         self.contexts = {}
 
-    def from_request(self, req: Request) -> Context:
-        """create a context"""
-        ctx = Context(req=req)
-        self.contexts[ctx.id] = ctx
-        return ctx
+    def get_context(self, ssid: str) -> Context | None:
+        if ssid in self.contexts:
+            return self.contexts[ssid]
+        return None
 
-    def get_thread(self, tid: str) -> Context:
-        """get a context by id"""
-        return self.threads.get(tid)
+    def save_context(self, ctx: Context):
+        self.contexts[ctx.id] = ctx
 
     def release(self, tid: str) -> None:
         """delete a context by id"""
-        del self.threads[tid]
+        pass

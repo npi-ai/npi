@@ -2,12 +2,12 @@
 import datetime
 import uuid
 import asyncio
+from abc import ABC, abstractmethod
+
 from typing import List, Union, Dict
 
-from fastapi import Request
-from litellm.types.completion import ChatCompletionMessageParam
 
-from npiai.cloud import Client
+from litellm.types.completion import ChatCompletionMessageParam
 
 
 class Task:
@@ -37,13 +37,10 @@ class Task:
         return self.dialogues.copy()
 
 
-class Context:
+class Context(ABC):
     __last_screenshot: str | None = None
 
-    def __init__(self, req: Request | None = None, client: Client | None = None) -> None:
-        if not client:
-            client = Client(access_token=req.headers.get('x-npi-access-token'))
-        self.client = client
+    def __init__(self) -> None:
         self.id = str(uuid.uuid4())
         self.q = asyncio.Queue()
         self.__is_finished = False
@@ -51,11 +48,10 @@ class Context:
         self.__is_failed = False
         self.__failed_msg: str = ''
         self.__active_tool = None
-        self.__request = req
-        self.__user_id = req.headers.get("x-npi-user-id")
 
+    @abstractmethod
     def credentials(self, app_code: str) -> Dict[str, str]:
-        return self.client.get_credentials(app_code)
+        ...
 
     def entry(self):
         pass

@@ -15,10 +15,14 @@ from npiai import utils
 from npiai.context import ContextManager
 from npiai.core.base import BaseTool
 
+from ._context import CloudContext
+from ._client import Client
+
 
 class ToolRuntime:
-    def __init__(self, tool_cls: List[BaseTool.__class__], port: int = 9140):
+    def __init__(self, tool_cls: List[BaseTool.__class__], port: int = 9140, endpoint='https://api.npi.ai'):
         self.tools = {}
+        self._endpoint=endpoint
         for tool in tool_cls:
             self.tools[tool.get_name()] = tool
         self.port = port
@@ -37,7 +41,8 @@ class ToolRuntime:
     def _start(self):
         """Start the server"""
         if not utils.is_cloud_env():
-            raise RuntimeError("Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
+            raise RuntimeError(
+                "Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
 
         def convert_camel_to_snake(name: str) -> str:
             return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
@@ -46,22 +51,37 @@ class ToolRuntime:
         async def root(request: Request, tool_name: str, full_path: str):
             method = convert_camel_to_snake(full_path)
             try:
-                ctx = self.ctx_mgr.from_request(request)
+                ssid = request.headers.get("x-npi-session-id")
+                if not ssid:
+                    authorization = request.headers.get("authorization")
+                    token = authorization.split(" ")
+                    access_token = ""
+                    if len(token) == 2 and token[0].lower() == "bearer":  # TODO apikey & none auth?
+                        access_token = token[1]
+                    ctx = CloudContext(req=request, client=Client(
+                        access_token=access_token,
+                        endpoint=self._endpoint
+                    ))
+                    self.ctx_mgr.save_context(ctx)
+                else:
+                    ctx = self.ctx_mgr.get_context(ssid)
+                    if not ctx:
+                        raise HTTPException(status_code=404, detail="session context not found")
                 tool_cls = self.get_tool(tool_name)
-                tool = tool_cls.from_context(ctx)
-                match request.method:
-                    case "POST":
-                        args = await request.json()
-                        res = await tool.exec(ctx, method, args)
-                    case "GET":
-                        args = {k: v for k, v in request.query_params.items()}
-                        res = await tool.exec(ctx, method, args)
-                    case _:
-                        return JSONResponse({'error': 'Method not allowed'}, status_code=405)
-                try:
-                    return JSONResponse(content=json.loads(res))
-                except json.JSONDecodeError as e:
-                    return res
+                async with tool_cls.from_context(ctx) as instance:
+                    match request.method:
+                        case "POST":
+                            args = await request.json()
+                            res = await instance.exec(ctx, method, args)
+                        case "GET":
+                            args = {k: v for k, v in request.query_params.items()}
+                            res = await instance.exec(ctx, method, args)
+                        case _:
+                            return JSONResponse({'error': 'Method not allowed'}, status_code=405)
+                    try:
+                        return JSONResponse(content=json.loads(res))
+                    except json.JSONDecodeError as e:
+                        return res
             except Exception as e:
                 logging.error(f"Failed to process request: {e}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Internal Server Error")
@@ -82,5 +102,6 @@ class ToolRuntime:
         signal.signal(signal.SIGINT, signal_handler)
         # signal.signal(signal.SIGKILL, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
-
+        for tool in self.tools.values():
+            logging.info(f"the tool:{tool.get_name()} has started", exc_info=True)
         uvicorn.run(self.app, host="0.0.0.0", port=self.port)

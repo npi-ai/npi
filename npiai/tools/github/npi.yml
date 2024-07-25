@@ -1,11 +1,12 @@
 class: GitHub
 main: app.py
-api_key: "key-1234567890"
+permissions:
+  - "github.all"
 dependencies:
   - name: python
     version: "^3.10"
   - name: npiai
-    version: "^0.1.2"
+    version: "^0.2.3.dev3"
   - name: openai
     version: "^1.30.3"
   - name: pygithub
