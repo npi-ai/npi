@@ -3,6 +3,7 @@ import dataclasses
 import inspect
 import json
 import re
+from abc import ABC
 from typing import Dict, List, Optional, Any, Type
 
 import yaml
@@ -67,7 +68,7 @@ def function(
     return decorator
 
 
-class FunctionTool(BaseFunctionTool):
+class FunctionTool(BaseFunctionTool, ABC):
     """The basic interface for the natural language programming interface"""
 
     name: str = "FunctionTool"
@@ -193,7 +194,6 @@ class FunctionTool(BaseFunctionTool):
             results.append(
                 ChatCompletionToolMessageParam(
                     role='tool',
-                    name=fn_name,
                     tool_call_id=call.id,
                     content=str(res),
                 )

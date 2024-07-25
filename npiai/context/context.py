@@ -2,7 +2,7 @@
 import datetime
 import uuid
 import asyncio
-from typing import List, Union
+from typing import List, Union, Dict
 
 from fastapi import Request
 from litellm.types.completion import ChatCompletionMessageParam
@@ -42,7 +42,7 @@ class Context:
 
     def __init__(self, req: Request | None = None, client: Client | None = None) -> None:
         if not client:
-            client = Client()
+            client = Client(access_token=req.headers.get('x-npi-access-token'))
         self.client = client
         self.id = str(uuid.uuid4())
         self.q = asyncio.Queue()
@@ -52,10 +52,10 @@ class Context:
         self.__failed_msg: str = ''
         self.__active_tool = None
         self.__request = req
-        self.__permission_id = req.headers.get('x-npi-permission-id')
+        self.__user_id = req.headers.get("x-npi-user-id")
 
-    def authorization(self) -> str:
-        return self.client.get_credentials(self.__permission_id)
+    def credentials(self, app_code: str) -> Dict[str, str]:
+        return self.client.get_credentials(app_code)
 
     def entry(self):
         pass

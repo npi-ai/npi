@@ -10,6 +10,7 @@ from github.GithubObject import NotSet
 from typing import Union, TypeVar, List, Literal
 
 from npiai import FunctionTool, function, utils
+from npiai.constant import app
 from npiai.context import Context
 from npiai.error.auth import UnauthorizedError
 
@@ -57,9 +58,9 @@ class GitHub(FunctionTool):
     @classmethod
     def from_context(cls, ctx: Context) -> 'GitHub':
         if not utils.is_cloud_env():
-            raise RuntimeError('GitHub tool can only be initialized in the NPi cloud environment')
-        auth = ctx.authorization()
-        return GitHub(access_token=auth)
+            raise RuntimeError('GitHub tool can only be initialized from context in the NPi cloud environment')
+        creds = ctx.credentials(app_code=app.GITHUB)
+        return GitHub(access_token=creds["access_token"])
 
     @classmethod
     def get_name(cls) -> str:
