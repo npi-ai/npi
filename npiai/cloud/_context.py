@@ -8,7 +8,7 @@ class CloudContext(Context):
 
     def __init__(self, req, client: Client | None = None):
         if not client:
-            client = Client(access_token=req.headers.get('x-npi-access-token'))
+            client = Client(access_token=req.headers.get("x-npi-access-token"))
         super().__init__()
         self.client = client
 

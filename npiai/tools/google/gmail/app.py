@@ -18,9 +18,13 @@ from oauth2client.client import OAuth2Credentials
 from .client import GmailClientWrapper
 
 
-def convert_google_cred_to_oauth2_cred(google_credentials: GoogleCredentials) -> OAuth2Credentials:
+def convert_google_cred_to_oauth2_cred(
+    google_credentials: GoogleCredentials,
+) -> OAuth2Credentials:
     # Convert expiry datetime to string if necessary
-    expiry = google_credentials.expiry.isoformat() if google_credentials.expiry else None
+    expiry = (
+        google_credentials.expiry.isoformat() if google_credentials.expiry else None
+    )
 
     # Create an instance of OAuth2Credentials
     return OAuth2Credentials(
@@ -31,7 +35,7 @@ def convert_google_cred_to_oauth2_cred(google_credentials: GoogleCredentials) ->
         token_expiry=google_credentials.expiry,
         token_uri=google_credentials.token_uri,
         user_agent=None,  # or any user agent you have
-        scopes=google_credentials.scopes
+        scopes=google_credentials.scopes,
     )
 
 
@@ -39,9 +43,9 @@ class Gmail(FunctionTool):
 
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__(
-            name='gmail',
+            name="gmail",
             description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
-            system_prompt='You are a Gmail Agent helping users to manage their emails',
+            system_prompt="You are a Gmail Agent helping users to manage their emails",
         )
         self.creds = creds
         self.gmail_client = None
@@ -52,8 +56,7 @@ class Gmail(FunctionTool):
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
             self.creds = GoogleCredentials.from_authorized_user_file(
-                filename=cred_file,
-                scopes="https://mail.google.com/"
+                filename=cred_file, scopes="https://mail.google.com/"
             )
 
         self.gmail_client = GmailClientWrapper(
@@ -74,8 +77,9 @@ class Gmail(FunctionTool):
 
     @staticmethod
     def _message_to_string(message: Message) -> str:
-        return dedent(
-            f"""
+        return (
+            dedent(
+                f"""
             Message ID: {message.id}
             Thread ID: {message.thread_id}
             Sender ID: {message.headers.get('Message-ID', message.id)}
@@ -83,7 +87,9 @@ class Gmail(FunctionTool):
             To: {message.recipient}
             Subject: {message.subject}
             """
-        ) + f"Content: {message.plain or message.html}"
+            )
+            + f"Content: {message.plain or message.html}"
+        )
 
     @function
     def add_labels(self, message_ids: List[str], labels: List[str]) -> str:
@@ -98,9 +104,11 @@ class Gmail(FunctionTool):
         messages = self._get_messages_from_ids(message_ids)
 
         if len(messages) == 0:
-            raise Exception('Error: No messages found for the given IDs')
+            raise Exception("Error: No messages found for the given IDs")
 
-        label_name_map = {label.name: label for label in self.gmail_client.list_labels()}
+        label_name_map = {
+            label.name: label for label in self.gmail_client.list_labels()
+        }
         labels_to_add = []
 
         for lbl in labels:
@@ -112,7 +120,7 @@ class Gmail(FunctionTool):
         for msg in messages:
             self.gmail_client.add_labels(msg, labels_to_add)
 
-        return 'Labels added'
+        return "Labels added"
 
     @function
     def remove_labels(self, message_ids: List[str], labels: List[str]) -> str:
@@ -127,9 +135,11 @@ class Gmail(FunctionTool):
         messages = self._get_messages_from_ids(message_ids)
 
         if len(messages) == 0:
-            raise Exception('Error: No messages found for the given IDs')
+            raise Exception("Error: No messages found for the given IDs")
 
-        label_name_map = {label.name: label for label in self.gmail_client.list_labels()}
+        label_name_map = {
+            label.name: label for label in self.gmail_client.list_labels()
+        }
         labels_to_remove = []
 
         for lbl in labels:
@@ -140,16 +150,16 @@ class Gmail(FunctionTool):
             for msg in messages:
                 self.gmail_client.remove_labels(msg, labels_to_remove)
 
-        return 'Labels removed'
+        return "Labels removed"
 
     @function
     def create_draft(
-            self,
-            to: str,
-            subject: str,
-            message: str = None,
-            cc: List[str] = None,
-            bcc: List[str] = None,
+        self,
+        to: str,
+        subject: str,
+        message: str = None,
+        cc: List[str] = None,
+        bcc: List[str] = None,
     ) -> str:
         """
         Create an email draft.
@@ -162,7 +172,7 @@ class Gmail(FunctionTool):
             bcc: The list of email addresses to bcc.
         """
         msg = self.gmail_client.create_draft(
-            sender='',
+            sender="",
             to=to,
             cc=cc,
             bcc=bcc,
@@ -171,17 +181,17 @@ class Gmail(FunctionTool):
             msg_html=markdown(message),
         )
 
-        return 'The following draft is created:\n' + self._message_to_string(msg)
+        return "The following draft is created:\n" + self._message_to_string(msg)
 
     @function
     def create_reply_draft(
-            self,
-            to: str,
-            subject: str,
-            recipient_id: str,
-            message: str = None,
-            cc: List[str] = None,
-            bcc: List[str] = None,
+        self,
+        to: str,
+        subject: str,
+        recipient_id: str,
+        message: str = None,
+        cc: List[str] = None,
+        bcc: List[str] = None,
     ):
         """
         Create a draft that replies to the last email retrieved in the previous chat.
@@ -210,7 +220,7 @@ class Gmail(FunctionTool):
             bcc: The list of email addresses to bcc.
         """
         msg = self.gmail_client.create_draft(
-            sender='',
+            sender="",
             to=to,
             cc=cc,
             bcc=bcc,
@@ -220,17 +230,17 @@ class Gmail(FunctionTool):
             reply_to=recipient_id,
         )
 
-        return 'The following reply draft is created:\n' + self._message_to_string(msg)
+        return "The following reply draft is created:\n" + self._message_to_string(msg)
 
     @function
     def reply(
-            self,
-            to: str,
-            subject: str,
-            recipient_id: str,
-            message: str = None,
-            cc: List[str] = None,
-            bcc: List[str] = None,
+        self,
+        to: str,
+        subject: str,
+        recipient_id: str,
+        message: str = None,
+        cc: List[str] = None,
+        bcc: List[str] = None,
     ):
         """
         Reply to the last email retrieved in the previous chat.
@@ -259,7 +269,7 @@ class Gmail(FunctionTool):
             bcc: The list of email addresses to bcc.
         """
         msg = self.gmail_client.send_message(
-            sender='',
+            sender="",
             to=to,
             cc=cc,
             bcc=bcc,
@@ -269,7 +279,7 @@ class Gmail(FunctionTool):
             reply_to=recipient_id,
         )
 
-        return 'The following reply is sent:\n' + self._message_to_string(msg)
+        return "The following reply is sent:\n" + self._message_to_string(msg)
 
     @function
     def search_emails(self, query: str = None, max_results: int = 100) -> str:
@@ -285,17 +295,19 @@ class Gmail(FunctionTool):
             max_results=max_results,
         )
 
-        return json.dumps([self._message_to_string(m) for m in msgs], ensure_ascii=False)
+        return json.dumps(
+            [self._message_to_string(m) for m in msgs], ensure_ascii=False
+        )
 
     @function
     async def send_email(
-            self,
-            ctx: Context,
-            to: str,
-            subject: str,
-            message: str = None,
-            cc: List[str] = None,
-            bcc: List[str] = None,
+        self,
+        ctx: Context,
+        to: str,
+        subject: str,
+        message: str = None,
+        cc: List[str] = None,
+        bcc: List[str] = None,
     ):
         """
         Send an email.
@@ -318,7 +330,7 @@ class Gmail(FunctionTool):
         #     return 'The email could not be sent due to user rejection'
 
         msg = self.gmail_client.send_message(
-            sender='',
+            sender="",
             to=to,
             cc=cc,
             bcc=bcc,
@@ -327,7 +339,7 @@ class Gmail(FunctionTool):
             msg_html=markdown(message),
         )
 
-        return 'Sending Success\n' + self._message_to_string(msg)
+        return "Sending Success\n" + self._message_to_string(msg)
 
     @function
     async def wait_for_reply(self, sender: str):
@@ -339,7 +351,7 @@ class Gmail(FunctionTool):
         """
         while True:
             messages = self.gmail_client.get_messages(
-                query=f'is:unread from:{sender}',
+                query=f"is:unread from:{sender}",
                 max_results=1,
             )
 

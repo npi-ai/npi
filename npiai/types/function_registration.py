@@ -21,22 +21,24 @@ class FunctionRegistration:
 
     def get_meta(self):
         return {
-            'description': self.description,
-            'name': self.name,
-            'parameters': self.schema,
-            'fewShots': [asdict(ex) for ex in self.few_shots] if self.few_shots else None,
+            "description": self.description,
+            "name": self.name,
+            "parameters": self.schema,
+            "fewShots": (
+                [asdict(ex) for ex in self.few_shots] if self.few_shots else None
+            ),
         }
 
     def get_tool_param(self) -> ChatCompletionToolParam:
         tool: ChatCompletionToolParam = {
-            'type': 'function',
-            'function': {
-                'name': self.name,
-                'description': self.description,
-            }
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+            },
         }
 
         if self.schema is not None:
-            tool['function']['parameters'] = self.schema
+            tool["function"]["parameters"] = self.schema
 
         return tool

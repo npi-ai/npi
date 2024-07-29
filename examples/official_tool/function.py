@@ -8,8 +8,8 @@ from npiai.tools import GitHub
 
 async def main():
     # Get your Access token at https://github.com/settings/tokens
-    async with GitHub(access_token=os.environ.get('GITHUB_ACCESS_TOKEN', None)) as gh:
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    async with GitHub(access_token=os.environ.get("GITHUB_ACCESS_TOKEN", None)) as gh:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         messages = [
             {
                 "role": "user",

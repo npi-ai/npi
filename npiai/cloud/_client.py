@@ -8,14 +8,14 @@ import requests
 class Client:
     __API_VERSION = "2024-07-25"
 
-    def __init__(self, access_token, endpoint='https://api.npi.ai'):
+    def __init__(self, access_token, endpoint="https://api.npi.ai"):
         self._base_url = endpoint
         self._api_version = "2024-07-25"
-        self._access_token = access_token,
+        self._access_token = (access_token,)
         self.client = requests.Session()
-        self.client.headers.update({'Content-Type': 'application/json'})
-        self.client.headers.update({'Accept': 'application/json'})
-        self.client.headers.update({'Authorization': f'Bearer {access_token}'})
+        self.client.headers.update({"Content-Type": "application/json"})
+        self.client.headers.update({"Accept": "application/json"})
+        self.client.headers.update({"Authorization": f"Bearer {access_token}"})
         self.client.headers.update({"x-npi-api-version": self._api_version})
 
     @property
@@ -28,8 +28,8 @@ class Client:
             raise Exception(f"Failed to get credentials: {response.text}")
         creds = json.loads(response.text)
         # Decoding the Base64 string
-        decoded_bytes = base64.b64decode(creds['credentials'])
-        return json.loads(decoded_bytes.decode('utf-8'))
+        decoded_bytes = base64.b64decode(creds["credentials"])
+        return json.loads(decoded_bytes.decode("utf-8"))
 
 
 if __name__ == "__main__":

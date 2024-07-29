@@ -4,8 +4,8 @@ from npiai import FunctionTool, function
 class MyTool(FunctionTool):
     def __init__(self):
         super().__init__(
-            name='Fibonacci',
-            description='My first NPi tool',
+            name="Fibonacci",
+            description="My first NPi tool",
         )
 
     @function

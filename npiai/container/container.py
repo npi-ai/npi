@@ -24,7 +24,9 @@ class Container:
     def run(self, port: int = 19140):
         app = FastAPI()
 
-        @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+        @app.api_route(
+            "/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+        )
         async def root(full_path: str, request: Request):
             # ctx = Context.from_request(req=request)
             ctx = Context()
@@ -42,14 +44,19 @@ class Container:
                     case "GET":
                         args = {k: v for k, v in request.query_params.items()}
                     case _:
-                        return JSONResponse({'error': 'Method not allowed'}, status_code=405)
+                        return JSONResponse(
+                            {"error": "Method not allowed"}, status_code=405
+                        )
                 res = await tool.exec(ctx, method, args)
-                return JSONResponse(content=json.loads(res), headers={
-                    "X-Context-Id": ctx.id,
-                })
+                return JSONResponse(
+                    content=json.loads(res),
+                    headers={
+                        "X-Context-Id": ctx.id,
+                    },
+                )
             except Exception as e:
                 logging.error(f"Failed to process request: {e}", exc_info=True)
-                return JSONResponse({'error': f'internal error: {e}'}, status_code=500)
+                return JSONResponse({"error": f"internal error: {e}"}, status_code=500)
             finally:
                 ctx.exit()
 
@@ -65,7 +72,7 @@ class Container:
 
     @staticmethod
     def convert_camel_to_snake(name: str) -> str:
-        return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
 
 if __name__ == "__main__":

@@ -11,12 +11,12 @@ from npiai.tools import GitHub
 class MyTool(FunctionTool):
     def __init__(self):
         super().__init__(
-            name='my_tool',
-            description='my first tool for OpenAI Function calling',
+            name="my_tool",
+            description="my first tool for OpenAI Function calling",
         )
         self.add_tool(
             # Get your Access token at https://github.com/settings/tokens
-            agent.wrap(GitHub(access_token=os.environ.get('GITHUB_ACCESS_TOKEN', None)))
+            agent.wrap(GitHub(access_token=os.environ.get("GITHUB_ACCESS_TOKEN", None)))
         )
 
 
@@ -24,8 +24,8 @@ async def main():
     tool = MyTool()
     await tool.start()
 
-    print(json.dumps(tool.tools, indent=2)) # view function definition
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    print(json.dumps(tool.tools, indent=2))  # view function definition
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     messages = [
         {
             "role": "user",

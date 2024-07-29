@@ -1,4 +1,5 @@
 """ the example of the calendar negotiator"""
+
 import asyncio
 import os
 from typing import List
@@ -72,26 +73,30 @@ def load_google_credentials(secret_file: str, scopes: List[str], token_file: str
             )
             creds = flow.run_local_server(port=19876, redirect_uri_trailing_slash=False)
         # Save the credentials for the next run
-        with open(token_file, 'w') as token:
+        with open(token_file, "w") as token:
             token.write(creds.to_json())
 
     return creds
 
 
 class Negotiator(FunctionTool):
-    def __init__(self, secret_file: str, token_file: str = ''):
+    def __init__(self, secret_file: str, token_file: str = ""):
         super().__init__(
-            name='calendar_negotiator',
-            description='Schedule meetings with others using gmail and google calendar',
+            name="calendar_negotiator",
+            description="Schedule meetings with others using gmail and google calendar",
             system_prompt=PROMPT,
         )
-        if token_file == '':
-            token_file = secret_file.replace('secret', 'token')
+        if token_file == "":
+            token_file = secret_file.replace("secret", "token")
 
-        cred = load_google_credentials(token_file=token_file, secret_file=secret_file, scopes=[
-            'https://mail.google.com/',
-            'https://www.googleapis.com/auth/calendar',
-        ])
+        cred = load_google_credentials(
+            token_file=token_file,
+            secret_file=secret_file,
+            scopes=[
+                "https://mail.google.com/",
+                "https://www.googleapis.com/auth/calendar",
+            ],
+        )
 
         self.add_tool(
             agent.wrap(GoogleCalendar(creds=cred)),
@@ -102,8 +107,8 @@ class Negotiator(FunctionTool):
 
 
 async def run():
-    llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
-    
+    llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
+
     # You could get Google Secret JSON file on https://console.cloud.google.com/apis/credentials by steps:
     #
     # 1. Open: https://console.cloud.google.com/apis/credentials
@@ -113,14 +118,14 @@ async def run():
     # 5. Click 'Add URI' then type into 'http://localhost:19876' at Authorized redirect URIs
     # 6. Click 'Create'
     # 7. Download JSON
-    # 
+    #
     # You may need to enable Google Calendar API and Gmail API in your Google Cloud Console.
-    
-    nego = Negotiator(secret_file=f'{Path.cwd()}/secret.example.json')
+
+    nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
     async with agent.wrap(nego, llm=llm) as negotiator:
         print("Negotiator: What's your task for me?")
-        task = input('User: ')
-        print('')
+        task = input("User: ")
+        print("")
 
         print(await negotiator.chat(ctx=Context(), instruction=task))
 

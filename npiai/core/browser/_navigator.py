@@ -138,7 +138,7 @@ class Response(TypedDict):
 
 def _parse_response(response: str) -> Union[Response, None]:
     try:
-        match = re.match(r'```.*\n([\s\S]+)```', response)
+        match = re.match(r"```.*\n([\s\S]+)```", response)
         data = json.loads(match.group(1)) if match else json.loads(response)
         return data
     except json.JSONDecodeError:
@@ -146,18 +146,18 @@ def _parse_response(response: str) -> Union[Response, None]:
 
 
 class NavigatorAgent(BrowserAgentTool):
-    name: str = 'navigator'
+    name: str = "navigator"
 
     def __init__(
-            self,
-            llm: LLM,
-            playwright: PlaywrightContext,
-            max_steps: int = 42,
+        self,
+        llm: LLM,
+        playwright: PlaywrightContext,
+        max_steps: int = 42,
     ):
         self._browser_app = BrowserTool(
-            name='navigator',
-            description='Perform any task by simulating keyboard/mouse interaction on a specific web page. '
-                        'If the some action needs user confirmation, please specify them.',
+            name="navigator",
+            description="Perform any task by simulating keyboard/mouse interaction on a specific web page. "
+            "If the some action needs user confirmation, please specify them.",
             system_prompt=__PROMPT__,
             playwright=playwright,
         )
@@ -179,7 +179,9 @@ class NavigatorAgent(BrowserAgentTool):
     async def generate_user_prompt(self, task: str, history: List[Response]):
         await self._browser_app.clear_bboxes()
         raw_screenshot = await self._browser_app.get_screenshot()
-        elements, added_ids = await self._browser_app.get_interactive_elements(raw_screenshot)
+        elements, added_ids = await self._browser_app.get_interactive_elements(
+            raw_screenshot
+        )
 
         user_prompt: str = dedent(
             f"""
@@ -198,30 +200,30 @@ class NavigatorAgent(BrowserAgentTool):
 
         if not raw_screenshot or not annotated_screenshot:
             return {
-                'role': 'user',
-                'content': user_prompt,
+                "role": "user",
+                "content": user_prompt,
             }
 
         return {
-            'role': 'user',
-            'content': [
+            "role": "user",
+            "content": [
                 {
-                    'type': 'text',
-                    'text': user_prompt,
+                    "type": "text",
+                    "text": user_prompt,
                 },
                 {
-                    'type': 'image_url',
-                    'image_url': {
-                        'url': raw_screenshot,
+                    "type": "image_url",
+                    "image_url": {
+                        "url": raw_screenshot,
                     },
                 },
                 {
-                    'type': 'image_url',
-                    'image_url': {
-                        'url': annotated_screenshot,
+                    "type": "image_url",
+                    "image_url": {
+                        "url": annotated_screenshot,
                     },
                 },
-            ]
+            ],
         }
 
     async def chat(self, ctx: Context, instruction: str) -> str:
@@ -233,8 +235,8 @@ class NavigatorAgent(BrowserAgentTool):
             msg = ctx.fork(instruction)
             msg.append(
                 {
-                    'role': 'system',
-                    'content': self._browser_app.system_prompt,
+                    "role": "system",
+                    "content": self._browser_app.system_prompt,
                 }
             )
             msg.append(await self.generate_user_prompt(instruction, history))
@@ -246,7 +248,7 @@ class NavigatorAgent(BrowserAgentTool):
                 # try again if the response can't be parsed correctly
                 continue
 
-            result, elem_json = await self._run_action(response['action'], ctx)
+            result, elem_json = await self._run_action(response["action"], ctx)
             logger.info(result)
 
             if not result:
@@ -254,13 +256,13 @@ class NavigatorAgent(BrowserAgentTool):
                 return response_str
 
             # remove element id from history to reduce noise
-            response['action'].pop('id', None)
-            response['action']['element'] = elem_json
+            response["action"].pop("id", None)
+            response["action"]["element"] = elem_json
             history.append(response)
             step += 1
 
             if step > self.max_steps:
-                return f'Maximum number of steps reached. Last response was: {response_str}'
+                return f"Maximum number of steps reached. Last response was: {response_str}"
 
     async def _call_llm(self, ctx: Context, message: Task) -> str:
         """
@@ -282,13 +284,15 @@ class NavigatorAgent(BrowserAgentTool):
         message.step(response_message)
 
         if not response_message.content:
-            raise Exception(f'{self.name}: No response message')
+            raise Exception(f"{self.name}: No response message")
 
-        logger.debug(response_message.content + '\n')
+        logger.debug(response_message.content + "\n")
 
         return response_message.content
 
-    async def _run_action(self, action: Action, ctx: Context) -> Tuple[Union[str, None], dict]:
+    async def _run_action(
+        self, action: Action, ctx: Context
+    ) -> Tuple[Union[str, None], dict]:
         """
         Run the given action
 
@@ -302,7 +306,11 @@ class NavigatorAgent(BrowserAgentTool):
         await self._browser_app.clear_bboxes()
         await self._browser_app.init_observer()
 
-        elem = await self._browser_app.get_element_by_marker_id(action['id']) if 'id' in action else None
+        elem = (
+            await self._browser_app.get_element_by_marker_id(action["id"])
+            if "id" in action
+            else None
+        )
         elem_json = await self._browser_app.element_to_json(elem) if elem else None
 
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
@@ -310,27 +318,27 @@ class NavigatorAgent(BrowserAgentTool):
         logger.info(call_msg)
         await ctx.send(call_msg)
 
-        match action['type']:
-            case 'click':
+        match action["type"]:
+            case "click":
                 result = await self._browser_app.click(elem)
-            case 'enter':
+            case "enter":
                 result = await self._browser_app.enter(elem)
-            case 'fill':
-                result = await self._browser_app.fill(elem, action['value'])
-            case 'select':
-                result = await self._browser_app.select(elem, action['value'])
-            case 'scroll':
+            case "fill":
+                result = await self._browser_app.fill(elem, action["value"])
+            case "select":
+                result = await self._browser_app.select(elem, action["value"])
+            case "scroll":
                 result = await self._browser_app.scroll()
-            case 'back-to-top':
+            case "back-to-top":
                 result = await self._browser_app.back_to_top()
-            case 'confirmation':
-                result = await self.hitl.confirm(ctx, self.name, action['description'])
-            case 'human-intervention':
-                result = await self.hitl.input(ctx, self.name, action['description'])
-            case 'done':
+            case "confirmation":
+                result = await self.hitl.confirm(ctx, self.name, action["description"])
+            case "human-intervention":
+                result = await self.hitl.input(ctx, self.name, action["description"])
+            case "done":
                 result = None
             case _:
-                raise Exception(f'{self.name}: Unknown action: {action}')
+                raise Exception(f"{self.name}: Unknown action: {action}")
 
         if elem:
             await elem.dispose()

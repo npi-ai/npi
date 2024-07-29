@@ -44,7 +44,7 @@ class NPiLangChainToolkit(BaseToolkit):
                     params[name] = (field.annotation, field_v1)
 
             schema_model_v1 = create_model(
-                f'{fn_reg.name}__model',
+                f"{fn_reg.name}__model",
                 **params,
             )
 

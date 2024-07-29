@@ -18,7 +18,9 @@ class ActionResult:
 
 class Callable:
 
-    def __init__(self, msg: str = None, action: playground_pb2.ActionRequiredResponse = None):
+    def __init__(
+        self, msg: str = None, action: playground_pb2.ActionRequiredResponse = None
+    ):
         self.msg = msg
         self.called = False
         self.action = action

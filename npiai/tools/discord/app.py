@@ -42,11 +42,13 @@ class Discord(FunctionTool):
     _access_token: str
 
     def __init__(self, access_token: str = None):
-        self._access_token = access_token or os.environ.get('DISCORD_ACCESS_TOKEN', None)
+        self._access_token = access_token or os.environ.get(
+            "DISCORD_ACCESS_TOKEN", None
+        )
 
         super().__init__(
-            name='discord',
-            description='Send/Retrieve messages to/from discord channels',
+            name="discord",
+            description="Send/Retrieve messages to/from discord channels",
             system_prompt=__PROMPT__,
         )
 
@@ -54,7 +56,7 @@ class Discord(FunctionTool):
 
     async def start(self):
         if self._access_token is None:
-            raise UnauthorizedError('Discord credentials are not found')
+            raise UnauthorizedError("Discord credentials are not found")
 
         await super().start()
         await self.client.login(self._access_token)
@@ -65,23 +67,25 @@ class Discord(FunctionTool):
 
     def parse_user(self, user: discord.User):
         return {
-            'id': user.id,
-            'name': user.name,
+            "id": user.id,
+            "name": user.name,
         }
 
     def parse_message(self, msg: discord.Message):
         return {
-            'id': msg.id,
-            'author': self.parse_user(msg.author),
-            'content': msg.content,
-            'created_at': msg.created_at.isoformat(),
-            'reply_to_message_id': msg.reference.message_id if msg.reference else None,
-            'mentions': [self.parse_user(user) for user in msg.mentions],
-            'mention_everyone': msg.mention_everyone,
+            "id": msg.id,
+            "author": self.parse_user(msg.author),
+            "content": msg.content,
+            "created_at": msg.created_at.isoformat(),
+            "reply_to_message_id": msg.reference.message_id if msg.reference else None,
+            "mentions": [self.parse_user(user) for user in msg.mentions],
+            "mention_everyone": msg.mention_everyone,
         }
 
     @function
-    async def ask_for_id(self, ctx: Context, name: Literal['user', 'channel', 'message']):
+    async def ask_for_id(
+        self, ctx: Context, name: Literal["user", "channel", "message"]
+    ):
         """
         Ask the user to provide recipient's user id, channel id, or message id.
         Args:
@@ -105,7 +109,7 @@ class Discord(FunctionTool):
         user = await self.client.fetch_user(user_id)
         channel = await user.create_dm()
 
-        return f'Direct message channel created. Channel ID: {channel.id}'
+        return f"Direct message channel created. Channel ID: {channel.id}"
 
     @function
     async def fetch_history(self, channel_id: int, max_results: int = 1):
@@ -123,7 +127,7 @@ class Discord(FunctionTool):
             messages.append(self.parse_message(msg))
 
         logger.debug(
-            f'[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}'
+            f"[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}"
         )
 
         return json.dumps(messages, ensure_ascii=False)
@@ -140,9 +144,9 @@ class Discord(FunctionTool):
         channel = await self.client.fetch_channel(channel_id)
         msg = await channel.send(content)
 
-        logger.debug(f'[{self.name}]: Sent message: (id: {msg.id}) {msg.content}')
+        logger.debug(f"[{self.name}]: Sent message: (id: {msg.id}) {msg.content}")
 
-        return f'Message sent. ID: {msg.id}'
+        return f"Message sent. ID: {msg.id}"
 
     @function
     async def reply(self, channel_id: int, message_id: int, content: str):
@@ -158,9 +162,11 @@ class Discord(FunctionTool):
         msg = await channel.fetch_message(message_id)
         reply = await msg.reply(content)
 
-        logger.debug(f'[{self.name}]: Created reply for message ID {msg.id}. Reply: (id: {reply.id}) {reply.content}')
+        logger.debug(
+            f"[{self.name}]: Created reply for message ID {msg.id}. Reply: (id: {reply.id}) {reply.content}"
+        )
 
-        return f'Created reply for message ID {msg.id}. Reply ID: {reply.id}'
+        return f"Created reply for message ID {msg.id}. Reply ID: {reply.id}"
 
     @function
     async def wait_for_reply(self, channel_id: int, message_id: int):
@@ -182,9 +188,10 @@ class Discord(FunctionTool):
                 # if (msg.reference and msg.reference.message_id == ref_msg.id) or \
                 #     msg.mention_everyone or \
                 #     any(user.id == ref_msg.author.id for user in msg.mentions):
-                if msg.author.id != ref_msg.author.id and \
-                        (not msg.reference or msg.reference.message_id == ref_msg.id):
-                    return f'Received reply. {json.dumps(self.parse_message(msg))}'
+                if msg.author.id != ref_msg.author.id and (
+                    not msg.reference or msg.reference.message_id == ref_msg.id
+                ):
+                    return f"Received reply. {json.dumps(self.parse_message(msg))}"
 
                 last_msg = msg
 
