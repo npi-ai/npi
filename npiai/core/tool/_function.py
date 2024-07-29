@@ -1,4 +1,5 @@
 """The basic interface for NPi Tools"""
+
 import dataclasses
 import inspect
 import json
@@ -9,7 +10,10 @@ from typing import Dict, List, Optional, Any, Type
 import yaml
 
 from pydantic import Field, create_model
-from litellm.types.completion import ChatCompletionToolMessageParam, ChatCompletionMessageParam
+from litellm.types.completion import (
+    ChatCompletionToolMessageParam,
+    ChatCompletionMessageParam,
+)
 from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
@@ -19,16 +23,16 @@ from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 from npiai.context import Context
 
-__NPI_TOOL_ATTR__ = '__NPI_TOOL_ATTR__'
+__NPI_TOOL_ATTR__ = "__NPI_TOOL_ATTR__"
 
 
 def function(
-        tool_fn: ToolFunction = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        schema: Dict[str, Any] = None,
-        model: Optional[Type[BaseTool]] = None,
-        few_shots: Optional[List[Shot]] = None,
+    tool_fn: ToolFunction = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    schema: Dict[str, Any] = None,
+    model: Optional[Type[BaseTool]] = None,
+    few_shots: Optional[List[Shot]] = None,
 ):
     """
     NPi Tool decorator for functions
@@ -55,7 +59,7 @@ def function(
                 schema=schema,
                 model=model,
                 few_shots=few_shots,
-            )
+            ),
         )
 
         return fn
@@ -91,22 +95,27 @@ class FunctionTool(BaseFunctionTool, ABC):
         return self._sub_tools
 
     def __init__(
-            self,
-            name: str,
-            description: str,
-            system_prompt: str = None,
-            provider: str = None,
+        self,
+        name: str,
+        description: str,
+        system_prompt: str = None,
+        provider: str = None,
     ):
         self.name = name
         self.description = description
         self.system_prompt = system_prompt
-        self.provider = provider or 'private'
+        self.provider = provider or "private"
         self._tools = []
         self._fn_map = {}
         self._sub_tools = []
 
         self._register_tools()
-        super().__init__(self.name, self.description, self.provider, self._fn_map, )
+        super().__init__(
+            self.name,
+            self.description,
+            self.provider,
+            self._fn_map,
+        )
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
@@ -138,8 +147,8 @@ class FunctionTool(BaseFunctionTool, ABC):
                 await app.end()
 
     def add_tool(
-            self,
-            *tools: BaseTool,
+        self,
+        *tools: BaseTool,
     ):
         for tool in tools:
             # share hitl handler
@@ -149,20 +158,27 @@ class FunctionTool(BaseFunctionTool, ABC):
             self._sub_tools.append(tool)
 
             for fn_reg in tool.unpack_functions():
-                scoped_fn_reg = dataclasses.replace(fn_reg, name=f'{tool.name}_{fn_reg.name}')
+                scoped_fn_reg = dataclasses.replace(
+                    fn_reg, name=f"{tool.name}_{fn_reg.name}"
+                )
                 self._add_function(scoped_fn_reg)
 
-    async def debug(self, session: Context | None = None, app_name: str = None, fn_name: str = None,
-                    args: Dict[str, Any] = None) -> str:
+    async def debug(
+        self,
+        session: Context | None = None,
+        app_name: str = None,
+        fn_name: str = None,
+        args: Dict[str, Any] = None,
+    ) -> str:
         if app_name:
-            fn_name = f'{app_name}_{fn_name}'
+            fn_name = f"{app_name}_{fn_name}"
 
         return await self.exec(session, fn_name, args)
 
     async def call(
-            self,
-            tool_calls: List[ChatCompletionMessageToolCall],
-            session: Context | None = None,
+        self,
+        tool_calls: List[ChatCompletionMessageToolCall],
+        session: Context | None = None,
     ) -> List[ChatCompletionMessageParam]:
         if session is None:
             session = Context()
@@ -171,13 +187,13 @@ class FunctionTool(BaseFunctionTool, ABC):
         for call in tool_calls:
             fn_name = call.function.name
             args = json.loads(call.function.arguments)
-            call_msg = f'[{self.name}]: Calling {fn_name}'
+            call_msg = f"[{self.name}]: Calling {fn_name}"
 
             if args:
-                arg_list = ', '.join(f'{k}={json.dumps(v)}' for k, v in args.items())
-                call_msg += f'({arg_list})'
+                arg_list = ", ".join(f"{k}={json.dumps(v)}" for k, v in args.items())
+                call_msg += f"({arg_list})"
             else:
-                call_msg += '()'
+                call_msg += "()"
 
             logger.info(call_msg)
             await session.send(call_msg)
@@ -186,14 +202,14 @@ class FunctionTool(BaseFunctionTool, ABC):
                 res = await self.exec(session, fn_name, args)
             except Exception as e:
                 logger.error(e)
-                res = f'Exception while executing {fn_name}: {e}'
+                res = f"Exception while executing {fn_name}: {e}"
                 await session.send(res)
 
-            logger.debug(f'[{self.name}]: function `{fn_name}` returned:\n {res}')
+            logger.debug(f"[{self.name}]: function `{fn_name}` returned:\n {res}")
 
             results.append(
                 ChatCompletionToolMessageParam(
-                    role='tool',
+                    role="tool",
                     tool_call_id=call.id,
                     content=str(res),
                 )
@@ -205,7 +221,9 @@ class FunctionTool(BaseFunctionTool, ABC):
         """
         Find the wrapped tool functions and register them in this tools
         """
-        for attr, fn in inspect.getmembers(self, lambda x: inspect.ismethod(x) or inspect.isfunction(x)):
+        for attr, fn in inspect.getmembers(
+            self, lambda x: inspect.ismethod(x) or inspect.isfunction(x)
+        ):
             tool_meta: ToolMeta | None = getattr(fn, __NPI_TOOL_ATTR__, None)
 
             if not callable(fn) or not tool_meta:
@@ -218,7 +236,7 @@ class FunctionTool(BaseFunctionTool, ABC):
 
             if not tool_desc:
                 raise ValueError(
-                    f'Unable to get the description of tool function `{fn}`'
+                    f"Unable to get the description of tool function `{fn}`"
                 )
 
             # parse schema
@@ -238,28 +256,37 @@ class FunctionTool(BaseFunctionTool, ABC):
                     if p.annotation is Context:
                         ctx_param_name = p.name
                         continue
-                    param_fields[p.name] = (p.annotation, Field(
-                        default=p.default if p.default is not inspect.Parameter.empty else ...,
-                        description=param_descriptions.get(p.name, ''),
-                    ))
+                    param_fields[p.name] = (
+                        p.annotation,
+                        Field(
+                            default=(
+                                p.default
+                                if p.default is not inspect.Parameter.empty
+                                else ...
+                            ),
+                            description=param_descriptions.get(p.name, ""),
+                        ),
+                    )
 
-                tool_model = create_model(f'{tool_name}_model', **param_fields)
+                tool_model = create_model(f"{tool_name}_model", **param_fields)
 
             if not tool_schema and tool_model:
                 tool_schema = sanitize_schema(tool_model)
 
             # parse examples
             tool_few_shots = tool_meta.few_shots
-            doc_shots = [m for m in docstr.meta if m.args == ['few_shots']]
+            doc_shots = [m for m in docstr.meta if m.args == ["few_shots"]]
 
             if not tool_few_shots and len(doc_shots) > 0:
                 tool_few_shots = []
 
                 for shot in doc_shots:
-                    items = re.findall(r'^\s*- ', shot.description, re.MULTILINE)
+                    items = re.findall(r"^\s*- ", shot.description, re.MULTILINE)
                     if len(items) == 1:
                         # remove leading '- ' to avoid indentation issues
-                        shot_data = yaml.safe_load(re.sub(r'^\s*- ', '', shot.description))
+                        shot_data = yaml.safe_load(
+                            re.sub(r"^\s*- ", "", shot.description)
+                        )
                     else:
                         shot_data = yaml.safe_load(shot.description)
 
@@ -284,7 +311,7 @@ class FunctionTool(BaseFunctionTool, ABC):
 
     def _add_function(self, fn_reg: FunctionRegistration):
         if fn_reg.name in self._fn_map:
-            raise Exception(f'Duplicate function: {fn_reg.name}')
+            raise Exception(f"Duplicate function: {fn_reg.name}")
 
         self._fn_map[fn_reg.name] = fn_reg
         self._tools.append(fn_reg.get_tool_param())

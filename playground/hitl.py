@@ -9,7 +9,7 @@ class PlaygroundHITL(HITL):
         cb = callback.Callable(
             action=playground_pb2.ActionRequiredResponse(
                 type=playground_pb2.ActionType.CONFIRMATION,
-                message=f'[{app_name}]: {message}'
+                message=f"[{app_name}]: {message}",
             )
         )
         cb.action.action_id = cb.id()
@@ -23,7 +23,7 @@ class PlaygroundHITL(HITL):
         cb = callback.Callable(
             action=playground_pb2.ActionRequiredResponse(
                 type=playground_pb2.ActionType.INFORMATION,
-                message=f'[{app_name}]: {message}'
+                message=f"[{app_name}]: {message}",
             )
         )
         cb.action.action_id = cb.id()

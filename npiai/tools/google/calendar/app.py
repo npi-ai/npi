@@ -19,10 +19,10 @@ from npiai.context import Context
 class GoogleCalendar(FunctionTool):
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__(
-            name='google_calendar',
-            description='Manage events on Google Calendar',
-            system_prompt='You are an assistant interacting with Google Calendar API. '
-                          'Your job is the selecting the best function based the tool list.',
+            name="google_calendar",
+            description="Manage events on Google Calendar",
+            system_prompt="You are an assistant interacting with Google Calendar API. "
+            "Your job is the selecting the best function based the tool list.",
         )
 
         self.creds = creds
@@ -34,12 +34,9 @@ class GoogleCalendar(FunctionTool):
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
             self.creds = GoogleCredentials.from_authorized_user_file(
-                filename=cred_file,
-                scopes="https://www.googleapis.com/auth/calendar"
+                filename=cred_file, scopes="https://www.googleapis.com/auth/calendar"
             )
-        self.service = build(
-            'calendar', 'v3', credentials=self.creds
-        )
+        self.service = build("calendar", "v3", credentials=self.creds)
         await super().start()
 
     @function
@@ -56,19 +53,23 @@ class GoogleCalendar(FunctionTool):
     @function
     def get_today(self):
         """Get today's date"""
-        return datetime.date.today().strftime('%a, %Y-%m-%d')
+        return datetime.date.today().strftime("%a, %Y-%m-%d")
 
     @function
     def get_timezone(self):
         """Get the user's timezone"""
-        res = self.service.calendars().get(  # pylint: disable=maybe-no-member
-            calendarId='primary'
-        ).execute()
+        res = (
+            self.service.calendars()
+            .get(calendarId="primary")  # pylint: disable=maybe-no-member
+            .execute()
+        )
 
-        return res.get('timeZone')
+        return res.get("timeZone")
 
     @function
-    def retrieve_events(self, calendar_id: str = 'primary', time_min: str = None, time_max: str = None) -> str:
+    def retrieve_events(
+        self, calendar_id: str = "primary", time_min: str = None, time_max: str = None
+    ) -> str:
         """
         Retrieve events from Google Calendar.
 
@@ -82,15 +83,18 @@ class GoogleCalendar(FunctionTool):
         time_max = time_max
         max_result = 10
         single_events = True
-        order_by = 'startTime'
+        order_by = "startTime"
         event_types = "default"
 
         if time_min is None:
             # 'Z' indicates UTC time
-            time_min = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")  # pylint: disable=maybe-no-member
+            time_min = datetime.datetime.utcnow().strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )  # pylint: disable=maybe-no-member
 
         events_result = (
-            self.service.events().list(  # pylint: disable=maybe-no-member
+            self.service.events()
+            .list(  # pylint: disable=maybe-no-member
                 calendarId=calendar_id,
                 timeMin=time_min,
                 timeMax=time_max,
@@ -98,7 +102,8 @@ class GoogleCalendar(FunctionTool):
                 singleEvents=single_events,
                 orderBy=order_by,
                 eventTypes=event_types,
-            ).execute()
+            )
+            .execute()
         )
         events = events_result.get("items", [])
 
@@ -109,12 +114,12 @@ class GoogleCalendar(FunctionTool):
 
     @function
     def create_event(
-            self,
-            summary: str,
-            start_time: str,
-            end_time: str,
-            calendar_id: str = 'primary',
-            description: str = '',
+        self,
+        summary: str,
+        start_time: str,
+        end_time: str,
+        calendar_id: str = "primary",
+        description: str = "",
     ) -> str:
         """
         Create and add an event to Google Calendar.
@@ -126,32 +131,36 @@ class GoogleCalendar(FunctionTool):
             calendar_id: The calendar ID which typically in the form of an email address. The primary calendar will be used if not given.
             description: The detailed description of the event.
         """
-        attendee = [],
-        location = None,
-        recurrence = None,
+        attendee = ([],)
+        location = (None,)
+        recurrence = (None,)
         event = {
-            'summary': summary,
-            'location': location,
-            'description': description,
-            'start': {
-                'dateTime': start_time,
+            "summary": summary,
+            "location": location,
+            "description": description,
+            "start": {
+                "dateTime": start_time,
             },
-            'end': {
-                'dateTime': end_time,
+            "end": {
+                "dateTime": end_time,
             },
-            'recurrence': [recurrence],
-            'attendees': attendee,
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'email', 'minutes': 24 * 60},
-                    {'method': 'popup', 'minutes': 10},
+            "recurrence": [recurrence],
+            "attendees": attendee,
+            "reminders": {
+                "useDefault": False,
+                "overrides": [
+                    {"method": "email", "minutes": 24 * 60},
+                    {"method": "popup", "minutes": 10},
                 ],
             },
         }
 
-        event = self.service.events().insert(  # pylint: disable=maybe-no-member
-            calendarId=calendar_id, body=event
-        ).execute()
+        event = (
+            self.service.events()
+            .insert(  # pylint: disable=maybe-no-member
+                calendarId=calendar_id, body=event
+            )
+            .execute()
+        )
 
         return f'Event created: {event.get("htmlLink")}'

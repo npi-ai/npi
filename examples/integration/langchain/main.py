@@ -28,12 +28,8 @@ async def main():
             verbose=True,
         )
 
-        await agent_executor.ainvoke(
-            {
-                "input": "Get top 10 posts at Hacker News."
-            }
-        )
+        await agent_executor.ainvoke({"input": "Get top 10 posts at Hacker News."})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

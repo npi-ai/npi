@@ -7,8 +7,8 @@ import json
 
 from npiai.runtime import ToolRuntime
 
-tool_file = '/Users/wenfeng/workspace/npi-ai/npi/npiai/tools/github/app.py'
-tool_main_class = 'GitHub'
+tool_file = "/Users/wenfeng/workspace/npi-ai/npi/npiai/tools/github/app.py"
+tool_main_class = "GitHub"
 
 
 def print_tool_spec():
@@ -42,16 +42,16 @@ def main():
     asyncio.run(runtime.run())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) > 1:
-        if sys.argv[1] == 'spec':
+        if sys.argv[1] == "spec":
             print_tool_spec()
-        elif sys.argv[1] == 'server':
-            print('Starting server...')
+        elif sys.argv[1] == "server":
+            print("Starting server...")
             main()
         else:
-            print('Usage: python entrypoint.py spec|server')
+            print("Usage: python entrypoint.py spec|server")
             sys.exit(1)
     else:
-        print('Usage: python entrypoint.py spec|server')
+        print("Usage: python entrypoint.py spec|server")
         sys.exit(1)

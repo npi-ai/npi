@@ -44,7 +44,9 @@ class Anthropic(LLM):
 
 
 class AzureOpenAI(LLM):
-    def __init__(self, api_key: str, api_base: str, api_version: str, deployment_name: str):
+    def __init__(
+        self, api_key: str, api_base: str, api_version: str, deployment_name: str
+    ):
         os.environ["AZURE_API_BASE"] = api_base
         os.environ["AZURE_API_VERSION"] = api_version
         super().__init__(f"azure/{deployment_name}", api_key, Provider.AzureOpenAI)

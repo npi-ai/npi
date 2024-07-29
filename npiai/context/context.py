@@ -1,4 +1,5 @@
 """This module contains the classes for the context and context message"""
+
 import datetime
 import uuid
 import asyncio
@@ -19,7 +20,7 @@ class Task:
         self.born_at = datetime.datetime.now()
         self.dialogues: List[Union[ChatCompletionMessageParam]] = []
         self.response: str
-        self._session: 'Context' | None = None
+        self._session: "Context" | None = None
 
     async def step(self, msgs: List[Union[ChatCompletionMessageParam]]) -> None:
         """add a message to the context"""
@@ -29,7 +30,7 @@ class Task:
         #     if msg.get('content'):
         #         await self._session.send(callback.Callable(msg.get('content')))
 
-    def set_session(self, session: 'Context') -> None:
+    def set_session(self, session: "Context") -> None:
         self._session = session
 
     def conversations(self) -> List[ChatCompletionMessageParam]:
@@ -44,14 +45,13 @@ class Context(ABC):
         self.id = str(uuid.uuid4())
         self.q = asyncio.Queue()
         self.__is_finished = False
-        self.__result: str = ''
+        self.__result: str = ""
         self.__is_failed = False
-        self.__failed_msg: str = ''
+        self.__failed_msg: str = ""
         self.__active_tool = None
 
     @abstractmethod
-    def credentials(self, app_code: str) -> Dict[str, str]:
-        ...
+    def credentials(self, app_code: str) -> Dict[str, str]: ...
 
     def entry(self):
         pass
@@ -59,11 +59,11 @@ class Context(ABC):
     def exit(self):
         pass
 
-    def with_task(self, task: Task) -> 'Context':
+    def with_task(self, task: Task) -> "Context":
         task.set_session(self)
         return self
 
-    def fork(self, task: Task) -> 'Context':
+    def fork(self, task: Task) -> "Context":
         """fork a child message, typically when call a new tools"""
         return self.with_task(task)
 

@@ -4,7 +4,13 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -43,6 +49,7 @@ class ActionType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     SINGLE_SELECTION: _ClassVar[ActionType]
     MULTIPLE_SELECTION: _ClassVar[ActionType]
     CONFIRMATION: _ClassVar[ActionType]
+
 REQUEST_UNKNOWN: RequestCode
 CHAT: RequestCode
 FETCH: RequestCode
@@ -69,7 +76,15 @@ MULTIPLE_SELECTION: ActionType
 CONFIRMATION: ActionType
 
 class Request(_message.Message):
-    __slots__ = ("code", "request_id", "thread_id", "authorization", "chat_request", "action_result_request", "empty")
+    __slots__ = (
+        "code",
+        "request_id",
+        "thread_id",
+        "authorization",
+        "chat_request",
+        "action_result_request",
+        "empty",
+    )
     CODE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     THREAD_ID_FIELD_NUMBER: _ClassVar[int]
@@ -84,7 +99,16 @@ class Request(_message.Message):
     chat_request: ChatRequest
     action_result_request: ActionResultRequest
     empty: _empty_pb2.Empty
-    def __init__(self, code: _Optional[_Union[RequestCode, str]] = ..., request_id: _Optional[str] = ..., thread_id: _Optional[str] = ..., authorization: _Optional[str] = ..., chat_request: _Optional[_Union[ChatRequest, _Mapping]] = ..., action_result_request: _Optional[_Union[ActionResultRequest, _Mapping]] = ..., empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        code: _Optional[_Union[RequestCode, str]] = ...,
+        request_id: _Optional[str] = ...,
+        thread_id: _Optional[str] = ...,
+        authorization: _Optional[str] = ...,
+        chat_request: _Optional[_Union[ChatRequest, _Mapping]] = ...,
+        action_result_request: _Optional[_Union[ActionResultRequest, _Mapping]] = ...,
+        empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...,
+    ) -> None: ...
 
 class AppSchemaRequest(_message.Message):
     __slots__ = ("type",)
@@ -98,7 +122,9 @@ class AppSchemaResponse(_message.Message):
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
     schema: str
     description: str
-    def __init__(self, schema: _Optional[str] = ..., description: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, schema: _Optional[str] = ..., description: _Optional[str] = ...
+    ) -> None: ...
 
 class ChatRequest(_message.Message):
     __slots__ = ("type", "instruction")
@@ -106,7 +132,11 @@ class ChatRequest(_message.Message):
     INSTRUCTION_FIELD_NUMBER: _ClassVar[int]
     type: AppType
     instruction: str
-    def __init__(self, type: _Optional[_Union[AppType, str]] = ..., instruction: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        type: _Optional[_Union[AppType, str]] = ...,
+        instruction: _Optional[str] = ...,
+    ) -> None: ...
 
 class ActionResultRequest(_message.Message):
     __slots__ = ("action_id", "action_result")
@@ -114,38 +144,59 @@ class ActionResultRequest(_message.Message):
     ACTION_RESULT_FIELD_NUMBER: _ClassVar[int]
     action_id: str
     action_result: str
-    def __init__(self, action_id: _Optional[str] = ..., action_result: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, action_id: _Optional[str] = ..., action_result: _Optional[str] = ...
+    ) -> None: ...
 
 class AuthorizeRequest(_message.Message):
     __slots__ = ("type", "credentials")
+
     class CredentialsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
         value: str
-        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+        def __init__(
+            self, key: _Optional[str] = ..., value: _Optional[str] = ...
+        ) -> None: ...
+
     TYPE_FIELD_NUMBER: _ClassVar[int]
     CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
     type: AppType
     credentials: _containers.ScalarMap[str, str]
-    def __init__(self, type: _Optional[_Union[AppType, str]] = ..., credentials: _Optional[_Mapping[str, str]] = ...) -> None: ...
+    def __init__(
+        self,
+        type: _Optional[_Union[AppType, str]] = ...,
+        credentials: _Optional[_Mapping[str, str]] = ...,
+    ) -> None: ...
 
 class AuthorizeResponse(_message.Message):
     __slots__ = ("result",)
+
     class ResultEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
         value: str
-        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+        def __init__(
+            self, key: _Optional[str] = ..., value: _Optional[str] = ...
+        ) -> None: ...
+
     RESULT_FIELD_NUMBER: _ClassVar[int]
     result: _containers.ScalarMap[str, str]
     def __init__(self, result: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class Response(_message.Message):
-    __slots__ = ("code", "request_id", "thread_id", "chat_response", "action_response", "empty")
+    __slots__ = (
+        "code",
+        "request_id",
+        "thread_id",
+        "chat_response",
+        "action_response",
+        "empty",
+    )
     CODE_FIELD_NUMBER: _ClassVar[int]
     REQUEST_ID_FIELD_NUMBER: _ClassVar[int]
     THREAD_ID_FIELD_NUMBER: _ClassVar[int]
@@ -158,7 +209,15 @@ class Response(_message.Message):
     chat_response: ChatResponse
     action_response: ActionRequiredResponse
     empty: _empty_pb2.Empty
-    def __init__(self, code: _Optional[_Union[ResponseCode, str]] = ..., request_id: _Optional[str] = ..., thread_id: _Optional[str] = ..., chat_response: _Optional[_Union[ChatResponse, _Mapping]] = ..., action_response: _Optional[_Union[ActionRequiredResponse, _Mapping]] = ..., empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        code: _Optional[_Union[ResponseCode, str]] = ...,
+        request_id: _Optional[str] = ...,
+        thread_id: _Optional[str] = ...,
+        chat_response: _Optional[_Union[ChatResponse, _Mapping]] = ...,
+        action_response: _Optional[_Union[ActionRequiredResponse, _Mapping]] = ...,
+        empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ...,
+    ) -> None: ...
 
 class ChatResponse(_message.Message):
     __slots__ = ("message",)
@@ -176,7 +235,13 @@ class ActionRequiredResponse(_message.Message):
     action_id: str
     message: str
     options: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, type: _Optional[_Union[ActionType, str]] = ..., action_id: _Optional[str] = ..., message: _Optional[str] = ..., options: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(
+        self,
+        type: _Optional[_Union[ActionType, str]] = ...,
+        action_id: _Optional[str] = ...,
+        message: _Optional[str] = ...,
+        options: _Optional[_Iterable[str]] = ...,
+    ) -> None: ...
 
 class GetAppScreenRequest(_message.Message):
     __slots__ = ("thread_id", "type")
@@ -184,7 +249,11 @@ class GetAppScreenRequest(_message.Message):
     TYPE_FIELD_NUMBER: _ClassVar[int]
     thread_id: str
     type: AppType
-    def __init__(self, thread_id: _Optional[str] = ..., type: _Optional[_Union[AppType, str]] = ...) -> None: ...
+    def __init__(
+        self,
+        thread_id: _Optional[str] = ...,
+        type: _Optional[_Union[AppType, str]] = ...,
+    ) -> None: ...
 
 class GetAppScreenResponse(_message.Message):
     __slots__ = ("base64",)

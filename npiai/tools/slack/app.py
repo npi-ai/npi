@@ -31,10 +31,10 @@ class Slack(FunctionTool):
     _user_id: str = None
 
     def __init__(self, access_token: str = None):
-        self._access_token = access_token or os.environ.get('SLACK_ACCESS_TOKEN', None)
+        self._access_token = access_token or os.environ.get("SLACK_ACCESS_TOKEN", None)
         super().__init__(
-            name='slack',
-            description='Send/Retrieve messages to/from Slack channels',
+            name="slack",
+            description="Send/Retrieve messages to/from Slack channels",
             system_prompt=__PROMPT__,
         )
 
@@ -47,7 +47,7 @@ class Slack(FunctionTool):
     async def _get_user_id(self) -> str:
         if not self._user_id:
             res = await self.client.auth_test()
-            self._user_id = res['user_id']
+            self._user_id = res["user_id"]
 
         return self._user_id
 
@@ -63,15 +63,17 @@ class Slack(FunctionTool):
     def _get_messages_from_response(self, response: AsyncSlackResponse):
         messages = []
 
-        for msg in response['messages']:
-            if msg['type'] != 'message':
+        for msg in response["messages"]:
+            if msg["type"] != "message":
                 continue
             messages.append(self._parse_raw_message(msg))
 
-        return sorted(messages, key=lambda x: float(x['thread_id']))
+        return sorted(messages, key=lambda x: float(x["thread_id"]))
 
     @function
-    async def ask_for_id(self, ctx: Context, name: Literal['user', 'channel', 'thread']):
+    async def ask_for_id(
+        self, ctx: Context, name: Literal["user", "channel", "thread"]
+    ):
         """
         Ask the user to provide recipient's user id, channel id, or thread id.
         Args:
@@ -126,7 +128,7 @@ class Slack(FunctionTool):
             text=message,
         )
 
-        msg = res['message']
+        msg = res["message"]
 
         logger.debug(f'[{self.name}]: Sent message: (id: {msg["ts"]}) {msg["text"]}')
 
@@ -141,11 +143,13 @@ class Slack(FunctionTool):
             channel_id: The ID of the **channel** to fetch the history from.
             max_messages: The maximum number of messages to fetch.
         """
-        res = await self.client.conversations_history(channel=channel_id, limit=max_messages)
+        res = await self.client.conversations_history(
+            channel=channel_id, limit=max_messages
+        )
         messages = self._get_messages_from_response(res)
 
         logger.debug(
-            f'[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}'
+            f"[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}"
         )
 
         return json.dumps(messages, ensure_ascii=False)
@@ -166,7 +170,7 @@ class Slack(FunctionTool):
             thread_ts=thread_id,
         )
 
-        msg = res['message']
+        msg = res["message"]
 
         logger.debug(
             f'[{self.name}]: Created reply for context ID {thread_id}. Reply: (id: {msg["ts"]}) {msg["text"]}'
@@ -192,11 +196,11 @@ class Slack(FunctionTool):
                 ts=thread_id,
             )
 
-            if len(thread_res['messages']) > 1:
+            if len(thread_res["messages"]) > 1:
                 messages = self._get_messages_from_response(thread_res)[1:]
 
                 logger.debug(
-                    f'[{self.name}]: Found {len(messages)} context replies: {json.dumps(messages, indent=2, ensure_ascii=False)}'
+                    f"[{self.name}]: Found {len(messages)} context replies: {json.dumps(messages, indent=2, ensure_ascii=False)}"
                 )
 
                 return json.dumps(messages, ensure_ascii=False)
@@ -209,12 +213,15 @@ class Slack(FunctionTool):
                 limit=10,
             )
 
-            for msg in channel_res['messages']:
-                if msg['type'] == 'message' and msg['user'] != await self._get_user_id():
+            for msg in channel_res["messages"]:
+                if (
+                    msg["type"] == "message"
+                    and msg["user"] != await self._get_user_id()
+                ):
                     messages = [self._parse_raw_message(msg)]
 
                     logger.debug(
-                        f'[{self.name}]: Received a new message: {json.dumps(messages, indent=2, ensure_ascii=False)}'
+                        f"[{self.name}]: Received a new message: {json.dumps(messages, indent=2, ensure_ascii=False)}"
                     )
 
                     return json.dumps(messages, ensure_ascii=False)

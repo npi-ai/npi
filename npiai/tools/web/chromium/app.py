@@ -10,8 +10,8 @@ You are a general chromium-based autonomous agent helping user to finish any tas
 class Chromium(BrowserTool):
     def __init__(self, navigator_llm: LLM = None, headless: bool = True):
         super().__init__(
-            name='chrome',
-            description='Perform any task on any webpage',
+            name="chrome",
+            description="Perform any task on any webpage",
             system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
@@ -32,4 +32,4 @@ class Chromium(BrowserTool):
         """
         await self.playwright.page.goto(url)
 
-        return f'Opened {await self.get_page_url()}, page title: {await self.get_page_title()}'
+        return f"Opened {await self.get_page_url()}, page title: {await self.get_page_title()}"

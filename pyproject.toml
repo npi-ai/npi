@@ -39,6 +39,8 @@ langchain = "^0.2.7"
 [tool.poetry.group.dev.dependencies]
 langchain-openai = "^0.1.14"
 langchainhub = "^0.1.20"
+black = "^24.4.2"
+pre-commit = "^3.8.0"
 
 [build-system]
 requires = ["poetry-core"]

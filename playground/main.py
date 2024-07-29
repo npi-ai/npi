@@ -32,11 +32,13 @@ class Chat(pbgrpc.PlaygroundServicer):
         self.ctx_manager = ContextManager()
 
     async def Chat(
-            self,
-            request: pb.Request,
-            _: grpc.ServicerContext,
+        self,
+        request: pb.Request,
+        _: grpc.ServicerContext,
     ) -> pb.Response:
-        logger.info(f"received a request, code:[{request.code}], id: [{request.request_id}]")
+        logger.info(
+            f"received a request, code:[{request.code}], id: [{request.request_id}]"
+        )
         response = pb.Response()
         if request.code == pb.RequestCode.CHAT:
             try:
@@ -45,10 +47,16 @@ class Chat(pbgrpc.PlaygroundServicer):
                 response.code = pb.ResponseCode.SUCCESS
                 decoded_bytes = base64.b64decode(request.authorization)
 
-                _ = asyncio.create_task(self.run(request.chat_request.type, decoded_bytes.decode('utf-8'),
-                                                 ctx, request.chat_request.instruction))
+                _ = asyncio.create_task(
+                    self.run(
+                        request.chat_request.type,
+                        decoded_bytes.decode("utf-8"),
+                        ctx,
+                        request.chat_request.instruction,
+                    )
+                )
             except Exception as err:
-                err_msg = ''.join(traceback.format_exception(err))
+                err_msg = "".join(traceback.format_exception(err))
                 print(err_msg)
                 response.chat_response.message = err
                 response.code = pb.ResponseCode.FAILED
@@ -65,16 +73,16 @@ class Chat(pbgrpc.PlaygroundServicer):
         return response
 
     async def Ping(
-            self,
-            request: Empty,
-            _: grpc.ServicerContext,
+        self,
+        request: Empty,
+        _: grpc.ServicerContext,
     ) -> Empty:
         return Empty()
 
     async def GetAppScreen(
-            self,
-            request: pb.GetAppScreenRequest,
-            _: grpc.ServicerContext,
+        self,
+        request: pb.GetAppScreenRequest,
+        _: grpc.ServicerContext,
     ) -> pb.GetAppScreenResponse:
         thread = self.ctx_manager.get_thread(request.thread_id)
 
@@ -141,7 +149,9 @@ class Chat(pbgrpc.PlaygroundServicer):
         cb.callback(result=req.action_result_request)
 
     @staticmethod
-    async def run(app_type: pb.AppType, authorization: str, ctx: Context, instruction: str):
+    async def run(
+        app_type: pb.AppType, authorization: str, ctx: Context, instruction: str
+    ):
         try:
             match app_type:
                 case pb.AppType.GITHUB:
@@ -152,14 +162,14 @@ class Chat(pbgrpc.PlaygroundServicer):
                     app = Gmail(
                         creds=Credentials.from_authorized_user_info(
                             info=json.loads(authorization),
-                            scopes="https://mail.google.com/"
+                            scopes="https://mail.google.com/",
                         )
                     )
                 case pb.AppType.GOOGLE_CALENDAR:
                     app = GoogleCalendar(
                         creds=Credentials.from_authorized_user_info(
                             info=json.loads(authorization),
-                            scopes="https://www.googleapis.com/auth/calendar"
+                            scopes="https://www.googleapis.com/auth/calendar",
                         )
                     )
                 case pb.AppType.TWITTER:
@@ -172,7 +182,7 @@ class Chat(pbgrpc.PlaygroundServicer):
                     app = Twilio(
                         account_sid=account[0],
                         auth_token=account[1],
-                        from_number=account[2]
+                        from_number=account[2],
                     )
                 case _:
                     raise ValueError(f"Unsupported tool")
@@ -186,7 +196,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         except UnauthorizedError as e:
             ctx.failed(str(e))
         except Exception as e:
-            err_msg = ''.join(traceback.format_exception(e))
+            err_msg = "".join(traceback.format_exception(e))
             logger.error(err_msg)
             ctx.failed(str(e))
             # raise e
@@ -238,6 +248,6 @@ def main():
 
 
 if __name__ == "__main__":
-    dotenv_path = os.path.join(os.path.dirname(__file__), 'credentials/.env')
+    dotenv_path = os.path.join(os.path.dirname(__file__), "credentials/.env")
     load_dotenv(dotenv_path)
     main()

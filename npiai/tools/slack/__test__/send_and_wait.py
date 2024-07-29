@@ -10,9 +10,9 @@ async def main():
         slack.use_hitl(ConsoleHandler())
 
         return await slack.chat(
-            'Send a direct message to Dolphin asking if he is doing well, and wait for his reply.'
+            "Send a direct message to Dolphin asking if he is doing well, and wait for his reply."
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

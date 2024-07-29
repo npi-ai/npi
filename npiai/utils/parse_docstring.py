@@ -2,7 +2,7 @@ from docstring_parser.google import GoogleParser, DEFAULT_SECTIONS, Section, Sec
 
 NPI_SECTIONS = [
     *DEFAULT_SECTIONS,
-    Section('FewShots', 'few_shots', SectionType.SINGULAR),
+    Section("FewShots", "few_shots", SectionType.SINGULAR),
 ]
 
 

@@ -31,26 +31,23 @@ Steps:
 class TwitterDiscordCrawler(FunctionTool):
     def __init__(self):
         super().__init__(
-            name='twitter_crawler',
-            description='Retrieve data from Twitter and send messages to Discord',
+            name="twitter_crawler",
+            description="Retrieve data from Twitter and send messages to Discord",
             system_prompt=PROMPT,
         )
 
         self.use_hitl(ConsoleHandler())
 
-        self.add_tool(
-            agent.wrap(Twitter(headless=False)),
-            agent.wrap(Discord())
-        )
+        self.add_tool(agent.wrap(Twitter(headless=False)), agent.wrap(Discord()))
 
 
 async def run():
-    llm = OpenAI(model='gpt-4-turbo-preview', api_key=os.environ['OPENAI_API_KEY'])
+    llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
 
     async with agent.wrap(TwitterDiscordCrawler(), llm=llm) as tool:
         print("Twitter Crawler: What's your task for me?")
-        task = input('User: ')
-        print('')
+        task = input("User: ")
+        print("")
         await tool.chat(task)
 
 

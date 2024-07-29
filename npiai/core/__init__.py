@@ -3,8 +3,8 @@ from .hitl import HITL
 from .base import BaseTool
 
 __all__ = [
-    'BaseTool',
-    'PlaywrightContext',
-    'NavigatorAgent',
-    'HITL',
+    "BaseTool",
+    "PlaywrightContext",
+    "NavigatorAgent",
+    "HITL",
 ]

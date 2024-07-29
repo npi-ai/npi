@@ -33,32 +33,34 @@ Steps:
 - add_issue_comment({ "repo": "npi-ai/npi", id: 42, "body": "{{issue_comment}}" })
 """
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 
-def _default_not_set(value: _T) -> _T | 'NotSet':
+def _default_not_set(value: _T) -> _T | "NotSet":
     return value if value is not None else NotSet
 
 
 class GitHub(FunctionTool):
     github_client: PyGithub
-    name: str = 'github'
+    name: str = "github"
 
     def __init__(self, access_token: str = None):
-        self.token = access_token or os.environ.get('GITHUB_ACCESS_TOKEN', None)
+        self.token = access_token or os.environ.get("GITHUB_ACCESS_TOKEN", None)
 
         super().__init__(
-            name='github',
-            description='Manage GitHub issues and pull requests',
+            name="github",
+            description="Manage GitHub issues and pull requests",
             system_prompt=__PROMPT__,
         )
 
         self.github_client: PyGithub | None = None
 
     @classmethod
-    def from_context(cls, ctx: Context) -> 'GitHub':
+    def from_context(cls, ctx: Context) -> "GitHub":
         if not utils.is_cloud_env():
-            raise RuntimeError('GitHub tool can only be initialized from context in the NPi cloud environment')
+            raise RuntimeError(
+                "GitHub tool can only be initialized from context in the NPi cloud environment"
+            )
         creds = ctx.credentials(app_code=app.GITHUB)
         return GitHub(access_token=creds["access_token"])
 
@@ -68,7 +70,7 @@ class GitHub(FunctionTool):
 
     async def start(self):
         if self.token is None:
-            raise UnauthorizedError('GitHub credentials are not found')
+            raise UnauthorizedError("GitHub credentials are not found")
         self.github_client = PyGithub(auth=Auth.Token(self.token))
         await super().start()
 
@@ -83,11 +85,11 @@ class GitHub(FunctionTool):
             a JSON object
         """
         return {
-            'id': comment.id,
-            'created_at': comment.created_at.isoformat(),
-            'updated_at': comment.updated_at.isoformat(),
-            'author': comment.user.login,
-            'body': comment.body,
+            "id": comment.id,
+            "created_at": comment.created_at.isoformat(),
+            "updated_at": comment.updated_at.isoformat(),
+            "author": comment.user.login,
+            "body": comment.body,
         }
 
     @staticmethod
@@ -101,16 +103,16 @@ class GitHub(FunctionTool):
             a JSON object
         """
         return {
-            'number': issue_or_pr.number,
-            'title': issue_or_pr.title,
-            'created_at': issue_or_pr.created_at.isoformat(),
-            'updated_at': issue_or_pr.updated_at.isoformat(),
-            'is_closed': issue_or_pr.closed_at is not None,
-            'author': issue_or_pr.user.login,
-            'body': issue_or_pr.body,
-            'comments_count': issue_or_pr.comments,
-            'assignees': [user.login for user in issue_or_pr.assignees],
-            'labels': [label.name for label in issue_or_pr.labels],
+            "number": issue_or_pr.number,
+            "title": issue_or_pr.title,
+            "created_at": issue_or_pr.created_at.isoformat(),
+            "updated_at": issue_or_pr.updated_at.isoformat(),
+            "is_closed": issue_or_pr.closed_at is not None,
+            "author": issue_or_pr.user.login,
+            "body": issue_or_pr.body,
+            "comments_count": issue_or_pr.comments,
+            "assignees": [user.login for user in issue_or_pr.assignees],
+            "labels": [label.name for label in issue_or_pr.labels],
         }
 
     def _get_issue(self, repo_name: str, number: int) -> Issue:
@@ -153,7 +155,7 @@ class GitHub(FunctionTool):
         user = self.github_client.get_user()
         user.add_to_starred(repo)
 
-        return f'Starred {repo} on behalf of {user.login}'
+        return f"Starred {repo} on behalf of {user.login}"
 
     @function
     def fork(self, repo: str):
@@ -167,7 +169,7 @@ class GitHub(FunctionTool):
         user = self.github_client.get_user()
         forked = user.create_fork(repo)
 
-        return f'Forked {repo} to {forked.full_name}'
+        return f"Forked {repo} to {forked.full_name}"
 
     @function
     def watch(self, repo: str):
@@ -181,7 +183,7 @@ class GitHub(FunctionTool):
         user = self.github_client.get_user()
         user.add_to_watched(repo)
 
-        return f'Watched {repo} on behalf of {user.login}'
+        return f"Watched {repo} on behalf of {user.login}"
 
     @function
     def search_repositories(self, query: str, max_results: int):
@@ -201,13 +203,13 @@ class GitHub(FunctionTool):
         for repo in res[:max_results]:
             results.append(
                 {
-                    'name': repo.full_name,
-                    'owner': repo.owner.login,
-                    'url': repo.url,
-                    'description': repo.description,
-                    'topics': repo.topics,
-                    'created_at': repo.created_at.isoformat(),
-                    'updated_at': repo.updated_at.isoformat(),
+                    "name": repo.full_name,
+                    "owner": repo.owner.login,
+                    "url": repo.url,
+                    "description": repo.description,
+                    "topics": repo.topics,
+                    "created_at": repo.created_at.isoformat(),
+                    "updated_at": repo.updated_at.isoformat(),
                 }
             )
 
@@ -224,10 +226,10 @@ class GitHub(FunctionTool):
                 2. Search for open pull requests in repository npi/npi: `is:pr is:open repo:npi/npi`
             max_results: Maximum number of results to return
         """
-        res = self.github_client.search_issues(query=query, sort='created')
+        res = self.github_client.search_issues(query=query, sort="created")
 
         if res.totalCount == 0:
-            return 'No results found'
+            return "No results found"
 
         results = []
 
@@ -262,12 +264,12 @@ class GitHub(FunctionTool):
 
     @function
     def create_issue(
-            self,
-            repo: str,
-            title: str,
-            body: str,
-            labels: List[str] = None,
-            assignees: List[str] = None,
+        self,
+        repo: str,
+        title: str,
+        body: str,
+        labels: List[str] = None,
+        assignees: List[str] = None,
     ):
         """
         Create an issue under the given repository.
@@ -287,19 +289,21 @@ class GitHub(FunctionTool):
             assignees=_default_not_set(assignees),
         )
 
-        return 'Issue created:\n' + json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
+        return "Issue created:\n" + json.dumps(
+            self._issue_pr_to_json(issue), ensure_ascii=False
+        )
 
     @function
     def create_pull_request(
-            self,
-            repo: str,
-            title: str,
-            body: str,
-            base: str,
-            head: str,
-            is_draft: bool = False,
-            labels: List[str] = None,
-            assignees: List[str] = None
+        self,
+        repo: str,
+        title: str,
+        body: str,
+        base: str,
+        head: str,
+        is_draft: bool = False,
+        labels: List[str] = None,
+        assignees: List[str] = None,
     ):
         """
         Create a pull request under the given repository.
@@ -329,7 +333,9 @@ class GitHub(FunctionTool):
         if assignees:
             pr.add_to_assignees(*assignees)
 
-        return 'Pull Request created:\n' + json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
+        return "Pull Request created:\n" + json.dumps(
+            self._issue_pr_to_json(pr), ensure_ascii=False
+        )
 
     @function
     def add_issue_comment(self, repo: str, number: int, body: str):
@@ -344,7 +350,9 @@ class GitHub(FunctionTool):
         issue = self._get_issue(repo_name=repo, number=number)
         comment = issue.create_comment(body)
 
-        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
+        return "Issue comment created:\n" + json.dumps(
+            self._comment_to_json(comment), ensure_ascii=False
+        )
 
     @function
     def add_pull_request_comment(self, repo: str, number: int, body: str):
@@ -359,18 +367,20 @@ class GitHub(FunctionTool):
         pr = self._get_pull_request(repo_name=repo, number=number)
         comment = pr.create_issue_comment(body)
 
-        return 'Issue comment created:\n' + json.dumps(self._comment_to_json(comment), ensure_ascii=False)
+        return "Issue comment created:\n" + json.dumps(
+            self._comment_to_json(comment), ensure_ascii=False
+        )
 
     @function
     def edit_issue(
-            self,
-            repo: str,
-            number: int,
-            title: str = None,
-            body: str = None,
-            labels: List[str] = None,
-            assignees: List[str] = None,
-            state: Literal['open', 'closed'] = None,
+        self,
+        repo: str,
+        number: int,
+        title: str = None,
+        body: str = None,
+        labels: List[str] = None,
+        assignees: List[str] = None,
+        state: Literal["open", "closed"] = None,
     ):
         """
         Edit an existing issue. You can also close or reopen an issue by specifying the state parameter.
@@ -394,19 +404,21 @@ class GitHub(FunctionTool):
             state=_default_not_set(state),
         )
 
-        return 'Issue updated to:\n' + json.dumps(self._issue_pr_to_json(issue), ensure_ascii=False)
+        return "Issue updated to:\n" + json.dumps(
+            self._issue_pr_to_json(issue), ensure_ascii=False
+        )
 
     @function
     def edit_pull_request(
-            self,
-            repo: str,
-            number: int,
-            title: str = None,
-            body: str = None,
-            base: str = None,
-            labels: List[str] = None,
-            assignees: List[str] = None,
-            state: Literal['open', 'closed'] = None,
+        self,
+        repo: str,
+        number: int,
+        title: str = None,
+        body: str = None,
+        base: str = None,
+        labels: List[str] = None,
+        assignees: List[str] = None,
+        state: Literal["open", "closed"] = None,
     ):
         """
         Edit an existing pull request. You can also close or reopen a pull request by specifying the state parameter.
@@ -436,4 +448,6 @@ class GitHub(FunctionTool):
         if assignees:
             pr.add_to_assignees(*assignees)
 
-        return 'Pull Request updated to:\n' + json.dumps(self._issue_pr_to_json(pr), ensure_ascii=False)
+        return "Pull Request updated to:\n" + json.dumps(
+            self._issue_pr_to_json(pr), ensure_ascii=False
+        )

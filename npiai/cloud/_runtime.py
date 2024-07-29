@@ -20,9 +20,14 @@ from ._client import Client
 
 
 class ToolRuntime:
-    def __init__(self, tool_cls: List[BaseTool.__class__], port: int = 9140, endpoint='https://api.npi.ai'):
+    def __init__(
+        self,
+        tool_cls: List[BaseTool.__class__],
+        port: int = 9140,
+        endpoint="https://api.npi.ai",
+    ):
         self.tools = {}
-        self._endpoint=endpoint
+        self._endpoint = endpoint
         for tool in tool_cls:
             self.tools[tool.get_name()] = tool
         self.port = port
@@ -42,12 +47,16 @@ class ToolRuntime:
         """Start the server"""
         if not utils.is_cloud_env():
             raise RuntimeError(
-                "Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true")
+                "Server mode is disabled, if you want to run the server, set env NPIAI_SERVICE_MODE=true"
+            )
 
         def convert_camel_to_snake(name: str) -> str:
-            return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+            return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
-        @self.app.api_route("/{tool_name}/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+        @self.app.api_route(
+            "/{tool_name}/{full_path:path}",
+            methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+        )
         async def root(request: Request, tool_name: str, full_path: str):
             method = convert_camel_to_snake(full_path)
             try:
@@ -56,17 +65,23 @@ class ToolRuntime:
                     authorization = request.headers.get("authorization")
                     token = authorization.split(" ")
                     access_token = ""
-                    if len(token) == 2 and token[0].lower() == "bearer":  # TODO apikey & none auth?
+                    if (
+                        len(token) == 2 and token[0].lower() == "bearer"
+                    ):  # TODO apikey & none auth?
                         access_token = token[1]
-                    ctx = CloudContext(req=request, client=Client(
-                        access_token=access_token,
-                        endpoint=self._endpoint
-                    ))
+                    ctx = CloudContext(
+                        req=request,
+                        client=Client(
+                            access_token=access_token, endpoint=self._endpoint
+                        ),
+                    )
                     self.ctx_mgr.save_context(ctx)
                 else:
                     ctx = self.ctx_mgr.get_context(ssid)
                     if not ctx:
-                        raise HTTPException(status_code=404, detail="session context not found")
+                        raise HTTPException(
+                            status_code=404, detail="session context not found"
+                        )
                 tool_cls = self.get_tool(tool_name)
                 async with tool_cls.from_context(ctx) as instance:
                     match request.method:
@@ -77,7 +92,9 @@ class ToolRuntime:
                             args = {k: v for k, v in request.query_params.items()}
                             res = await instance.exec(ctx, method, args)
                         case _:
-                            return JSONResponse({'error': 'Method not allowed'}, status_code=405)
+                            return JSONResponse(
+                                {"error": "Method not allowed"}, status_code=405
+                            )
                     try:
                         return JSONResponse(content=json.loads(res))
                     except json.JSONDecodeError as e:
