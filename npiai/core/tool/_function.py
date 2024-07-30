@@ -20,7 +20,13 @@ from openai.types.chat import ChatCompletionToolParam
 from npiai.core.base import BaseTool, BaseFunctionTool
 from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta, FromContext
-from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
+from npiai.utils import (
+    logger,
+    sanitize_schema,
+    parse_docstring,
+    to_async_fn,
+    is_template_str,
+)
 from npiai.context import Context
 
 __NPI_TOOL_ATTR__ = "__NPI_TOOL_ATTR__"
@@ -250,6 +256,21 @@ class FunctionTool(BaseFunctionTool, ABC):
                                     return_type=return_type,
                                 )
                             )
+
+                            if is_template_str(anno.query):
+                                param_fields[f"{p.name}__query"] = (
+                                    str,
+                                    Field(
+                                        default=anno.query,
+                                        description=f"""
+                                        This parameter is a query to retrieve information from the memory storage.
+                                        For the following query, you should replace the strings surrounded by braces `{{}}`
+                                        with the information from current context.
+                                        
+                                        Query: {anno.query}
+                                        """,
+                                    ),
+                                )
                             continue
 
                     param_fields[p.name] = (

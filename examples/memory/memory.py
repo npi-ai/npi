@@ -9,7 +9,10 @@ class MyTool(FunctionTool):
     description = "My first NPi tool"
 
     @function
-    def get_test_id(self, test_id: Annotated[int, FromContext(query="test id")]):
+    def get_test_id(
+        self,
+        test_id: Annotated[int, FromContext(query="{user} test id")],
+    ):
         """
         Get test id
 
@@ -24,7 +27,10 @@ async def main():
         tool.use_hitl(ConsoleHandler())
         ctx = Context()
         ctx.bind(tool)
-        result = await tool.chat(ctx=ctx, instruction="What's the test id?")
+        result = await tool.chat(ctx=ctx, instruction="What's the test id for @Alice?")
+        print(f"Result: {result}")
+
+        result = await tool.chat(ctx=ctx, instruction="What's the test id for @Bob?")
         print(f"Result: {result}")
 
 
