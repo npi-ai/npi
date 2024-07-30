@@ -4,7 +4,7 @@ import datetime
 import json
 import uuid
 import asyncio
-from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type
+from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type, Any
 from textwrap import dedent
 
 from mem0 import Memory
@@ -58,6 +58,7 @@ class Context:
     _last_screenshot: str | None
     _active_tool: Union["BaseTool", None]
     _memory: Memory
+    _query_cache: Dict[str, Any]
 
     def __init__(
         self,
@@ -72,6 +73,7 @@ class Context:
         self._last_screenshot = None
         self._active_tool = None
         self._memory = memory
+        self._query_cache = {}
 
     async def _ask_human(self, query: str):
         """
@@ -89,7 +91,7 @@ class Context:
             message=f"Please provide the following information: {query}",
         )
 
-        await self.save(f"Question: {query}? Answer: {res}")
+        await self.save(f"Q: {query}? A: {res}")
 
     async def save(self, info: str):
         """
@@ -99,6 +101,8 @@ class Context:
             info: Information to save
         """
         self._memory.add(info, run_id=self.id, metadata={"raw": info})
+        # clear cache
+        self._query_cache = {}
 
     async def ask(
         self,
@@ -116,6 +120,10 @@ class Context:
             constraints: Search constraints
             _is_retry: Retry flag
         """
+        cached_result = self._query_cache.get(query, None)
+
+        if cached_result:
+            return cached_result
 
         async def retry():
             if _is_retry:
@@ -206,6 +214,8 @@ class Context:
         if data is None:
             logger.info(f"No data found for query: {query}")
             return await retry()
+
+        self._query_cache[query] = data
 
         return data
 
