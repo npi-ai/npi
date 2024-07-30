@@ -11,7 +11,7 @@ class MyTool(FunctionTool):
     @function
     def get_test_id(
         self,
-        test_id: Annotated[int, FromContext(query="{user} test id")],
+        test_id: Annotated[int, FromContext(query="{user}'s test id")],
     ):
         """
         Get test id
