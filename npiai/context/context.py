@@ -91,7 +91,7 @@ class Context:
             message=f"Please provide the following information: {query}",
         )
 
-        await self.save(f"Q: {query}? A: {res}")
+        await self.save(f"Question: {query}? Answer: {res}")
 
     async def save(self, info: str):
         """
@@ -140,7 +140,10 @@ class Context:
             logger.info(f"No memories found for query: {query}")
             return await retry()
 
-        mem_str = "- " + "\n- ".join(m["text"] for m in memories)
+        mem_str = "- " + "\n- ".join(
+            "Extracted data: " + m["text"] + "\n Raw data: " + m["metadata"]["raw"]
+            for m in memories
+        )
 
         callback_model = create_model(
             "MemorySearchCallback",
