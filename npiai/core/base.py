@@ -73,8 +73,10 @@ class BaseTool(ABC):
 
         # add context variables
         for ctx_var in fn.ctx_variables:
+            query = args.pop(f"{ctx_var.name}__query", ctx_var.query)
+
             args[ctx_var.name] = await ctx.ask(
-                query=ctx_var.query,
+                query=query,
                 return_type=ctx_var.return_type,
                 constraints=ctx_var.constraints,
             )

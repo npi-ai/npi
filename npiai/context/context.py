@@ -158,12 +158,18 @@ class Context:
                         You are an memory retrieval tool helping user extract the necessary
                         information from the following memories. For any search query, you
                         should call the `callback` function with the essential information
-                        set in the `data` argument. The `data` should be concise and precise, 
-                        and you should avoid adding any unnecessary information. For example, 
-                        instead of "Today is Friday", you should return "Friday" directly.
-                        You should follow the constraints if provided.
+                        set in the `data` argument.
                         
-                        Memories:
+                        ## Rules
+                        - The `data` should be concise and precise, and you should avoid 
+                        adding any unnecessary information. For example, instead of "Today 
+                        is Friday", you should return "Friday" directly.
+                        - You should ensure the retrieved data exactly matches the query. For
+                        example, "#general channel id is 12345" matches the query "#general
+                        channel id" but mismatches the query "#random channel id".
+                        - You should also follow the constraints if provided.
+                        
+                        ## Memories
                         """
                     )
                     + mem_str,
@@ -200,7 +206,13 @@ class Context:
 
         logger.debug(f"LLM callback: {json.dumps(tool_calls)}")
 
-        return tool_calls[0]["arguments"].get("data", None)
+        data = tool_calls[0]["arguments"].get("data", None)
+
+        if data is None:
+            logger.info(f"No data found for query: {query}")
+            return await retry()
+
+        return data
 
     # @abstractmethod
     # NOTE: this method should not be abstract
