@@ -98,7 +98,7 @@ class Context:
         Args:
             info: Information to save
         """
-        self._memory.add(info, run_id=self.id)
+        self._memory.add(info, run_id=self.id, metadata={"raw": info})
 
     async def ask(
         self,
