@@ -8,6 +8,7 @@ from openai.types.chat import ChatCompletionToolParam
 from npiai.context import Context
 from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration
+from npiai.constant import CTX_QUERY_POSTFIX
 
 
 class BaseTool(ABC):
@@ -73,7 +74,7 @@ class BaseTool(ABC):
 
         # add context variables
         for ctx_var in fn.ctx_variables:
-            query = args.pop(f"{ctx_var.name}__query", ctx_var.query)
+            query = args.pop(f"{ctx_var.name}{CTX_QUERY_POSTFIX}", ctx_var.query)
 
             args[ctx_var.name] = await ctx.ask(
                 query=query,
