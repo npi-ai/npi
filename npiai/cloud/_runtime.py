@@ -29,7 +29,7 @@ class ToolRuntime:
         self.tools = {}
         self._endpoint = endpoint
         for tool in tool_cls:
-            self.tools[tool.get_name()] = tool
+            self.tools[tool.name] = tool
         self.port = port
         self.app = FastAPI()
         self.ctx_mgr = ContextManager()

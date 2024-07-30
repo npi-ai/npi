@@ -1,5 +1,5 @@
 import os
-from typing import List, overload
+from typing import List
 
 from pydantic import create_model, Field
 
@@ -19,8 +19,11 @@ from litellm.types.completion import (
 
 
 class AgentTool(BaseAgentTool):
+    llm: LLM
+    _tool: FunctionTool
 
     def __init__(self, tool: FunctionTool, llm: LLM = None):
+        super().__init__()
         self.name = f"{tool.name}_agent"
         self._tool = tool
         self.llm = llm or OpenAI(
@@ -28,7 +31,6 @@ class AgentTool(BaseAgentTool):
         )
         self.description = tool.description
         self.provider = tool.provider
-        super().__init__(tool.name, tool.description, tool.provider)
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
@@ -46,6 +48,7 @@ class AgentTool(BaseAgentTool):
         fn_reg = FunctionRegistration(
             fn=self.chat,
             name="chat",
+            ctx_variables=[],
             ctx_param_name="ctx",
             description=f"This is an api of an AI Assistant, named {self.name}, the abilities of the assistant is:\n "
             f"{self.description}\n"
@@ -57,7 +60,7 @@ class AgentTool(BaseAgentTool):
         return [fn_reg]
 
     def use_hitl(self, hitl: HITL):
-        # super().use_hitl(hitl)
+        super().use_hitl(hitl)
         self._tool.use_hitl(hitl)
 
     async def start(self):
@@ -108,9 +111,9 @@ class AgentTool(BaseAgentTool):
 
 
 class BrowserAgentTool(AgentTool):
+    _tool: BrowserTool
 
     def __init__(self, tool: BrowserTool, llm: LLM = None):
-        self._tool = tool
         super().__init__(tool, llm)
 
     async def get_screenshot(self) -> str | None:
@@ -164,23 +167,3 @@ class BrowserAgentTool(AgentTool):
         )
 
         return await self._call_llm(ctx, task)
-
-
-@overload
-def agent_wrapper(tool: FunctionTool, llm: LLM = None) -> AgentTool: ...
-
-
-@overload
-def agent_wrapper(tool: BrowserTool, llm: LLM = None) -> BrowserAgentTool: ...
-
-
-def agent_wrapper(
-    tool: FunctionTool | BrowserTool, llm: LLM = None
-) -> AgentTool | BrowserAgentTool:
-    if isinstance(tool, BrowserTool):
-        return BrowserAgentTool(tool, llm)
-
-    if isinstance(tool, FunctionTool):
-        return AgentTool(tool, llm)
-
-    raise TypeError(f"app must be an instance of FunctionTool or BrowserTool")

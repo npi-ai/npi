@@ -1,17 +1,23 @@
-import datetime
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 from litellm.types.completion import ChatCompletionToolMessageParam
 from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
-from npiai.types import FunctionRegistration
 from npiai.context import Context
 from npiai.core.hitl import HITL
+from npiai.types import FunctionRegistration
 
 
 class BaseTool(ABC):
+    name: str = ""
+    description: str = ""
+    system_prompt: str = ""
+    provider: str = "private"
+
+    _fn_map: Dict[str, FunctionRegistration]
+    _hitl: HITL | None
 
     @classmethod
     def from_context(cls, ctx: Context) -> "BaseTool":
@@ -19,25 +25,6 @@ class BaseTool(ABC):
         raise NotImplementedError(
             "subclasses must implement this method for npi cloud hosting"
         )
-
-    @classmethod
-    @abstractmethod
-    def get_name(cls) -> str:
-        pass
-
-    def __init__(
-        self,
-        name: str = "",
-        description: str = "",
-        provider: str = "npiai",
-        fn_map: Dict[str, FunctionRegistration] | None = None,
-    ):
-        self.name = name
-        self.description = description
-        self.provider = provider
-        self._fn_map = fn_map or {}
-        self._hitl: HITL | None = None
-        # self._context = _context
 
     @property
     def hitl(self) -> HITL:
@@ -70,28 +57,29 @@ class BaseTool(ABC):
         ...
 
     async def exec(self, ctx: Context, fn_name: str, args: Dict[str, Any] = None):
-        time1 = datetime.datetime.now()
-
         if fn_name not in self._fn_map:
             raise RuntimeError(
                 f"[{self.name}]: function `{fn_name}` not found. Available functions: {self._fn_map.keys()}"
             )
 
+        if not args:
+            args = {}
+
         fn = self._fn_map[fn_name]
 
         # add context param
         if fn.ctx_param_name is not None:
-            if args is None:
-                args = {fn.ctx_param_name: ctx}
-            else:
-                args[fn.ctx_param_name] = ctx
-        if args is None:
-            re = await fn.fn()
-        else:
-            re = await fn.fn(**args)
-        time2 = datetime.datetime.now()
-        # print(f"Time taken to execute the function: {time2 - time1}")
-        return re
+            args[fn.ctx_param_name] = ctx
+
+        # add context variables
+        for ctx_var in fn.ctx_variables:
+            args[ctx_var.name] = await ctx.ask(
+                query=ctx_var.query,
+                return_type=ctx_var.return_type,
+                constraints=ctx_var.constraints,
+            )
+
+        return await fn.fn(**args)
 
     def use_hitl(self, hitl: HITL):
         self._hitl = hitl

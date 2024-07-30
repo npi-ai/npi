@@ -27,26 +27,27 @@ Workflow:
 
 
 class Slack(FunctionTool):
-    client: AsyncWebClient
+    name = "slack"
+    description = "Send/Retrieve messages to/from Slack channels"
+    system_prompt = __PROMPT__
+
+    _access_token: str | None
+    _client: AsyncWebClient
     _user_id: str = None
 
     def __init__(self, access_token: str = None):
+        super().__init__()
         self._access_token = access_token or os.environ.get("SLACK_ACCESS_TOKEN", None)
-        super().__init__(
-            name="slack",
-            description="Send/Retrieve messages to/from Slack channels",
-            system_prompt=__PROMPT__,
-        )
 
     async def start(self):
         if self._access_token is None:
             raise UnauthorizedError("Slack credentials are not found")
 
-        self.client = AsyncWebClient(token=self._access_token)
+        self._client = AsyncWebClient(token=self._access_token)
 
     async def _get_user_id(self) -> str:
         if not self._user_id:
-            res = await self.client.auth_test()
+            res = await self._client.auth_test()
             self._user_id = res["user_id"]
 
         return self._user_id
@@ -89,7 +90,7 @@ class Slack(FunctionTool):
     @function
     async def list_channels(self):
         """Get a list of all Slack channels"""
-        res = await self.client.conversations_list()
+        res = await self._client.conversations_list()
         channels = []
 
         for chn in res["channels"]:
@@ -110,7 +111,7 @@ class Slack(FunctionTool):
         Args:
             user_id: The ID of the **user** who will receive the direct message. Note that this is not the channel ID.
         """
-        res = await self.client.conversations_open(users=[user_id])
+        res = await self._client.conversations_open(users=[user_id])
 
         return f'Direct message channel created. Channel ID: {res["channel"]["id"]}'
 
@@ -123,7 +124,7 @@ class Slack(FunctionTool):
             channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
             message: The message to send.
         """
-        res = await self.client.chat_postMessage(
+        res = await self._client.chat_postMessage(
             channel=channel_id,
             text=message,
         )
@@ -143,7 +144,7 @@ class Slack(FunctionTool):
             channel_id: The ID of the **channel** to fetch the history from.
             max_messages: The maximum number of messages to fetch.
         """
-        res = await self.client.conversations_history(
+        res = await self._client.conversations_history(
             channel=channel_id, limit=max_messages
         )
         messages = self._get_messages_from_response(res)
@@ -164,7 +165,7 @@ class Slack(FunctionTool):
             thread_id: The ID of the **context** to reply to.
             message: The message to reply.
         """
-        res = await self.client.chat_postMessage(
+        res = await self._client.chat_postMessage(
             channel=channel_id,
             text=message,
             thread_ts=thread_id,
@@ -191,7 +192,7 @@ class Slack(FunctionTool):
 
         while True:
             # check threaded replies
-            thread_res = await self.client.conversations_replies(
+            thread_res = await self._client.conversations_replies(
                 channel=channel_id,
                 ts=thread_id,
             )
@@ -206,7 +207,7 @@ class Slack(FunctionTool):
                 return json.dumps(messages, ensure_ascii=False)
 
             # check channel replies
-            channel_res = await self.client.conversations_history(
+            channel_res = await self._client.conversations_history(
                 channel=channel_id,
                 oldest=last_ts,
                 inclusive=False,

@@ -1,4 +1,4 @@
-from npiai.core.tool import wrap
+from .wrap import wrap
 
 __all__ = [
     "wrap",

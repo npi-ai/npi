@@ -29,12 +29,12 @@ Steps:
 
 
 class TwitterDiscordCrawler(FunctionTool):
+    name = "twitter_crawler"
+    description = "Retrieve data from Twitter and send messages to Discord"
+    system_prompt = PROMPT
+
     def __init__(self):
-        super().__init__(
-            name="twitter_crawler",
-            description="Retrieve data from Twitter and send messages to Discord",
-            system_prompt=PROMPT,
-        )
+        super().__init__()
 
         self.use_hitl(ConsoleHandler())
 

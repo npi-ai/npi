@@ -5,6 +5,7 @@ from openai.types.chat import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from npiai.types.shot import Shot
+from npiai.types.from_context import FromContext
 
 ToolFunction = Callable[..., Awaitable[str]]
 
@@ -14,7 +15,8 @@ class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
-    ctx_param_name: str
+    ctx_variables: List[FromContext]
+    ctx_param_name: str | None = None
     schema: Optional[Dict[str, Any]] = None
     model: Optional[Type[BaseModel]] = None
     few_shots: Optional[List[Shot]] = None

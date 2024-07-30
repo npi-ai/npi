@@ -41,19 +41,16 @@ def _default_not_set(value: _T) -> _T | "NotSet":
 
 
 class GitHub(FunctionTool):
-    github_client: PyGithub
-    name: str = "github"
+    name = "github"
+    description = "Manage GitHub issues and pull requests"
+    system_prompt = __PROMPT__
+
+    _token: str | None
+    _client: PyGithub | None
 
     def __init__(self, access_token: str = None):
-        self.token = access_token or os.environ.get("GITHUB_ACCESS_TOKEN", None)
-
-        super().__init__(
-            name="github",
-            description="Manage GitHub issues and pull requests",
-            system_prompt=__PROMPT__,
-        )
-
-        self.github_client: PyGithub | None = None
+        super().__init__()
+        self._token = access_token or os.environ.get("GITHUB_ACCESS_TOKEN", None)
 
     @classmethod
     def from_context(cls, ctx: Context) -> "GitHub":
@@ -64,14 +61,10 @@ class GitHub(FunctionTool):
         creds = ctx.credentials(app_code=app.GITHUB)
         return GitHub(access_token=creds["access_token"])
 
-    @classmethod
-    def get_name(cls) -> str:
-        return GitHub.name
-
     async def start(self):
-        if self.token is None:
+        if self._token is None:
             raise UnauthorizedError("GitHub credentials are not found")
-        self.github_client = PyGithub(auth=Auth.Token(self.token))
+        self._client = PyGithub(auth=Auth.Token(self._token))
         await super().start()
 
     @staticmethod
@@ -126,7 +119,7 @@ class GitHub(FunctionTool):
         Returns:
             an Issue object
         """
-        repo = self.github_client.get_repo(repo_name)
+        repo = self._client.get_repo(repo_name)
         return repo.get_issue(int(number))
 
     def _get_pull_request(self, repo_name: str, number: int) -> PullRequest:
@@ -140,7 +133,7 @@ class GitHub(FunctionTool):
         Returns:
             an Issue object
         """
-        repo = self.github_client.get_repo(repo_name)
+        repo = self._client.get_repo(repo_name)
         return repo.get_pull(number)
 
     @function
@@ -151,8 +144,8 @@ class GitHub(FunctionTool):
         Args:
             repo: Name of the repository in format {owner}/{repo}
         """
-        repo = self.github_client.get_repo(repo)
-        user = self.github_client.get_user()
+        repo = self._client.get_repo(repo)
+        user = self._client.get_user()
         user.add_to_starred(repo)
 
         return f"Starred {repo} on behalf of {user.login}"
@@ -165,8 +158,8 @@ class GitHub(FunctionTool):
         Args:
             repo: Name of the repository in format {owner}/{repo}
         """
-        repo = self.github_client.get_repo(repo)
-        user = self.github_client.get_user()
+        repo = self._client.get_repo(repo)
+        user = self._client.get_user()
         forked = user.create_fork(repo)
 
         return f"Forked {repo} to {forked.full_name}"
@@ -179,8 +172,8 @@ class GitHub(FunctionTool):
         Args:
             repo: Name of the repository in format {owner}/{repo}
         """
-        repo = self.github_client.get_repo(repo)
-        user = self.github_client.get_user()
+        repo = self._client.get_repo(repo)
+        user = self._client.get_user()
         user.add_to_watched(repo)
 
         return f"Watched {repo} on behalf of {user.login}"
@@ -196,7 +189,7 @@ class GitHub(FunctionTool):
                 2. Search for repositories with more than 1000 stars: `stars:>1000`
             max_results: Maximum number of results to return
         """
-        res = self.github_client.search_repositories(query)
+        res = self._client.search_repositories(query)
 
         results = []
 
@@ -226,7 +219,7 @@ class GitHub(FunctionTool):
                 2. Search for open pull requests in repository npi/npi: `is:pr is:open repo:npi/npi`
             max_results: Maximum number of results to return
         """
-        res = self.github_client.search_issues(query=query, sort="created")
+        res = self._client.search_issues(query=query, sort="created")
 
         if res.totalCount == 0:
             return "No results found"
@@ -281,7 +274,7 @@ class GitHub(FunctionTool):
             labels: List of labels to add to the issue
             assignees: List of users to assign to the issue
         """
-        repository = self.github_client.get_repo(repo)
+        repository = self._client.get_repo(repo)
         issue = repository.create_issue(
             title=title,
             body=body,
@@ -318,7 +311,7 @@ class GitHub(FunctionTool):
             labels: List of labels to add to the pull request
             assignees: List of users to assign to the pull request
         """
-        repository = self.github_client.get_repo(repo)
+        repository = self._client.get_repo(repo)
         pr = repository.create_pull(
             base=base,
             title=title,

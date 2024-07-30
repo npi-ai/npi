@@ -5,7 +5,7 @@ import inspect
 import json
 import re
 from abc import ABC
-from typing import Dict, List, Optional, Any, Type
+from typing import Dict, List, Optional, Any, Type, Annotated, get_args, get_origin
 
 import yaml
 
@@ -19,7 +19,7 @@ from openai.types.chat import ChatCompletionToolParam
 
 from npiai.core.base import BaseTool, BaseFunctionTool
 from npiai.core.hitl import HITL
-from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
+from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta, FromContext
 from npiai.utils import logger, sanitize_schema, parse_docstring, to_async_fn
 from npiai.context import Context
 
@@ -75,11 +75,6 @@ def function(
 class FunctionTool(BaseFunctionTool, ABC):
     """The basic interface for the natural language programming interface"""
 
-    name: str = "FunctionTool"
-    description: str
-    system_prompt: Optional[str]
-    provider: str
-
     _tools: List[ChatCompletionToolParam]
     _fn_map: Dict[str, FunctionRegistration]
     _sub_tools: List[BaseTool]
@@ -94,28 +89,14 @@ class FunctionTool(BaseFunctionTool, ABC):
     def sub_tools(self):
         return self._sub_tools
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        system_prompt: str = None,
-        provider: str = None,
-    ):
-        self.name = name
-        self.description = description
-        self.system_prompt = system_prompt
-        self.provider = provider or "private"
+    def __init__(self):
+        super().__init__()
+
         self._tools = []
         self._fn_map = {}
         self._sub_tools = []
 
         self._register_tools()
-        super().__init__(
-            self.name,
-            self.description,
-            self.provider,
-            self._fn_map,
-        )
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
@@ -205,7 +186,7 @@ class FunctionTool(BaseFunctionTool, ABC):
                 res = f"Exception while executing {fn_name}: {e}"
                 await session.send(res)
 
-            logger.debug(f"[{self.name}]: function `{fn_name}` returned:\n {res}")
+            logger.debug(f"[{self.name}]: function `{fn_name}` returned: {res}")
 
             results.append(
                 ChatCompletionToolMessageParam(
@@ -243,6 +224,7 @@ class FunctionTool(BaseFunctionTool, ABC):
             tool_model = tool_meta.model
             tool_schema = tool_meta.schema
             ctx_param_name = None
+            ctx_variables = []
 
             if not tool_model and len(params) > 0:
                 # get parameter descriptions
@@ -256,6 +238,20 @@ class FunctionTool(BaseFunctionTool, ABC):
                     if p.annotation is Context:
                         ctx_param_name = p.name
                         continue
+
+                    if get_origin(p.annotation) is Annotated:
+                        # extract context variables
+                        return_type, anno = get_args(p.annotation)
+                        if isinstance(anno, FromContext):
+                            ctx_variables.append(
+                                dataclasses.replace(
+                                    anno,
+                                    name=p.name,
+                                    return_type=return_type,
+                                )
+                            )
+                            continue
+
                     param_fields[p.name] = (
                         p.annotation,
                         Field(
@@ -268,7 +264,8 @@ class FunctionTool(BaseFunctionTool, ABC):
                         ),
                     )
 
-                tool_model = create_model(f"{tool_name}_model", **param_fields)
+                if len(param_fields):
+                    tool_model = create_model(f"{tool_name}_model", **param_fields)
 
             if not tool_schema and tool_model:
                 tool_schema = sanitize_schema(tool_model)
@@ -301,6 +298,7 @@ class FunctionTool(BaseFunctionTool, ABC):
                     # wrap fn in an async wrapper
                     fn=to_async_fn(fn),
                     name=tool_name,
+                    ctx_variables=ctx_variables,
                     ctx_param_name=ctx_param_name,
                     description=tool_desc.strip(),
                     schema=tool_schema,

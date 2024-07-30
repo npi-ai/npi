@@ -1,5 +1,3 @@
-from fastapi import Request
-
 from .context import Context
 
 
@@ -10,13 +8,11 @@ class ContextManager:
         self.contexts = {}
 
     def get_context(self, ssid: str) -> Context | None:
-        if ssid in self.contexts:
-            return self.contexts[ssid]
-        return None
+        return self.contexts.get(ssid, None)
 
     def save_context(self, ctx: Context):
         self.contexts[ctx.id] = ctx
 
     def release(self, tid: str) -> None:
         """delete a context by id"""
-        pass
+        del self.contexts[tid]

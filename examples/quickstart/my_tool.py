@@ -2,11 +2,11 @@ from npiai import FunctionTool, function
 
 
 class MyTool(FunctionTool):
+    name = "Fibonacci"
+    description = "My first NPi tool"
+
     def __init__(self):
-        super().__init__(
-            name="Fibonacci",
-            description="My first NPi tool",
-        )
+        super().__init__()
 
     @function
     def fibonacci(self, n: int) -> int:

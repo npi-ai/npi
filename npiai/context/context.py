@@ -1,14 +1,23 @@
 """This module contains the classes for the context and context message"""
 
 import datetime
+import json
 import uuid
 import asyncio
-from abc import ABC, abstractmethod
+from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type
+from textwrap import dedent
 
-from typing import List, Union, Dict
-
-
+from mem0 import Memory
 from litellm.types.completion import ChatCompletionMessageParam
+from pydantic import create_model, Field
+
+from npiai.utils import sanitize_schema, logger
+
+if TYPE_CHECKING:
+    from npiai.core import BaseTool
+
+
+_T = TypeVar("_T")
 
 
 class Task:
@@ -20,7 +29,7 @@ class Task:
         self.born_at = datetime.datetime.now()
         self.dialogues: List[Union[ChatCompletionMessageParam]] = []
         self.response: str
-        self._session: "Context" | None = None
+        self._session: Union["Context", None] = None
 
     async def step(self, msgs: List[Union[ChatCompletionMessageParam]]) -> None:
         """add a message to the context"""
@@ -38,20 +47,167 @@ class Task:
         return self.dialogues.copy()
 
 
-class Context(ABC):
-    __last_screenshot: str | None = None
+class Context:
+    id: str
 
-    def __init__(self) -> None:
+    _q: asyncio.Queue
+    _is_finished: bool
+    _is_failed: bool
+    _result: str
+    _failed_msg: str
+    _last_screenshot: str | None
+    _active_tool: Union["BaseTool", None]
+    _memory: Memory
+
+    def __init__(
+        self,
+        memory: Memory = Memory(),
+    ) -> None:
         self.id = str(uuid.uuid4())
-        self.q = asyncio.Queue()
-        self.__is_finished = False
-        self.__result: str = ""
-        self.__is_failed = False
-        self.__failed_msg: str = ""
-        self.__active_tool = None
+        self._q = asyncio.Queue()
+        self._is_finished = False
+        self._result = ""
+        self._is_failed = False
+        self._failed_msg = ""
+        self._last_screenshot = None
+        self._active_tool = None
+        self._memory = memory
 
-    @abstractmethod
-    def credentials(self, app_code: str) -> Dict[str, str]: ...
+    async def _ask_human(self, query: str):
+        """
+        Ask human if no memory is found
+
+        Args:
+            query: Memory search query
+        """
+        if not self._active_tool:
+            raise RuntimeError("No active tool found")
+
+        res = await self._active_tool.hitl.input(
+            ctx=self,
+            tool_name=self._active_tool.name,
+            message=f"Please provide the following information: {query}",
+        )
+
+        await self.save(f"Question: {query}. Answer: {res}")
+
+    async def save(self, info: str):
+        """
+        Save the given information into memory
+
+        Args:
+            info: Information to save
+        """
+        self._memory.add(info, run_id=self.id)
+
+    async def ask(
+        self,
+        query: str,
+        return_type: Type[_T] = str,
+        constraints: str = None,
+        _is_retry: bool = False,
+    ) -> _T:
+        """
+        Search the memory
+
+        Args:
+            query: Memory search query
+            return_type: Return type of the result
+            constraints: Search constraints
+            _is_retry: Retry flag
+        """
+
+        async def retry():
+            if _is_retry:
+                return
+
+            # invoke HITL and retry
+            await self._ask_human(query)
+            return await self.ask(query, return_type, constraints, _is_retry=True)
+
+        memories = self._memory.search(query, run_id=self.id, limit=10)
+        logger.debug(f"Retrieved memories: {json.dumps(memories)}")
+
+        if len(memories) == 0:
+            logger.info(f"No memories found for query: {query}")
+            return await retry()
+
+        mem_str = "- " + "\n- ".join(m["text"] for m in memories)
+
+        callback_model = create_model(
+            "MemorySearchCallback",
+            data=(
+                return_type,
+                Field(
+                    default=None,
+                    description="Retrieved memories. Set to `null` if no data is found.",
+                ),
+            ),
+        )
+
+        schema = sanitize_schema(callback_model)
+
+        # TODO: use npi llm client?
+        response = self._memory.llm.generate_response(
+            tool_choice="required",
+            messages=[
+                {
+                    "role": "system",
+                    "content": dedent(
+                        f"""
+                        You are an memory retrieval tool helping user extract the necessary
+                        information from the following memories. For any search query, you
+                        should call the `callback` function with the essential information
+                        set in the `data` argument. The `data` should be concise and precise, 
+                        and you should avoid adding any unnecessary information. For example, 
+                        instead of "Today is Friday", you should return "Friday" directly.
+                        You should follow the constraints if provided.
+                        
+                        Memories:
+                        """
+                    )
+                    + mem_str,
+                },
+                {
+                    "role": "user",
+                    "content": dedent(
+                        f"""
+                        Query: {query}
+                        Constraints: {constraints}
+                        """
+                    ),
+                },
+            ],
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "callback",
+                        "description": "Callback with retrieved information from the given memory",
+                        "parameters": schema,
+                    },
+                }
+            ],
+        )
+
+        tool_calls = response["tool_calls"]
+
+        if not tool_calls or tool_calls[0]["name"] != "callback":
+            logger.info(
+                f"No LLM callback found for query: {query}. Response: {json.dumps(response)}"
+            )
+            return await retry()
+
+        logger.debug(f"LLM callback: {json.dumps(tool_calls)}")
+
+        return tool_calls[0]["arguments"].get("data", None)
+
+    # @abstractmethod
+    # NOTE: this method should not be abstract
+    # since we need to create an empty context when running locally
+    # SEE: FunctionTool::call()
+    def credentials(self, app_code: str) -> Dict[str, str]:
+        return {}
 
     def entry(self):
         pass
@@ -75,28 +231,28 @@ class Context(ABC):
             None if no screenshot is available or the screenshot stays unchanged.
             Otherwise, return the latest screenshot.
         """
-        if not self.__active_tool or self.is_finished():
+        if not self._active_tool or self.is_finished():
             return None
 
-        screenshot = await self.__active_tool.get_screenshot()
+        screenshot = await self._active_tool.get_screenshot()
 
-        if screenshot == self.__last_screenshot:
+        if screenshot == self._last_screenshot:
             return None
 
-        self.__last_screenshot = screenshot
+        self._last_screenshot = screenshot
 
         return screenshot
 
-    async def send(self, cb) -> None:
+    async def send(self, cb: str) -> None:
         """send a message to the context"""
         # self.cb_dict[cb.id()] = cb
-        await self.q.put(cb)
+        await self._q.put(cb)
 
     async def fetch(self):
         """receive a message"""
         while not self.is_failed() and not self.is_finished():
             try:
-                item = self.q.get_nowait()
+                item = self._q.get_nowait()
                 if item:
                     return item
             except asyncio.QueueEmpty:
@@ -107,33 +263,30 @@ class Context(ABC):
         # return self.cb_dict[cb_id]
 
     def finish(self, msg: str):
-        self.__result = msg
-        self.__is_finished = True
-        self.__last_screenshot = None
-        self.q.task_done()
+        self._result = msg
+        self._is_finished = True
+        self._last_screenshot = None
+        self._q.task_done()
 
     def failed(self, msg: str):
-        self.__failed_msg = msg
-        self.__is_failed = True
-        self.q.task_done()
+        self._failed_msg = msg
+        self._is_failed = True
+        self._q.task_done()
 
     def is_finished(self) -> bool:
-        return self.__is_finished
+        return self._is_finished
 
     def get_result(self) -> str:
-        return self.__result
+        return self._result
 
     def is_failed(self) -> bool:
-        return self.__is_failed
+        return self._is_failed
 
     def get_failed_msg(self) -> str:
-        return self.__failed_msg
+        return self._failed_msg
 
-    def retrieve(self, msg: str) -> str:
-        pass
+    def bind(self, tool: "BaseTool"):
+        self._active_tool = tool
 
-    def bind(self, tool):
-        self.__active_tool = tool
-
-    def get_tool(self):
-        return self.__active_tool
+    def get_tool(self) -> Union["BaseTool", None]:
+        return self._active_tool
