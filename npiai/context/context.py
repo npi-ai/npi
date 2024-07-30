@@ -100,7 +100,7 @@ class Context:
         Args:
             info: Information to save
         """
-        self._memory.add(
+        m = self._memory.add(
             data=info,
             run_id=self.id,
             metadata={"raw": info},
@@ -121,6 +121,7 @@ class Context:
         )
         # clear cache
         self._query_cache = {}
+        logger.debug(f"Saved memory: {m}")
 
     async def ask(
         self,
