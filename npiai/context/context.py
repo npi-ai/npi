@@ -89,7 +89,7 @@ class Context:
             message=f"Please provide the following information: {query}",
         )
 
-        await self.save(f"Question: {query}. Answer: {res}")
+        await self.save(f"Question: {query}? Answer: {res}")
 
     async def save(self, info: str):
         """
@@ -155,20 +155,15 @@ class Context:
                     "role": "system",
                     "content": dedent(
                         f"""
-                        You are an memory retrieval tool helping user extract the necessary
-                        information from the following memories. For any search query, you
-                        should call the `callback` function with the essential information
-                        set in the `data` argument.
-                        
-                        ## Rules
-                        - The `data` should be concise and precise, and you should avoid 
-                        adding any unnecessary information. For example, instead of "Today 
-                        is Friday", you should return "Friday" directly.
-                        - You should ensure the retrieved data exactly matches the query. For
-                        example, "#general channel id is 12345" matches the query "#general
-                        channel id" but mismatches the query "#random channel id".
-                        - You should also follow the constraints if provided.
-                        
+                        Optimize the functioning of a memory retrieval AI tool by adhering to the following guidelines for processing search queries:
+
+                        1. Respond to search queries by invoking the `callback` function, supplying the required information within the `data` argument.
+                        2. When delivering the `data`, aim for brevity and accuracy—only include the core details pertinent to the query.
+                           - For instance, rather than "The capital of France is Paris," provide the succinct "Paris."
+                        3. Ensure the content in `data` is an exact match to the search query.
+                           - As an example, "The password for the Wi-Fi is '1234Abcd'" should only be returned if the query is "Wi-Fi password" and not for "macOS password" or any other password-related question.
+                        4. Adhere to any specified constraints in the retrieval process.
+
                         ## Memories
                         """
                     )
