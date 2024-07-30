@@ -6,6 +6,7 @@ import json
 import re
 from abc import ABC
 from typing import Dict, List, Optional, Any, Type, Annotated, get_args, get_origin
+from textwrap import dedent
 
 import yaml
 
@@ -28,6 +29,7 @@ from npiai.utils import (
     is_template_str,
 )
 from npiai.context import Context
+from npiai.constant import CTX_QUERY_POSTFIX
 
 __NPI_TOOL_ATTR__ = "__NPI_TOOL_ATTR__"
 
@@ -258,17 +260,19 @@ class FunctionTool(BaseFunctionTool, ABC):
                             )
 
                             if is_template_str(anno.query):
-                                param_fields[f"{p.name}__query"] = (
+                                param_fields[f"{p.name}{CTX_QUERY_POSTFIX}"] = (
                                     str,
                                     Field(
                                         default=anno.query,
-                                        description=f"""
-                                        This parameter is a query to retrieve information from the memory storage.
-                                        For the following query, you should replace the strings surrounded by braces `{{}}`
-                                        with the information from current context.
-                                        
-                                        Query: {anno.query}
-                                        """,
+                                        description=dedent(
+                                            f"""
+                                            This parameter is a query to retrieve information from the memory storage.
+                                            For the following query, you should replace the strings surrounded by braces
+                                            `{{}}` with the information from current context.
+                                            
+                                            Query: {anno.query}
+                                            """
+                                        ),
                                     ),
                                 )
                             continue
