@@ -33,6 +33,11 @@ async def main():
         result = await tool.chat(ctx=ctx, instruction="What's the test id for @Bob?")
         print(f"Result: {result}")
 
+        result = await tool.chat(
+            ctx=ctx, instruction="What are the test id's for @Alice and @Bob?"
+        )
+        print(f"Result: {result}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
