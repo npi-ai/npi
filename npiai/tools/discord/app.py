@@ -38,32 +38,32 @@ Workflow:
 
 
 class Discord(FunctionTool):
-    client: discord.Client
+    name = "discord"
+    description = "Send/Retrieve messages to/from discord channels"
+    system_prompt = __PROMPT__
+
+    _client: discord.Client
     _access_token: str
 
     def __init__(self, access_token: str = None):
+        super().__init__()
+
         self._access_token = access_token or os.environ.get(
             "DISCORD_ACCESS_TOKEN", None
         )
 
-        super().__init__(
-            name="discord",
-            description="Send/Retrieve messages to/from discord channels",
-            system_prompt=__PROMPT__,
-        )
-
-        self.client = discord.Client(intents=discord.Intents.default())
+        self._client = discord.Client(intents=discord.Intents.default())
 
     async def start(self):
         if self._access_token is None:
             raise UnauthorizedError("Discord credentials are not found")
 
         await super().start()
-        await self.client.login(self._access_token)
+        await self._client.login(self._access_token)
 
     async def end(self):
         await super().end()
-        await self.client.close()
+        await self._client.close()
 
     def parse_user(self, user: discord.User):
         return {
@@ -106,7 +106,7 @@ class Discord(FunctionTool):
         Args:
             user_id: The ID of the **user** who will receive the direct message. Note that this is not the channel ID.
         """
-        user = await self.client.fetch_user(user_id)
+        user = await self._client.fetch_user(user_id)
         channel = await user.create_dm()
 
         return f"Direct message channel created. Channel ID: {channel.id}"
@@ -120,7 +120,7 @@ class Discord(FunctionTool):
             channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
             max_results: The maximum number of messages to fetch.
         """
-        channel = await self.client.fetch_channel(channel_id)
+        channel = await self._client.fetch_channel(channel_id)
         messages = []
 
         async for msg in channel.history(limit=max_results):
@@ -141,7 +141,7 @@ class Discord(FunctionTool):
             channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
             content: The message to send.
         """
-        channel = await self.client.fetch_channel(channel_id)
+        channel = await self._client.fetch_channel(channel_id)
         msg = await channel.send(content)
 
         logger.debug(f"[{self.name}]: Sent message: (id: {msg.id}) {msg.content}")
@@ -158,7 +158,7 @@ class Discord(FunctionTool):
             message_id: The ID of the message to reply. You should ask the user for it if not provided.
             content: The message to reply.
         """
-        channel = await self.client.fetch_channel(channel_id)
+        channel = await self._client.fetch_channel(channel_id)
         msg = await channel.fetch_message(message_id)
         reply = await msg.reply(content)
 
@@ -177,7 +177,7 @@ class Discord(FunctionTool):
             channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
             message_id: The ID of the message being replied to. You should ask the user for it if not provided.
         """
-        channel = await self.client.fetch_channel(channel_id)
+        channel = await self._client.fetch_channel(channel_id)
         ref_msg = await channel.fetch_message(message_id)
         last_msg = ref_msg
 

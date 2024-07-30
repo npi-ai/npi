@@ -34,6 +34,7 @@ grpcio = "^1.62.1"
 protobuf = "^5.27.2"
 python-slugify = "^8.0.4"
 langchain = "^0.2.7"
+mem0ai = "^0.0.9"
 
 
 [tool.poetry.group.dev.dependencies]

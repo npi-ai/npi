@@ -42,7 +42,8 @@ class Chat(pbgrpc.PlaygroundServicer):
         response = pb.Response()
         if request.code == pb.RequestCode.CHAT:
             try:
-                ctx = self.ctx_manager.new_thread(request.chat_request)
+                ctx = Context()
+                self.ctx_manager.save_context(ctx)
                 response.thread_id = ctx.id
                 response.code = pb.ResponseCode.SUCCESS
                 decoded_bytes = base64.b64decode(request.authorization)
@@ -84,7 +85,7 @@ class Chat(pbgrpc.PlaygroundServicer):
         request: pb.GetAppScreenRequest,
         _: grpc.ServicerContext,
     ) -> pb.GetAppScreenResponse:
-        thread = self.ctx_manager.get_thread(request.thread_id)
+        thread = self.ctx_manager.get_context(request.thread_id)
 
         if not thread:
             logger.error(f"context not found {request.thread_id}")
@@ -95,7 +96,7 @@ class Chat(pbgrpc.PlaygroundServicer):
 
     async def __fetch_thread(self, req: pb.Request, resp: pb.Response):
         logger.info(f"fetching chat [{req.thread_id}]")
-        thread = self.ctx_manager.get_thread(req.thread_id)
+        thread = self.ctx_manager.get_context(req.thread_id)
         if not thread:
             logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED
@@ -134,7 +135,7 @@ class Chat(pbgrpc.PlaygroundServicer):
 
     async def __action(self, req: pb.Request, resp: pb.Response):
         logger.info(f"received action chat [{req.thread_id}]")
-        thread = self.ctx_manager.get_thread(req.thread_id)
+        thread = self.ctx_manager.get_context(req.thread_id)
         if not thread:
             logger.error("context not found")
             resp.code = pb.ResponseCode.FAILED

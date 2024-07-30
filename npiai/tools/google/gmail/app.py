@@ -40,27 +40,28 @@ def convert_google_cred_to_oauth2_cred(
 
 
 class Gmail(FunctionTool):
+    name = "gmail"
+    description = 'interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")'
+    system_prompt = "You are a Gmail Agent helping users to manage their emails"
+
+    _creds: GoogleCredentials | None
+    _gmail_client: GmailClientWrapper
 
     def __init__(self, creds: GoogleCredentials | None = None):
-        super().__init__(
-            name="gmail",
-            description='interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")',
-            system_prompt="You are a Gmail Agent helping users to manage their emails",
-        )
-        self.creds = creds
-        self.gmail_client = None
+        super().__init__()
+        self._creds = creds
 
     async def start(self):
-        if self.creds is None:
+        if self._creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
-            self.creds = GoogleCredentials.from_authorized_user_file(
+            self._creds = GoogleCredentials.from_authorized_user_file(
                 filename=cred_file, scopes="https://mail.google.com/"
             )
 
-        self.gmail_client = GmailClientWrapper(
-            _creds=convert_google_cred_to_oauth2_cred(self.creds)
+        self._gmail_client = GmailClientWrapper(
+            _creds=convert_google_cred_to_oauth2_cred(self._creds)
         )
         await super().start()
 
@@ -69,7 +70,7 @@ class Gmail(FunctionTool):
 
         for message_id in message_ids:
             try:
-                emails.append(self.gmail_client.get_message_by_id(message_id))
+                emails.append(self._gmail_client.get_message_by_id(message_id))
             except HttpError:
                 pass
 
@@ -107,18 +108,18 @@ class Gmail(FunctionTool):
             raise Exception("Error: No messages found for the given IDs")
 
         label_name_map = {
-            label.name: label for label in self.gmail_client.list_labels()
+            label.name: label for label in self._gmail_client.list_labels()
         }
         labels_to_add = []
 
         for lbl in labels:
             if lbl not in label_name_map:
-                new_label = self.gmail_client.create_label(lbl)
+                new_label = self._gmail_client.create_label(lbl)
                 label_name_map[lbl] = new_label
             labels_to_add.append(label_name_map[lbl])
 
         for msg in messages:
-            self.gmail_client.add_labels(msg, labels_to_add)
+            self._gmail_client.add_labels(msg, labels_to_add)
 
         return "Labels added"
 
@@ -138,7 +139,7 @@ class Gmail(FunctionTool):
             raise Exception("Error: No messages found for the given IDs")
 
         label_name_map = {
-            label.name: label for label in self.gmail_client.list_labels()
+            label.name: label for label in self._gmail_client.list_labels()
         }
         labels_to_remove = []
 
@@ -148,7 +149,7 @@ class Gmail(FunctionTool):
 
         if len(labels_to_remove):
             for msg in messages:
-                self.gmail_client.remove_labels(msg, labels_to_remove)
+                self._gmail_client.remove_labels(msg, labels_to_remove)
 
         return "Labels removed"
 
@@ -171,7 +172,7 @@ class Gmail(FunctionTool):
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
-        msg = self.gmail_client.create_draft(
+        msg = self._gmail_client.create_draft(
             sender="",
             to=to,
             cc=cc,
@@ -219,7 +220,7 @@ class Gmail(FunctionTool):
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
-        msg = self.gmail_client.create_draft(
+        msg = self._gmail_client.create_draft(
             sender="",
             to=to,
             cc=cc,
@@ -268,7 +269,7 @@ class Gmail(FunctionTool):
             cc: The list of email addresses to cc.
             bcc: The list of email addresses to bcc.
         """
-        msg = self.gmail_client.send_message(
+        msg = self._gmail_client.send_message(
             sender="",
             to=to,
             cc=cc,
@@ -290,7 +291,7 @@ class Gmail(FunctionTool):
             query: A Gmail query to match emails.
             max_results: Maximum number of results to return.
         """
-        msgs = self.gmail_client.get_messages(
+        msgs = self._gmail_client.get_messages(
             query=query,
             max_results=max_results,
         )
@@ -329,7 +330,7 @@ class Gmail(FunctionTool):
         # if not approved:
         #     return 'The email could not be sent due to user rejection'
 
-        msg = self.gmail_client.send_message(
+        msg = self._gmail_client.send_message(
             sender="",
             to=to,
             cc=cc,
@@ -350,7 +351,7 @@ class Gmail(FunctionTool):
             sender: The reply message sender. This should be the recipient of the last email, and you can find it in the "To: ..." line.
         """
         while True:
-            messages = self.gmail_client.get_messages(
+            messages = self._gmail_client.get_messages(
                 query=f"is:unread from:{sender}",
                 max_results=1,
             )

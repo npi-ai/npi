@@ -105,6 +105,10 @@ def html_to_md(html: str, **options) -> str:
 
 
 class Twitter(BrowserTool):
+    name = "twitter"
+    description = "retrieve and manage tweets"
+    system_prompt = __SYSTEM_PROMPT__
+
     _username: str
     _password: str
 
@@ -116,9 +120,6 @@ class Twitter(BrowserTool):
         headless: bool = True,
     ):
         super().__init__(
-            name="twitter",
-            description="retrieve and manage tweets",
-            system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
 

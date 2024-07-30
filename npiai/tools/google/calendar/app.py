@@ -4,7 +4,7 @@ import datetime
 import json
 import os
 
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build, Resource
 from google.oauth2.credentials import Credentials as GoogleCredentials
 
 from npiai import function, FunctionTool
@@ -17,26 +17,29 @@ from npiai.context import Context
 
 
 class GoogleCalendar(FunctionTool):
-    def __init__(self, creds: GoogleCredentials | None = None):
-        super().__init__(
-            name="google_calendar",
-            description="Manage events on Google Calendar",
-            system_prompt="You are an assistant interacting with Google Calendar API. "
-            "Your job is the selecting the best function based the tool list.",
-        )
+    name = "google_calendar"
+    description = "Manage events on Google Calendar"
+    system_prompt = """
+    You are an assistant interacting with Google Calendar API. 
+    Your job is the selecting the best function based the tool list.
+    """
 
-        self.creds = creds
-        self.service = None
+    _creds: GoogleCredentials | None
+    _service: Resource
+
+    def __init__(self, creds: GoogleCredentials | None = None):
+        super().__init__()
+        self._creds = creds
 
     async def start(self):
-        if self.creds is None:
+        if self._creds is None:
             cred_file = os.environ.get("GOOGLE_CREDENTIAL")
             if cred_file is None:
                 raise UnauthorizedError("Google credential file not found")
-            self.creds = GoogleCredentials.from_authorized_user_file(
+            self._creds = GoogleCredentials.from_authorized_user_file(
                 filename=cred_file, scopes="https://www.googleapis.com/auth/calendar"
             )
-        self.service = build("calendar", "v3", credentials=self.creds)
+        self._service = build("calendar", "v3", credentials=self._creds)
         await super().start()
 
     @function
@@ -59,7 +62,7 @@ class GoogleCalendar(FunctionTool):
     def get_timezone(self):
         """Get the user's timezone"""
         res = (
-            self.service.calendars()
+            self._service.calendars()
             .get(calendarId="primary")  # pylint: disable=maybe-no-member
             .execute()
         )
@@ -93,7 +96,7 @@ class GoogleCalendar(FunctionTool):
             )  # pylint: disable=maybe-no-member
 
         events_result = (
-            self.service.events()
+            self._service.events()
             .list(  # pylint: disable=maybe-no-member
                 calendarId=calendar_id,
                 timeMin=time_min,
@@ -156,7 +159,7 @@ class GoogleCalendar(FunctionTool):
         }
 
         event = (
-            self.service.events()
+            self._service.events()
             .insert(  # pylint: disable=maybe-no-member
                 calendarId=calendar_id, body=event
             )

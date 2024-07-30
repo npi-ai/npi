@@ -80,12 +80,12 @@ def load_google_credentials(secret_file: str, scopes: List[str], token_file: str
 
 
 class Negotiator(FunctionTool):
+    name = "calendar_negotiator"
+    description = "Schedule meetings with others using gmail and google calendar"
+    system_prompt = PROMPT
+
     def __init__(self, secret_file: str, token_file: str = ""):
-        super().__init__(
-            name="calendar_negotiator",
-            description="Schedule meetings with others using gmail and google calendar",
-            system_prompt=PROMPT,
-        )
+        super().__init__()
         if token_file == "":
             token_file = secret_file.replace("secret", "token")
 

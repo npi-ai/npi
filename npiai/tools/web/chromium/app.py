@@ -8,11 +8,12 @@ You are a general chromium-based autonomous agent helping user to finish any tas
 
 
 class Chromium(BrowserTool):
+    name = "chrome"
+    description = "Perform any task on any webpage"
+    system_prompt = __SYSTEM_PROMPT__
+
     def __init__(self, navigator_llm: LLM = None, headless: bool = True):
         super().__init__(
-            name="chrome",
-            description="Perform any task on any webpage",
-            system_prompt=__SYSTEM_PROMPT__,
             headless=headless,
         )
         self.add_tool(

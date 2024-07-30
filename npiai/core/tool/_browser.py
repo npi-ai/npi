@@ -3,10 +3,10 @@ import base64
 from markdownify import MarkdownConverter
 from playwright.async_api import ElementHandle, Error
 
-from npiai.core.tool._function import FunctionTool, function
-from npiai.core.browser._playwright import PlaywrightContext
-from npiai.context import Context
+from npiai.core.browser import PlaywrightContext
 from npiai.utils import logger
+
+from ._function import FunctionTool, function
 
 
 class MdConverter(MarkdownConverter):
@@ -16,12 +16,11 @@ class MdConverter(MarkdownConverter):
 
 
 class BrowserTool(FunctionTool):
+    use_screenshot: bool
+    playwright: PlaywrightContext
 
     def __init__(
         self,
-        name: str,
-        description: str,
-        system_prompt: str = None,
         playwright: PlaywrightContext = None,
         use_screenshot: bool = True,
         headless: bool = True,
@@ -30,18 +29,11 @@ class BrowserTool(FunctionTool):
         Initialize a Browser App
 
         Args:
-            name: Name of the chrome tools
-            description: A brief description of the chrome tools. This will be used if the tools is called as a tool.
-            system_prompt: System prompt of the chrome tools.
             playwright: Playwright context to use. A new playwright context is created if None.
             use_screenshot: Whether to send a screenshot of the current page to the vision model. This should be used with a navigator and a vision model.
             headless: Whether to run playwright in headless mode.
         """
-        super().__init__(
-            name=name,
-            description=description,
-            system_prompt=system_prompt,
-        )
+        super().__init__()
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
 
