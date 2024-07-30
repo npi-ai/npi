@@ -100,7 +100,25 @@ class Context:
         Args:
             info: Information to save
         """
-        self._memory.add(info, run_id=self.id, metadata={"raw": info})
+        self._memory.add(
+            data=info,
+            run_id=self.id,
+            metadata={"raw": info},
+            prompt=dedent(
+                f"""
+                Deduce the facts, preferences, and memories from the provided text.
+                Just return the facts, preferences, and memories in bullet points:
+                Natural language text: {info}
+                
+                Constraint for deducing facts, preferences, and memories:
+                - The facts, preferences, and memories should be concise and informative.
+                - Don't start by "The person likes Pizza". Instead, start with "Likes Pizza".
+                - Don't remember the user/agent details provided. Only remember the facts, preferences, and memories.
+                
+                Deduced facts, preferences, and memories:
+                """
+            ),
+        )
         # clear cache
         self._query_cache = {}
 
