@@ -1,5 +1,5 @@
 from typing import Annotated
-from npiai import FunctionTool, function, FromContext, agent, Context
+from npiai import FunctionTool, function, FromContext, agent, Context, LLM, Source, Description, Field, Schema
 from npiai.hitl_handler import ConsoleHandler
 import asyncio
 
@@ -11,15 +11,40 @@ class MyTool(FunctionTool):
     @function
     def get_test_id(
         self,
-        test_id: Annotated[int, FromContext(query="{user}'s test id")],
+        ctx,
+        target_user: str,
+    ):
+        """
+        Get test id
+        """
+
+        ctx.rag(query="xxxxxx") # => c
+        ctx.kv.get("channel_id") # => d
+        obj = Schema()
+        ctx.sql.exec(Schema, f'select channel_id from users where user= {user}') # => e
+        ctx.memory.ask(f"What's the channel_id for {target_user}?") # => RAG
+        ctx.memory.db.query(sql="") # SQL
+        ctx.memory.get("channel_id") # point query
+
+        # 长短期记忆
+        #
+        return obj
+
+    @function
+    def get_test_id1(
+            self,
+            ctx,
+            user: str, # default from LLM
+            c: Annotated[Schema, FromRAG(query="LLM"),
+            d: Annotated[Schema, FromKV(key="channel_id"),
+            e: Annotated[Schema, FromDB(sql="select channel_id from users where user= {user}"),
     ):
         """
         Get test id
 
-        Args:
-            test_id: test id
         """
-        return test_id
+    # ...
+    return None
 
 
 async def main():

@@ -234,7 +234,7 @@ SHELL ["/bin/bash", "-c"]
 
 WORKDIR /npiai/tools
 RUN poetry install
-ENV NPIAI_TOOL_SERVER_MODE=true
+ENV NPIAI_SERVICE_MODE=true
 
 ENTRYPOINT ["poetry", "run", "python", "main.py", "server"]
 `
