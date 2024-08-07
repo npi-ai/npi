@@ -100,6 +100,7 @@ class BaseTool(ABC):
             "metadata": {
                 "name": self.name,
                 "description": self.description,
+                "system_prompt": self.system_prompt,
                 "provider": self.provider,
             },
             "spec": {
