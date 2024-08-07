@@ -62,8 +62,10 @@ class Context:
 
     def __init__(
         self,
-        memory: Memory = Memory(),
+        memory: Memory | None = None,
     ) -> None:
+        if not memory:
+            memory = Memory()
         self.id = str(uuid.uuid4())
         self._q = asyncio.Queue()
         self._is_finished = False
