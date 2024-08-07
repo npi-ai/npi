@@ -42,6 +42,7 @@ class FunctionRegistration:
     def get_tool_param(self) -> ChatCompletionToolParam:
         tool: ChatCompletionToolParam = {
             "type": "function",
+            "strict": True,
             "function": {
                 "name": self.name,
                 "description": self.description,
