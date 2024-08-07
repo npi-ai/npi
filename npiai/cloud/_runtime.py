@@ -120,5 +120,5 @@ class ToolRuntime:
         # signal.signal(signal.SIGKILL, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
         for tool in self.tools.values():
-            logging.info(f"the tool:{tool.get_name()} has started", exc_info=True)
+            logging.info(f"the tool:{tool.name} has started", exc_info=True)
         uvicorn.run(self.app, host="0.0.0.0", port=self.port)
