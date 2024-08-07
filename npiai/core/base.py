@@ -57,7 +57,9 @@ class BaseTool(ABC):
         """Stop and dispose the tools"""
         ...
 
-    async def exec(self, ctx: Context, fn_name: str, args: Dict[str, Any] = None):
+    async def exec(
+        self, ctx: Context, fn_name: str, args: Dict[str, Any] = None
+    ) -> str:
         if fn_name not in self._fn_map:
             raise RuntimeError(
                 f"[{self.name}]: function `{fn_name}` not found. Available functions: {self._fn_map.keys()}"
@@ -82,7 +84,9 @@ class BaseTool(ABC):
                 constraints=ctx_var.constraints,
             )
 
-        return await fn.fn(**args)
+        res = await fn.fn(**args)
+
+        return str(res)
 
     def use_hitl(self, hitl: HITL):
         self._hitl = hitl

@@ -8,7 +8,7 @@ from npiai.types.shot import Shot
 from npiai.types.from_context import FromContext
 from npiai.constant import CTX_QUERY_POSTFIX
 
-ToolFunction = Callable[..., Awaitable[str]]
+ToolFunction = Callable[..., Awaitable[Any]]
 
 
 @dataclass(frozen=True)
