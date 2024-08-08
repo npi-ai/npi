@@ -23,17 +23,17 @@ class FunctionRegistration:
     few_shots: Optional[List[Shot]] = None
 
     def get_meta(self):
-        params = {}
-
-        for name in self.schema:
-            # remove context variable queries
-            if not name.endswith(CTX_QUERY_POSTFIX):
-                params[name] = self.schema[name]
+        # params = {}
+        #
+        # for name in self.schema:
+        #     # remove context variable queries
+        #     if not name.endswith(CTX_QUERY_POSTFIX):
+        #         params[name] = self.schema[name]
 
         return {
             "description": self.description,
             "name": self.name,
-            "parameters": params,
+            "parameters": self.schema,
             "fewShots": (
                 [asdict(ex) for ex in self.few_shots] if self.few_shots else None
             ),
