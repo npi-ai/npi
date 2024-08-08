@@ -198,7 +198,7 @@ class GitHub(FunctionTool):
                 {
                     "name": repo.full_name,
                     "owner": repo.owner.login,
-                    "url": repo.url,
+                    "url": repo.html_url,
                     "description": repo.description,
                     "topics": repo.topics,
                     "created_at": repo.created_at.isoformat(),
