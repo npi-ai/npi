@@ -15,7 +15,7 @@ from npiai.core.base import BaseTool
 
 from ._context import CloudContext
 from ._client import Client
-from ._message import WSClientMessage
+from ._message import WSClientMessage, ToolCallMessage
 from ._hitl import CloudHITL
 
 
@@ -149,13 +149,13 @@ class ToolRuntime:
             async with tool_cls.from_context(ctx) as instance:
                 instance.use_hitl(CloudHITL())
 
-                async def run_tool(msg: WSClientMessage):
+                async def run_tool(call_msg: ToolCallMessage):
                     try:
                         res = await instance.exec(
-                            ctx, msg["tool_name"], msg["arguments"]
+                            ctx, call_msg["tool_name"], call_msg["arguments"]
                         )
                         await ctx.send_execution_result(
-                            tool_call_id=msg["tool_call_id"], result=res
+                            tool_call_id=call_msg["tool_call_id"], result=res
                         )
                         screenshot = await instance.get_screenshot()
                         if screenshot:
@@ -163,7 +163,7 @@ class ToolRuntime:
                     except Exception as e:
                         utils.logger.error(e)
                         await ctx.send_error_message(
-                            f"Exception while executing {msg['tool_name']}: {e}"
+                            f"Exception while executing {call_msg['tool_name']}: {e}"
                         )
 
                 while True:
@@ -178,6 +178,6 @@ class ToolRuntime:
         except WebSocketDisconnect:
             if ctx:
                 ctx.detach_websocket()
-        except Exception as e:
-            utils.logger.error(e)
+        except Exception as err:
+            utils.logger.error(err)
             raise HTTPException(status_code=500, detail="Internal Server Error")
