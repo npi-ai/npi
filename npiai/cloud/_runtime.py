@@ -168,7 +168,6 @@ class ToolRuntime:
 
                 while True:
                     msg: WSClientMessage = await ws.receive_json()
-                    print(msg)
 
                     match msg.get("type", None):
                         case "tool_call":
@@ -178,7 +177,7 @@ class ToolRuntime:
                             await ctx.put_action_result(msg)
         except WebSocketDisconnect:
             if ctx:
-                await ctx.detach_websocket()
+                ctx.detach_websocket()
         except Exception as e:
             utils.logger.error(e)
             raise HTTPException(status_code=500, detail="Internal Server Error")
