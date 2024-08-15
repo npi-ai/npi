@@ -12,8 +12,10 @@ from slugify import slugify
 from npiai import function, BrowserTool
 from npiai.context import Context
 from npiai.core.browser import NavigatorAgent
-from npiai.utils import logger
+from npiai.utils import logger, is_cloud_env
 from npiai.error.auth import UnauthorizedError
+from npiai.llm import LLM
+from npiai.constant import app
 
 __SYSTEM_PROMPT__ = """
 You are a Twitter Agent helping user retrieve and manage tweets. 
@@ -47,8 +49,6 @@ Steps:
 """
 
 __ROUTES__ = {"login": "https://x.com/", "home": "https://x.com/home"}
-
-from npiai.llm import LLM
 
 
 class ImageFilterConverter(MarkdownConverter):
@@ -128,6 +128,15 @@ class Twitter(BrowserTool):
         self.ctx = None
 
         self.add_tool(NavigatorAgent(llm=navigator_llm, playwright=self.playwright))
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Twitter":
+        if not is_cloud_env():
+            raise RuntimeError(
+                "Twitter tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.TWITTER)
+        return Twitter(**creds)
 
     async def start(self):
         if self._username is None:

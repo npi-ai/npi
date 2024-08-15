@@ -2,8 +2,9 @@ import os
 
 from twilio.rest import Client
 
-from npiai import FunctionTool, function
+from npiai import FunctionTool, function, utils, Context
 from npiai.error.auth import UnauthorizedError
+from npiai.constant import app
 
 
 class Twilio(FunctionTool):
@@ -26,6 +27,15 @@ class Twilio(FunctionTool):
         self._sid = account_sid or os.environ.get("TWILIO_ACCOUNT_SID", None)
         self._token = auth_token or os.environ.get("TWILIO_AUTH_TOKEN", None)
         self._from_number = from_number or os.environ.get("TWILIO_FROM_NUMBER", None)
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Twilio":
+        if not utils.is_cloud_env():
+            raise RuntimeError(
+                "Twilio tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.TWILIO)
+        return Twilio(**creds)
 
     async def start(self):
         if not self._sid:

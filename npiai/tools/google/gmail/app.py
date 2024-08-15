@@ -8,9 +8,10 @@ from googleapiclient.errors import HttpError
 from markdown import markdown
 from simplegmail.message import Message
 
-from npiai import FunctionTool, function
+from npiai import FunctionTool, function, utils
 from npiai.error import UnauthorizedError
 from npiai.context import Context
+from npiai.constant import app
 
 from google.oauth2.credentials import Credentials as GoogleCredentials
 from oauth2client.client import OAuth2Credentials
@@ -50,6 +51,15 @@ class Gmail(FunctionTool):
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__()
         self._creds = creds
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Gmail":
+        if not utils.is_cloud_env():
+            raise RuntimeError(
+                "Gmail tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.GMAIL)
+        return Gmail(creds=GoogleCredentials.from_authorized_user_info(creds))
 
     async def start(self):
         if self._creds is None:

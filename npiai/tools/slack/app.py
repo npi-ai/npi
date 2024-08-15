@@ -6,9 +6,10 @@ from typing import Literal
 from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 
 from npiai.context import Context
-from npiai.utils import logger
+from npiai.utils import logger, is_cloud_env
 from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
+from npiai.constant import app
 
 __PROMPT__ = """
 You are a Slack Agent helping user send/retrieve messages to/from discord channels. 
@@ -38,6 +39,15 @@ class Slack(FunctionTool):
     def __init__(self, access_token: str = None):
         super().__init__()
         self._access_token = access_token or os.environ.get("SLACK_ACCESS_TOKEN", None)
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Slack":
+        if not is_cloud_env():
+            raise RuntimeError(
+                "Slack tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.SLACK)
+        return Slack(access_token=creds["access_token"])
 
     async def start(self):
         if self._access_token is None:
