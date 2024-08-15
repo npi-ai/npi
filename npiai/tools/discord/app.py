@@ -1,13 +1,13 @@
 import asyncio
 import json
 import os
-from typing import Literal
+from typing import Annotated
 
 import discord
 
+from npiai import FunctionTool, function, FromContext
 from npiai.context import Context
 from npiai.utils import logger, is_cloud_env
-from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
 from npiai.constant import app
 
@@ -92,29 +92,31 @@ class Discord(FunctionTool):
             "mention_everyone": msg.mention_everyone,
         }
 
-    @function
-    async def ask_for_id(
-        self, ctx: Context, name: Literal["user", "channel", "message"]
-    ):
-        """
-        Ask the user to provide recipient's user id, channel id, or message id.
-        Args:
-            ctx: NPi context.
-            name: The type of id to ask for.
-        """
-        return await self.hitl.input(
-            ctx,
-            self.name,
-            f"Please provide recipient's {name} ID to send messages to",
-        )
+    # @function
+    # async def ask_for_id(
+    #     self, ctx: Context, name: Literal["user", "channel", "message"]
+    # ):
+    #     """
+    #     Ask the user to provide recipient's user id, channel id, or message id.
+    #     Args:
+    #         ctx: NPi context.
+    #         name: The type of id to ask for.
+    #     """
+    #     return await self.hitl.input(
+    #         ctx,
+    #         self.name,
+    #         f"Please provide recipient's {name} ID to send messages to",
+    #     )
 
     @function
-    async def create_dm(self, user_id: int):
+    async def create_dm(
+        self, user_id: Annotated[int, FromContext(query="id of user {user}")]
+    ):
         """
         Create a direct message channel with a specific user.
 
         Args:
-            user_id: The ID of the **user** who will receive the direct message. Note that this is not the channel ID.
+            user_id: The ID of the user who will receive the direct message.
         """
         user = await self._client.fetch_user(user_id)
         channel = await user.create_dm()
@@ -122,12 +124,16 @@ class Discord(FunctionTool):
         return f"Direct message channel created. Channel ID: {channel.id}"
 
     @function
-    async def fetch_history(self, channel_id: int, max_results: int = 1):
+    async def fetch_history(
+        self,
+        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        max_results: int = 1,
+    ):
         """
         Fetch history messages from the discord channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
+            channel_id: The ID of the channel to send the message to.
             max_results: The maximum number of messages to fetch.
         """
         channel = await self._client.fetch_channel(channel_id)
@@ -143,12 +149,16 @@ class Discord(FunctionTool):
         return json.dumps(messages, ensure_ascii=False)
 
     @function
-    async def send_message(self, channel_id: int, content: str):
+    async def send_message(
+        self,
+        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        content: str,
+    ):
         """
         Send a message to the discord channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
+            channel_id: The ID of the channel to send the message to.
             content: The message to send.
         """
         channel = await self._client.fetch_channel(channel_id)
@@ -159,13 +169,18 @@ class Discord(FunctionTool):
         return f"Message sent. ID: {msg.id}"
 
     @function
-    async def reply(self, channel_id: int, message_id: int, content: str):
+    async def reply(
+        self,
+        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        message_id: Annotated[int, FromContext(query="id of message {message}")],
+        content: str,
+    ):
         """
         Reply to a message in the discord channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
-            message_id: The ID of the message to reply. You should ask the user for it if not provided.
+            channel_id: The ID of the channel to send the message to.
+            message_id: The ID of the message to reply.
             content: The message to reply.
         """
         channel = await self._client.fetch_channel(channel_id)
@@ -179,13 +194,17 @@ class Discord(FunctionTool):
         return f"Created reply for message ID {msg.id}. Reply ID: {reply.id}"
 
     @function
-    async def wait_for_reply(self, channel_id: int, message_id: int):
+    async def wait_for_reply(
+        self,
+        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        message_id: Annotated[int, FromContext(query="id of message {message}")],
+    ):
         """
         Wait for a reply to the given message in the discord channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
-            message_id: The ID of the message being replied to. You should ask the user for it if not provided.
+            channel_id: The ID of the channel to send the message to.
+            message_id: The ID of the message being replied to.
         """
         channel = await self._client.fetch_channel(channel_id)
         ref_msg = await channel.fetch_message(message_id)
