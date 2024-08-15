@@ -63,7 +63,6 @@ class ToolRuntime:
             ):  # TODO apikey & none auth?
                 access_token = token[1]
             ctx = CloudContext(
-                req=request,
                 client=Client(access_token=access_token, endpoint=self._endpoint),
             )
             self.ctx_mgr.save_context(ctx)
@@ -180,4 +179,4 @@ class ToolRuntime:
                 ctx.detach_websocket()
         except Exception as err:
             utils.logger.error(err)
-            raise HTTPException(status_code=500, detail="Internal Server Error")
+            raise err

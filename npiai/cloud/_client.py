@@ -8,10 +8,10 @@ import requests
 class Client:
     __API_VERSION = "2024-07-25"
 
-    def __init__(self, access_token, endpoint="https://api.npi.ai"):
+    def __init__(self, access_token: str, endpoint: str = "https://api.npi.ai"):
         self._base_url = endpoint
         self._api_version = "2024-07-25"
-        self._access_token = (access_token,)
+        self._access_token = access_token
         self.client = requests.Session()
         self.client.headers.update({"Content-Type": "application/json"})
         self.client.headers.update({"Accept": "application/json"})
