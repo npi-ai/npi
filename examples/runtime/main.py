@@ -3,9 +3,10 @@ import os
 
 from npiai.cloud import ToolRuntime
 from npiai.tools import GitHub, Gmail
+from npiai.tools.web import Chromium
 
 if __name__ == "__main__":
-    os.environ.setdefault("NPIAI_SERVICE_MODE", 'True')
+    os.environ.setdefault("NPIAI_SERVICE_MODE", "True")
 
-    runtime = ToolRuntime(tool_cls=[GitHub, Gmail], port=9141)
+    runtime = ToolRuntime(tool_cls=[GitHub, Gmail, Chromium], port=9141)
     asyncio.run(runtime.run())
