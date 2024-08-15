@@ -1,13 +1,13 @@
 import asyncio
 import json
 import os
-from typing import Literal
+from typing import Annotated
 
 from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 
+from npiai import FunctionTool, function, FromContext
 from npiai.context import Context
 from npiai.utils import logger, is_cloud_env
-from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
 from npiai.constant import app
 
@@ -81,21 +81,21 @@ class Slack(FunctionTool):
 
         return sorted(messages, key=lambda x: float(x["thread_id"]))
 
-    @function
-    async def ask_for_id(
-        self, ctx: Context, name: Literal["user", "channel", "thread"]
-    ):
-        """
-        Ask the user to provide recipient's user id, channel id, or thread id.
-        Args:
-            ctx: NPi context.
-            name: The type of id to ask for.
-        """
-        return await self.hitl.input(
-            ctx,
-            self.name,
-            f"Please provide recipient's {name} ID to send messages to",
-        )
+    # @function
+    # async def ask_for_id(
+    #     self, ctx: Context, name: Literal["user", "channel", "thread"]
+    # ):
+    #     """
+    #     Ask the user to provide recipient's user id, channel id, or thread id.
+    #     Args:
+    #         ctx: NPi context.
+    #         name: The type of id to ask for.
+    #     """
+    #     return await self.hitl.input(
+    #         ctx,
+    #         self.name,
+    #         f"Please provide recipient's {name} ID to send messages to",
+    #     )
 
     @function
     async def list_channels(self):
@@ -114,24 +114,30 @@ class Slack(FunctionTool):
         return json.dumps(channels, ensure_ascii=False)
 
     @function
-    async def create_dm(self, user_id: str):
+    async def create_dm(
+        self, user_id: Annotated[str, FromContext(query="id of user {user}")]
+    ):
         """
         Create a direct message channel with a specific user.
 
         Args:
-            user_id: The ID of the **user** who will receive the direct message. Note that this is not the channel ID.
+            user_id: The ID of the user who will receive the direct message.
         """
         res = await self._client.conversations_open(users=[user_id])
 
         return f'Direct message channel created. Channel ID: {res["channel"]["id"]}'
 
     @function
-    async def send_message(self, channel_id: str, message: str):
+    async def send_message(
+        self,
+        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
+        message: Annotated[str, FromContext(query="id of message {message}")],
+    ):
         """
         Send a message to the Slack channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to send the message to. You should ask the user for it if not provided.
+            channel_id: The ID of the channel to send the message to.
             message: The message to send.
         """
         res = await self._client.chat_postMessage(
@@ -146,12 +152,16 @@ class Slack(FunctionTool):
         return f'Message sent. Thread ID: {msg["ts"]}'
 
     @function
-    async def fetch_history(self, channel_id: str, max_messages: int = 1):
+    async def fetch_history(
+        self,
+        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
+        max_messages: int = 1,
+    ):
         """
         Fetch history messages from the Slack channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to fetch the history from.
+            channel_id: The ID of the channel to fetch the history from.
             max_messages: The maximum number of messages to fetch.
         """
         res = await self._client.conversations_history(
@@ -166,13 +176,18 @@ class Slack(FunctionTool):
         return json.dumps(messages, ensure_ascii=False)
 
     @function
-    async def reply(self, channel_id: str, thread_id: str, message: str):
+    async def reply(
+        self,
+        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
+        thread_id: Annotated[str, FromContext(query="id of thread {thread}")],
+        message: str,
+    ):
         """
         Reply to a context in the Slack channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to reply to.
-            thread_id: The ID of the **context** to reply to.
+            channel_id: The ID of the channel to reply to.
+            thread_id: The ID of the context to reply to.
             message: The message to reply.
         """
         res = await self._client.chat_postMessage(
@@ -190,13 +205,17 @@ class Slack(FunctionTool):
         return f'Created reply for message ID {msg.id}. Reply ID: {msg["ts"]}'
 
     @function
-    async def wait_for_reply(self, channel_id: str, thread_id: str):
+    async def wait_for_reply(
+        self,
+        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
+        thread_id: Annotated[str, FromContext(query="id of thread {thread}")],
+    ):
         """
         Wait for a reply to the given context in the Slack channel with the given channel ID.
 
         Args:
-            channel_id: The ID of the **channel** to wait for.
-            thread_id: The ID of the **context** to wait for.
+            channel_id: The ID of the channel to wait for.
+            thread_id: The ID of the context to wait for.
         """
         last_ts = thread_id
 
