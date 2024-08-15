@@ -185,14 +185,14 @@ class FunctionTool(BaseFunctionTool, ABC):
                 call_msg += "()"
 
             logger.info(call_msg)
-            await session.send(call_msg)
+            await session.send_debug_message(call_msg)
 
             try:
                 res = await self.exec(session, fn_name, args)
             except Exception as e:
                 logger.error(e)
                 res = f"Exception while executing {fn_name}: {e}"
-                await session.send(res)
+                await session.send_error_message(res)
 
             logger.debug(f"[{self.name}]: function `{fn_name}` returned: {res}")
 

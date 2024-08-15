@@ -4,7 +4,7 @@ import datetime
 import json
 import uuid
 import asyncio
-from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type, Any
+from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type, Any, Literal
 from textwrap import dedent
 
 from mem0 import Memory
@@ -12,6 +12,7 @@ from litellm.types.completion import ChatCompletionMessageParam
 from pydantic import create_model, Field
 
 from npiai.utils import sanitize_schema, logger
+from npiai.types import RuntimeMessage
 
 if TYPE_CHECKING:
     from npiai.core import BaseTool
@@ -50,7 +51,7 @@ class Task:
 class Context:
     id: str
 
-    _q: asyncio.Queue
+    _q: asyncio.Queue[RuntimeMessage]
     _is_finished: bool
     _is_failed: bool
     _result: str
@@ -264,32 +265,73 @@ class Context:
         """fork a child message, typically when call a new tools"""
         return self.with_task(task)
 
-    async def refresh_screenshot(self) -> str | None:
-        """
-        Refresh and return the latest screenshot of the running tools.
+    async def send(self, msg: RuntimeMessage):
+        """send a message to the context"""
+        await self._q.put(msg)
 
-        Returns:
-            None if no screenshot is available or the screenshot stays unchanged.
-            Otherwise, return the latest screenshot.
-        """
-        if not self._active_tool or self.is_finished():
-            return None
+    async def send_tool_message(self, message: str):
+        await self.send(
+            {
+                "type": "message",
+                "message": message,
+                "id": str(uuid.uuid4()),
+            }
+        )
 
-        screenshot = await self._active_tool.get_screenshot()
+    async def send_execution_result(self, tool_call_id: str, result: str):
+        await self.send(
+            {
+                "type": "execution_result",
+                "result": result,
+                "tool_call_id": tool_call_id,
+                "id": str(uuid.uuid4()),
+            }
+        )
 
+    async def send_debug_message(self, message: str):
+        await self.send(
+            {
+                "type": "debug",
+                "message": message,
+                "id": str(uuid.uuid4()),
+            }
+        )
+
+    async def send_error_message(self, message: str):
+        await self.send(
+            {
+                "type": "error",
+                "message": message,
+                "id": str(uuid.uuid4()),
+            }
+        )
+
+    async def send_screenshot(self, screenshot: str):
+        # avoid sending duplicates
         if screenshot == self._last_screenshot:
-            return None
+            return
+
+        await self.send(
+            {
+                "type": "screenshot",
+                "screenshot": screenshot,
+                "id": str(uuid.uuid4()),
+            }
+        )
 
         self._last_screenshot = screenshot
 
-        return screenshot
+    async def send_hitl_action(self, action: Literal["input", "confirm"], message: str):
+        await self.send(
+            {
+                "type": "hitl",
+                "action": action,
+                "message": message,
+                "id": str(uuid.uuid4()),
+            }
+        )
 
-    async def send(self, cb: str) -> None:
-        """send a message to the context"""
-        # self.cb_dict[cb.id()] = cb
-        await self._q.put(cb)
-
-    async def fetch(self):
+    async def fetch(self) -> RuntimeMessage:
         """receive a message"""
         while not self.is_failed() and not self.is_finished():
             try:
@@ -298,10 +340,6 @@ class Context:
                     return item
             except asyncio.QueueEmpty:
                 await asyncio.sleep(0.01)
-
-    def get_callback(self, cb_id: str):
-        pass
-        # return self.cb_dict[cb_id]
 
     def finish(self, msg: str):
         self._result = msg

@@ -147,6 +147,8 @@ def _parse_response(response: str) -> Union[Response, None]:
 
 class NavigatorAgent(BrowserAgentTool):
     name: str = "navigator"
+    description = "Perform any task by simulating keyboard/mouse interaction on a specific web page. If the some action needs user confirmation, please specify them."
+    system_prompt = __PROMPT__
 
     def __init__(
         self,
@@ -155,10 +157,6 @@ class NavigatorAgent(BrowserAgentTool):
         max_steps: int = 42,
     ):
         self._browser_app = BrowserTool(
-            name="navigator",
-            description="Perform any task by simulating keyboard/mouse interaction on a specific web page. "
-            "If the some action needs user confirmation, please specify them.",
-            system_prompt=__PROMPT__,
             playwright=playwright,
         )
 
@@ -232,16 +230,19 @@ class NavigatorAgent(BrowserAgentTool):
         step = 0
 
         while True:
-            msg = ctx.fork(instruction)
-            msg.append(
-                {
-                    "role": "system",
-                    "content": self._browser_app.system_prompt,
-                }
+            task = Task(goal=instruction)
+            ctx.with_task(task)
+            await task.step(
+                [
+                    {
+                        "role": "system",
+                        "content": self._browser_app.system_prompt,
+                    }
+                ]
             )
-            msg.append(await self.generate_user_prompt(instruction, history))
+            await task.step([await self.generate_user_prompt(instruction, history)])
 
-            response_str = await self._call_llm(ctx, msg)
+            response_str = await self._call_llm(ctx, task)
             response = _parse_response(response_str)
 
             if not response:
@@ -264,24 +265,15 @@ class NavigatorAgent(BrowserAgentTool):
             if step > self.max_steps:
                 return f"Maximum number of steps reached. Last response was: {response_str}"
 
-    async def _call_llm(self, ctx: Context, message: Task) -> str:
-        """
-        Call llm for one round with the given prompts
-
-        Args:
-            message: ThreadMessage context
-
-        Returns:
-            response message
-        """
+    async def _call_llm(self, ctx: Context, task: Task) -> str:
         response = await self.llm.completion(
-            messages=message.conversations(),
+            messages=task.conversations(),
             max_tokens=4096,
         )
 
         response_message = response.choices[0].message
 
-        message.step(response_message)
+        await task.step([response_message])
 
         if not response_message.content:
             raise Exception(f"{self.name}: No response message")
@@ -316,7 +308,7 @@ class NavigatorAgent(BrowserAgentTool):
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
         logger.info(call_msg)
-        await ctx.send(call_msg)
+        await ctx.send_debug_message(call_msg)
 
         match action["type"]:
             case "click":
@@ -349,5 +341,8 @@ class NavigatorAgent(BrowserAgentTool):
             # FIXME: if the action triggers a navigator, we will receive an error showing "Page.evaluate:
             #  Execution context was destroyed, most likely because of a navigation"
             await self._browser_app.playwright.page.wait_for_timeout(3000)
+
+        # update screenshot after each action
+        await ctx.send_screenshot(await self.get_screenshot())
 
         return result, elem_json

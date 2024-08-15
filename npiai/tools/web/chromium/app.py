@@ -1,5 +1,5 @@
 from npiai.core import NavigatorAgent
-from npiai import LLM, function, BrowserTool
+from npiai import LLM, function, BrowserTool, Context, utils
 
 __SYSTEM_PROMPT__ = """
 You are a general chromium-based autonomous agent helping user to finish any task on any webpage. For a given task,
@@ -22,6 +22,14 @@ class Chromium(BrowserTool):
                 playwright=self.playwright,
             )
         )
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Chromium":
+        if not utils.is_cloud_env():
+            raise RuntimeError(
+                "Chromium tool can only be initialized from context in the NPi cloud environment"
+            )
+        return cls()
 
     @function
     async def goto(self, url: str):

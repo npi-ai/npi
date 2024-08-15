@@ -75,7 +75,7 @@ class AgentTool(BaseAgentTool):
         instruction: str,
     ) -> str:
         task = Task(goal=instruction)
-        ctx = ctx.fork(task)
+        ctx.with_task(task)
         if self._tool.system_prompt:
             await task.step(
                 [
