@@ -7,10 +7,10 @@ import os
 from googleapiclient.discovery import build, Resource
 from google.oauth2.credentials import Credentials as GoogleCredentials
 
-from npiai import function, FunctionTool
+from npiai import function, FunctionTool, utils
 from npiai.error import UnauthorizedError
 from npiai.context import Context
-
+from npiai.constant import app
 
 # https://developers.google.com/calendar/quickstart/python
 # API Reference: https://developers.google.com/calendar/api/v3/reference
@@ -30,6 +30,15 @@ class GoogleCalendar(FunctionTool):
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__()
         self._creds = creds
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "GoogleCalendar":
+        if not utils.is_cloud_env():
+            raise RuntimeError(
+                "Google Calendar tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.GOOGLE_CALENDAR)
+        return GoogleCalendar(creds=GoogleCredentials.from_authorized_user_info(creds))
 
     async def start(self):
         if self._creds is None:

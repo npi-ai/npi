@@ -6,9 +6,10 @@ from typing import Literal
 import discord
 
 from npiai.context import Context
-from npiai.utils import logger
+from npiai.utils import logger, is_cloud_env
 from npiai import FunctionTool, function
 from npiai.error.auth import UnauthorizedError
+from npiai.constant import app
 
 __PROMPT__ = """
 You are a Discord Agent helping user send/retrieve messages to/from discord channels. 
@@ -53,6 +54,15 @@ class Discord(FunctionTool):
         )
 
         self._client = discord.Client(intents=discord.Intents.default())
+
+    @classmethod
+    def from_context(cls, ctx: Context) -> "Discord":
+        if not is_cloud_env():
+            raise RuntimeError(
+                "Discord tool can only be initialized from context in the NPi cloud environment"
+            )
+        creds = ctx.credentials(app_code=app.DISCORD)
+        return Discord(access_token=creds["access_token"])
 
     async def start(self):
         if self._access_token is None:
