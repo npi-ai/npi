@@ -10,7 +10,7 @@ dependencies:
   - name: python
     version: "^3.10"
   - name: npiai
-    version: "^0.2.4.dev2"
+    version: "^0.2.4.dev3"
   - name: markdownify
     version: "^0.12.1"
   - name: playwright
