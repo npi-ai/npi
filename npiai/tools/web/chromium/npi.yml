@@ -1,11 +1,9 @@
 class: Chromium
 main: app.py
-permissions: ["chromium.all"]
 env:
   - name: "NPIAI_SERVICE_MODE"
     value: True
   - name: "OPENAI_API_KEY"
-    value: "sk-proj-123456"
     secret: true
 dependencies:
   - name: python
