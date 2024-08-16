@@ -10,6 +10,6 @@ dependencies:
   - name: python
     version: "^3.10"
   - name: npiai
-    version: "^0.2.4.dev4"
+    version: "^0.2.4.dev5"
   - name: twilio
     version: "^9.1.0"
