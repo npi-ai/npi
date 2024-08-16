@@ -1,5 +1,6 @@
 class: Chromium
 main: app.py
+image: npiai/web-agent
 env:
   - name: "NPIAI_SERVICE_MODE"
     value: True
