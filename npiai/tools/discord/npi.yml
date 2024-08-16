@@ -10,6 +10,6 @@ dependencies:
   - name: python
     version: "^3.10"
   - name: npiai
-    version: "^0.2.4.dev3"
+    version: "^0.2.4.dev4"
   - name: discord
     version: "^2.3.2"

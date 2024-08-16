@@ -1,6 +1,6 @@
 class: Gmail
 main: app.py
-permissions: ["gmail.all"]
+permissions: ["google.gmail.all"]
 env:
   - name: "NPIAI_SERVICE_MODE"
     value: True
@@ -10,7 +10,7 @@ dependencies:
   - name: python
     version: "^3.10"
   - name: npiai
-    version: "^0.2.4.dev3"
+    version: "^0.2.4.dev4"
   - name: google-api-python-client
     version: "^2.132.0"
   - name: google-auth-httplib2
