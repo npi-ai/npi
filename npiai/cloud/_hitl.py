@@ -25,20 +25,20 @@ class CloudHITL(HITL):
         result = await ctx.receive_action_result(action_id)
         return result
 
-    async def confirm(self, ctx: CloudContext, app_name: str, message: str) -> bool:
+    async def confirm(self, ctx: CloudContext, tool_name: str, message: str) -> bool:
         res = await self._send_action(
             ctx=ctx,
             action="confirm",
-            message=f"[{app_name}]: {message}",
+            message=f"[{tool_name}]: {message}",
         )
 
         return res.lower() == "approved"
 
-    async def input(self, ctx: CloudContext, app_name: str, message: str) -> str:
+    async def input(self, ctx: CloudContext, tool_name: str, message: str) -> str:
         res = await self._send_action(
             ctx=ctx,
             action="input",
-            message=f"[{app_name}]: {message}",
+            message=f"[{tool_name}]: {message}",
         )
 
         return res
