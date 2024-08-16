@@ -1,7 +1,7 @@
 class: Twitter
 main: app.py
 image: npiai/web-agent
-permissions: ["twitter.all"]
+permissions: ["xcom.all"]
 env:
   - name: "NPIAI_SERVICE_MODE"
     value: True
