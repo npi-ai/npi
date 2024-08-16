@@ -161,8 +161,12 @@ class ToolRuntime:
                             await ctx.send_screenshot(screenshot)
                     except Exception as e:
                         utils.logger.error(e)
-                        await ctx.send_error_message(
-                            f"Exception while executing {call_msg['tool_name']}: {e}"
+                        # await ctx.send_error_message(
+                        #     f"Exception while executing {call_msg['tool_name']}: {e}"
+                        # )
+                        await ctx.send_execution_result(
+                            tool_call_id=call_msg["tool_call_id"],
+                            result=f"Exception while executing {call_msg['tool_name']}: {e}",
                         )
 
                 while True:
