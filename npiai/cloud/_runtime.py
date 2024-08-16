@@ -181,4 +181,5 @@ class ToolRuntime:
             utils.logger.error(err)
             if ctx:
                 await ctx.send_error_message(str(err))
+                await ws.close()
             raise err
