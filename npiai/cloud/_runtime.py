@@ -179,4 +179,6 @@ class ToolRuntime:
                 ctx.detach_websocket()
         except Exception as err:
             utils.logger.error(err)
+            if ctx:
+                await ctx.send_error_message(str(err))
             raise err
