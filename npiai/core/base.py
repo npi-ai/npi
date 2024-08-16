@@ -20,6 +20,10 @@ class BaseTool(ABC):
     _fn_map: Dict[str, FunctionRegistration]
     _hitl: HITL | None
 
+    def __init__(self):
+        self._fn_map = {}
+        self._hitl = None
+
     @classmethod
     def from_context(cls, ctx: Context) -> "BaseTool":
         # bind the tool to the Context
