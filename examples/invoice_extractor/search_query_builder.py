@@ -23,8 +23,8 @@ class SearchQueryBuilder(FunctionTool):
            tool even if no criteria are present.
         3. Receive the refined criteria from the `get_criteria` tool.
         4. Formulate a Gmail search query using the finalized criteria provided 
-           by the tool. Note that you may need to use the `newer_than` or
-           `older_than` filter if the criteria contains relative dates.
+           by the tool. Note that you may need to convert the date to ~d (day), 
+           ~m (month), or ~y (year) format if the criteria contains relative dates.
         5. Utilize the `save_query` tool to record the crafted search query.
        
     ## Example
@@ -33,19 +33,19 @@ class SearchQueryBuilder(FunctionTool):
         a. Extracted criteria: `sender="someone@example.com"`.
         b. Interaction with `get_criteria`: `get_criteria(sender="someone@example.com")`, 
            which may result in the following JSON object after communicating with the user:
-           `{"sender": "someone@example.com", "keywords": "daily standup meeting", "start_date": "last week"}`.
+           `{"sender": "someone@example.com", "keywords": "daily standup meeting", "after_date": "last week"}`.
         c. Formulate the Gmail search query using the criteria: 
-           `from:someone@example.com newer_than:7d daily standup meeting`.
-        d. Record the query: `save_query(query="from:someone@example.com newer_than:7d daily standup meeting")`.
+           `from:someone@example.com after:7d daily standup meeting`.
+        d. Record the query: `save_query(query="from:someone@example.com after:7d daily standup meeting")`.
         
     Instruction: None
     Steps:
         a. Interaction with `get_criteria`: `get_criteria()`, 
            which may result in the following JSON object after communicating with the user:
-           `{"keywords": "github", "end_data": "2024/7/1"}`.
+           `{"keywords": "github", "after_date": "2024/7/1", "before_date": "yesterday"}`.
         b. Formulate the Gmail search query using the criteria: 
            `before:2024/7/1 github`.
-        c. Record the query: `save_query(query="before:2024/7/1 github")`.
+        c. Record the query: `save_query(query="after:2024/7/1 before:1d github")`.
     """
 
     @function
@@ -57,8 +57,9 @@ class SearchQueryBuilder(FunctionTool):
         recipient: str | None = None,
         subject: str | None = None,
         label: str | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        after_date: str | None = None,
+        before_date: str | None = None,
+        in_folder: str | None = "inbox",
         has_pdf_attachments: bool | None = None,
     ):
         """
@@ -71,8 +72,9 @@ class SearchQueryBuilder(FunctionTool):
             recipient: Specify a recipient.
             subject: Words in the subject line.
             label: The label that the email should have.
-            start_date: Search for emails after this date.
-            end_date: Search for emails before this date.
+            after_date: Search for emails after this date.
+            before_date: Search for emails before this date.
+            in_folder: Search for emails within this folder.
             has_pdf_attachments: Whether the email contains PDF attachments.
         """
 
@@ -119,14 +121,19 @@ class SearchQueryBuilder(FunctionTool):
             default=label,
         )
 
-        start_date = await hitl_input(
+        after_date = await hitl_input(
             msg="Please specify the start date for the search. Leave blank to start from the first-ever email",
-            default=start_date,
+            default=after_date,
         )
 
-        end_date = await hitl_input(
+        before_date = await hitl_input(
             msg="Please specify the end date for the search. Leave blank to end with the latest email",
-            default=end_date,
+            default=before_date,
+        )
+
+        in_folder = await hitl_input(
+            msg="Please specify the folder to search in. Leave blank to skip",
+            default=in_folder,
         )
 
         has_pdf_attachments = await hitl_confirm(
@@ -140,8 +147,9 @@ class SearchQueryBuilder(FunctionTool):
             "recipient": recipient,
             "subject": subject,
             "label": label,
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": after_date,
+            "end_date": before_date,
+            "in_folder": in_folder,
             # "has_pdf_attachments": has_pdf_attachments,
         }
 
