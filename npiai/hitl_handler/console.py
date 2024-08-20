@@ -1,3 +1,5 @@
+from typing import List
+
 import questionary
 
 from termcolor import colored
@@ -13,7 +15,6 @@ class ConsoleHandler(HITL):
         message: str,
         default=False,
     ) -> bool:
-        # print(colored(f'[{tool_name}]: Confirmation required', color='green', attrs=['bold']))
         return await questionary.confirm(
             colored(
                 f"[{tool_name}]: Please confirm: {message}",
@@ -30,8 +31,25 @@ class ConsoleHandler(HITL):
         message: str,
         default="",
     ) -> str:
-        # print(colored(f'[{tool_name}]: Additional information required', color='green', attrs=['bold']))
         print(colored(f"[{tool_name}]: {message}", color="magenta", attrs=["bold"]))
         return await questionary.text(
             "Type your response:", default=default
+        ).ask_async()
+
+    async def select(
+        self,
+        ctx: Context,
+        tool_name: str,
+        message: str,
+        choices: List[str],
+        default: str = None,
+    ) -> str:
+        return await questionary.select(
+            message=colored(
+                f"[{tool_name}]: {message}",
+                color="magenta",
+                attrs=["bold"],
+            ),
+            choices=choices,
+            default=default,
         ).ask_async()
