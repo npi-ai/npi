@@ -19,7 +19,7 @@ from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
 from npiai.core.base import BaseTool, BaseFunctionTool
-from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta, FromContext
+from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta, FromVectorDB
 from npiai.utils import (
     logger,
     sanitize_schema,
@@ -233,7 +233,7 @@ class FunctionTool(BaseFunctionTool, ABC):
                     if get_origin(p.annotation) is Annotated:
                         # extract context variables
                         return_type, anno = get_args(p.annotation)
-                        if isinstance(anno, FromContext):
+                        if isinstance(anno, FromVectorDB):
                             ctx_variables.append(
                                 dataclasses.replace(
                                     anno,

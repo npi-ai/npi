@@ -9,10 +9,10 @@ from litellm.types.completion import ChatCompletionMessageParam
 
 from npiai.types import RuntimeMessage
 
-from .memory import VectorDBMemory
+from .memory import VectorDBMemory, KVMemory
 
 if TYPE_CHECKING:
-    from npiai.core import BaseTool, HITL
+    from npiai.core import HITL
 
 
 class Task:
@@ -45,6 +45,7 @@ class Task:
 class Context:
     id: str
     vector_db: VectorDBMemory
+    kv: KVMemory
 
     _q: asyncio.Queue[RuntimeMessage]
     _is_finished: bool
@@ -52,11 +53,10 @@ class Context:
     _result: str
     _failed_msg: str
     _last_screenshot: str | None
-    _active_tool: Union["BaseTool", None]
     _hitl: Union["HITL", None]
 
     @property
-    def hitl(self) -> HITL:
+    def hitl(self) -> "HITL":
         if self._hitl is None:
             raise AttributeError("HITL handler has not been set")
 
@@ -66,15 +66,16 @@ class Context:
         self,
     ) -> None:
         self.id = str(uuid.uuid4())
+        self.vector_db = VectorDBMemory(context_id=self.id)
+        self.kv = KVMemory(context_id=self.id)
+
         self._q = asyncio.Queue()
         self._is_finished = False
         self._result = ""
         self._is_failed = False
         self._failed_msg = ""
         self._last_screenshot = None
-        self._active_tool = None
         self._hitl = None
-        self._vector_db = VectorDBMemory(context_id=self.id)
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -198,9 +199,3 @@ class Context:
 
     def get_failed_msg(self) -> str:
         return self._failed_msg
-
-    def bind(self, tool: "BaseTool"):
-        self._active_tool = tool
-
-    def get_tool(self) -> Union["BaseTool", None]:
-        return self._active_tool

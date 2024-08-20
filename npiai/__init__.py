@@ -8,7 +8,7 @@ from npiai.core.tool import (
 from npiai.core.hitl import HITL
 from npiai.llm import OpenAI, LLM
 from npiai.core.base import Context
-from npiai.types import FromContext
+from npiai.types import FromVectorDB
 
 __all__ = [
     "BrowserTool",
@@ -20,5 +20,5 @@ __all__ = [
     "OpenAI",
     "LLM",
     "Context",
-    "FromContext",
+    "FromVectorDB",
 ]

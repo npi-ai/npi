@@ -5,7 +5,7 @@ from typing import Annotated
 
 import discord
 
-from npiai import FunctionTool, function, FromContext
+from npiai import FunctionTool, function, FromVectorDB
 from npiai.context import Context
 from npiai.utils import logger, is_cloud_env
 from npiai.error.auth import UnauthorizedError
@@ -110,7 +110,7 @@ class Discord(FunctionTool):
 
     @function
     async def create_dm(
-        self, user_id: Annotated[int, FromContext(query="id of user {user}")]
+        self, user_id: Annotated[int, FromVectorDB(query="id of user {user}")]
     ):
         """
         Create a direct message channel with a specific user.
@@ -126,7 +126,7 @@ class Discord(FunctionTool):
     @function
     async def fetch_history(
         self,
-        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
         max_results: int = 1,
     ):
         """
@@ -151,7 +151,7 @@ class Discord(FunctionTool):
     @function
     async def send_message(
         self,
-        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
+        channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
         content: str,
     ):
         """
@@ -171,8 +171,8 @@ class Discord(FunctionTool):
     @function
     async def reply(
         self,
-        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
-        message_id: Annotated[int, FromContext(query="id of message {message}")],
+        channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
+        message_id: Annotated[int, FromVectorDB(query="id of message {message}")],
         content: str,
     ):
         """
@@ -196,8 +196,8 @@ class Discord(FunctionTool):
     @function
     async def wait_for_reply(
         self,
-        channel_id: Annotated[int, FromContext(query="id of channel {channel}")],
-        message_id: Annotated[int, FromContext(query="id of message {message}")],
+        channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
+        message_id: Annotated[int, FromVectorDB(query="id of message {message}")],
     ):
         """
         Wait for a reply to the given message in the discord channel with the given channel ID.
