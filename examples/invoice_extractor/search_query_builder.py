@@ -138,7 +138,7 @@ class SearchQueryBuilder(FunctionTool):
         )
 
         has_pdf_attachments = await hitl_confirm(
-            msg="Does the emails contain PDF attachments?",
+            msg="Do the emails contain PDF attachments?",
             default=has_pdf_attachments,
         )
 
