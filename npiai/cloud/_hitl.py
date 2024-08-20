@@ -9,7 +9,9 @@ from ._context import CloudContext
 class CloudHITL(HITL):
     @staticmethod
     async def _send_action(
-        ctx: CloudContext, action: Literal["input", "confirm"], message: str
+        ctx: CloudContext,
+        action: Literal["input", "confirm"],
+        message: str,
     ) -> str | None:
         action_id = str(uuid.uuid4())
 
@@ -25,7 +27,13 @@ class CloudHITL(HITL):
         result = await ctx.receive_action_result(action_id)
         return result
 
-    async def confirm(self, ctx: CloudContext, tool_name: str, message: str) -> bool:
+    async def confirm(
+        self,
+        ctx: CloudContext,
+        tool_name: str,
+        message: str,
+        default=False,
+    ) -> bool:
         res = await self._send_action(
             ctx=ctx,
             action="confirm",
@@ -34,7 +42,13 @@ class CloudHITL(HITL):
 
         return res.lower() == "approved"
 
-    async def input(self, ctx: CloudContext, tool_name: str, message: str) -> str:
+    async def input(
+        self,
+        ctx: CloudContext,
+        tool_name: str,
+        message: str,
+        default="",
+    ) -> str:
         res = await self._send_action(
             ctx=ctx,
             action="input",
