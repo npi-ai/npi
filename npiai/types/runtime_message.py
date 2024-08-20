@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, List
 
 
 class ToolMessage(TypedDict):
@@ -26,11 +26,29 @@ class ErrorMessage(TypedDict):
     message: str
 
 
-class HITLMessage(TypedDict):
+class HITLInputMessage(TypedDict):
     type: Literal["hitl"]
     id: str
-    action: Literal["input", "confirm"]
+    action: Literal["input"]
     message: str
+    default: str
+
+
+class HITLConfirmMessage(TypedDict):
+    type: Literal["hitl"]
+    id: str
+    action: Literal["input"]
+    message: str
+    default: bool
+
+
+class HITLSelectMessage(TypedDict):
+    type: Literal["hitl"]
+    id: str
+    action: Literal["select"]
+    message: str
+    choices: List[str]
+    default: str
 
 
 class ScreenshotMessage(TypedDict):
@@ -38,6 +56,8 @@ class ScreenshotMessage(TypedDict):
     id: str
     screenshot: str
 
+
+HITLMessage = HITLInputMessage | HITLConfirmMessage | HITLSelectMessage
 
 RuntimeMessage = (
     ToolMessage
