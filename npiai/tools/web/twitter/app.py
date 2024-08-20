@@ -229,7 +229,7 @@ class Twitter(BrowserTool):
                 f"Unable to login to Twitter. Please replace username with {cred_name} and try again."
             )
 
-        return await self.hitl.input(
+        return await ctx.hitl.input(
             ctx,
             self.name,
             f"Please enter {cred_name} to continue the login process.",

@@ -7,7 +7,6 @@ from npiai.llm import LLM, OpenAI
 from npiai.types import FunctionRegistration
 from npiai.context import Context, Task
 from npiai.core.base import BaseAgentTool
-from npiai.core.hitl import HITL
 from npiai.core.tool._function import FunctionTool
 from npiai.core.tool._browser import BrowserTool
 from npiai.utils import sanitize_schema
@@ -58,10 +57,6 @@ class AgentTool(BaseAgentTool):
         )
 
         return [fn_reg]
-
-    def use_hitl(self, hitl: HITL):
-        super().use_hitl(hitl)
-        self._tool.use_hitl(hitl)
 
     async def start(self):
         await self._tool.start()

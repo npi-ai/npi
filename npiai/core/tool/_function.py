@@ -19,7 +19,6 @@ from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
 from npiai.core.base import BaseTool, BaseFunctionTool
-from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta, FromContext
 from npiai.utils import (
     logger,
@@ -109,18 +108,6 @@ class FunctionTool(BaseFunctionTool, ABC):
     def unpack_functions(self) -> List[FunctionRegistration]:
         return list(self._fn_map.values())
 
-    def use_hitl(self, hitl: HITL):
-        """
-        Attach the given HITL handler to this tool and all its sub apps
-
-        Args:
-            hitl: HITL handler
-        """
-        super().use_hitl(hitl)
-
-        for app in self._sub_tools:
-            app.use_hitl(hitl)
-
     async def start(self):
         """Start the tools"""
         if not self._started:
@@ -140,10 +127,6 @@ class FunctionTool(BaseFunctionTool, ABC):
         *tools: BaseTool,
     ):
         for tool in tools:
-            # share hitl handler
-            if tool._hitl is None:
-                tool.use_hitl(self._hitl)
-
             self._sub_tools.append(tool)
 
             for fn_reg in tool.unpack_functions():

@@ -60,7 +60,7 @@ class GoogleCalendar(FunctionTool):
             ctx: NPi context
             message: The message to ask the user for their email address
         """
-        return await self.hitl.input(ctx, self.name, message)
+        return await ctx.hitl.input(ctx, self.name, message)
 
     @function
     def get_today(self):
