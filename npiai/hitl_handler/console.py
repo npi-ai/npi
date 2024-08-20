@@ -8,8 +8,11 @@ from npiai.context import Context
 class ConsoleHandler(HITL):
     async def confirm(self, ctx: Context, tool_name: str, message: str) -> bool:
         # print(colored(f'[{tool_name}]: Confirmation required', color='green', attrs=['bold']))
-        msg = colored(f"[{tool_name}]: {message}", color="magenta", attrs=["bold"])
-        return await questionary.confirm(f"Please confirm: {msg}").ask_async()
+        msg = colored(message, color="magenta", attrs=["bold"])
+        return await questionary.confirm(
+            f"[{tool_name}]: Please confirm: {msg}",
+            default=False,
+        ).ask_async()
 
     async def input(self, ctx: Context, tool_name: str, message: str) -> str:
         # print(colored(f'[{tool_name}]: Additional information required', color='green', attrs=['bold']))
