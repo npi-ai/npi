@@ -64,51 +64,53 @@ class SearchQueryBuilder(FunctionTool):
             has_pdf_attachments: Whether the email contains PDF attachments.
         """
 
-        async def hitl_input(msg: str):
-            return await ctx.hitl.input(ctx, self.name, msg)
+        async def hitl_input(msg: str, default: str | None):
+            return await ctx.hitl.input(ctx, self.name, msg, default or "")
 
-        async def hitl_confirm(msg: str):
-            return await ctx.hitl.confirm(ctx, self.name, msg)
+        async def hitl_confirm(msg: str, default: bool | None):
+            return await ctx.hitl.confirm(ctx, self.name, msg, default or False)
 
         await ctx.send_debug_message("Composing Gmail search query...")
 
-        if not keywords:
-            keywords = await hitl_input(
-                "Please specify the keywords to include in the emails. Leave blank to skip."
-            )
+        keywords = await hitl_input(
+            msg="Please specify the keywords to include in the emails. Leave blank to skip.",
+            default=keywords,
+        )
 
-        if not sender:
-            sender = await hitl_input("Please specify the sender. Leave blank to skip.")
+        sender = await hitl_input(
+            msg="Please specify the sender. Leave blank to skip.",
+            default=sender,
+        )
 
-        if not recipient:
-            recipient = await hitl_input(
-                "Please specify a recipient. Leave blank to skip."
-            )
+        recipient = await hitl_input(
+            msg="Please specify a recipient. Leave blank to skip.",
+            default=recipient,
+        )
 
-        if not subject:
-            subject = await hitl_input(
-                "Please specify the words to include in the subject line. Leave blank to skip."
-            )
+        subject = await hitl_input(
+            msg="Please specify the words to include in the subject line. Leave blank to skip.",
+            default=subject,
+        )
 
-        if not label:
-            label = await hitl_input(
-                "Please specify the label for the emails. Leave blank to skip."
-            )
+        label = await hitl_input(
+            msg="Please specify the label for the emails. Leave blank to skip.",
+            default=label,
+        )
 
-        if not start_date:
-            start_date = await hitl_input(
-                "Please specify the start date for the search. Leave blank to start from the first-ever email."
-            )
+        start_date = await hitl_input(
+            msg="Please specify the start date for the search. Leave blank to start from the first-ever email.",
+            default=start_date,
+        )
 
-        if not end_date:
-            end_date = await hitl_input(
-                "Please specify the end date for the search. Leave blank to end with the latest email."
-            )
+        end_date = await hitl_input(
+            msg="Please specify the end date for the search. Leave blank to end with the latest email.",
+            default=end_date,
+        )
 
-        if has_pdf_attachments is None:
-            has_pdf_attachments = await hitl_confirm(
-                "Does the emails contain PDF attachments?"
-            )
+        has_pdf_attachments = await hitl_confirm(
+            msg="Does the emails contain PDF attachments?",
+            default=has_pdf_attachments,
+        )
 
         filters = {
             "keywords": keywords,
@@ -130,7 +132,6 @@ class SearchQueryBuilder(FunctionTool):
 
         if has_pdf_attachments:
             criteria["filename"] = "*.pdf"
-
         return criteria
 
     @function
