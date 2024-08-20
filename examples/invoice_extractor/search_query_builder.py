@@ -1,5 +1,7 @@
 from npiai import FunctionTool, function, Context
 
+from constants import QUERY
+
 
 class SearchQueryBuilder(FunctionTool):
     name = "search_query_builder"
@@ -17,7 +19,8 @@ class SearchQueryBuilder(FunctionTool):
            including `keywords`, `sender`, and any other pertinent details.
         2. Engage with the `get_criteria` tool, inputting identified criteria and 
            leaving unspecified fields as `None`. The tool will interact with the 
-           user to define any missing information.
+           user to define any missing information, so you should always call this
+           tool even if no criteria are present.
         3. Receive the refined criteria from the `get_criteria` tool.
         4. Formulate a Gmail search query using the finalized criteria provided 
            by the tool. Note that you may need to use the `newer_than` or
@@ -34,6 +37,15 @@ class SearchQueryBuilder(FunctionTool):
         c. Formulate the Gmail search query using the criteria: 
            `from:someone@example.com newer_than:7d daily standup meeting`.
         d. Record the query: `save_query(query="from:someone@example.com newer_than:7d daily standup meeting")`.
+        
+    Instruction: None
+    Steps:
+        a. Interaction with `get_criteria`: `get_criteria()`, 
+           which may result in the following JSON object after communicating with the user:
+           `{"keywords": "github", "end_data": "2024/7/1"}`.
+        b. Formulate the Gmail search query using the criteria: 
+           `before:2024/7/1 github`.
+        c. Record the query: `save_query(query="before:2024/7/1 github")`.
     """
 
     @function
@@ -65,45 +77,55 @@ class SearchQueryBuilder(FunctionTool):
         """
 
         async def hitl_input(msg: str, default: str | None):
-            return await ctx.hitl.input(ctx, self.name, msg, default or "")
+            return await ctx.hitl.input(
+                ctx=ctx,
+                tool_name=self.name,
+                message=msg,
+                default=default or "",
+            )
 
         async def hitl_confirm(msg: str, default: bool | None):
-            return await ctx.hitl.confirm(ctx, self.name, msg, default or False)
+            return await ctx.hitl.confirm(
+                ctx=ctx,
+                tool_name=self.name,
+                message=msg,
+                default=default or False,
+            )
 
         await ctx.send_debug_message("Composing Gmail search query...")
 
         keywords = await hitl_input(
-            msg="Please specify the keywords to include in the emails. Leave blank to skip.",
+            msg="Please specify the keywords to include in the emails. Leave blank to skip",
             default=keywords,
         )
 
         sender = await hitl_input(
-            msg="Please specify the sender. Leave blank to skip.",
+            msg="Please specify the sender. Leave blank to skip",
             default=sender,
         )
 
         recipient = await hitl_input(
-            msg="Please specify a recipient. Leave blank to skip.",
+            msg="Please specify a recipient. Leave blank to skip",
             default=recipient,
         )
 
         subject = await hitl_input(
-            msg="Please specify the words to include in the subject line. Leave blank to skip.",
+            msg="Please specify the words to include in the subject line. Leave blank to skip",
             default=subject,
         )
 
         label = await hitl_input(
-            msg="Please specify the label for the emails. Leave blank to skip.",
+            msg="Please specify the label for the emails. Leave blank to skip",
             default=label,
         )
 
         start_date = await hitl_input(
-            msg="Please specify the start date for the search. Leave blank to start from the first-ever email.",
+            msg="Please specify the start date for the search. Leave blank to start from the first-ever email",
             default=start_date,
         )
 
         end_date = await hitl_input(
-            msg="Please specify the end date for the search. Leave blank to end with the latest email.",
+            msg="Please specify the end date for the search. Leave blank to end with the latest email",
             default=end_date,
         )
 
@@ -143,7 +165,7 @@ class SearchQueryBuilder(FunctionTool):
             ctx: NPi Context object.
             query: Gmail search query.
         """
-        await ctx.kv.save("query", query)
+        await ctx.kv.save(QUERY, query)
 
         return "Query saved"
 
@@ -162,6 +184,6 @@ if __name__ == "__main__":
 
             await tool.chat(ctx, "search for emails containing invoice")
 
-            print("query:", await ctx.kv.get(ctx, "query"))
+            print("query:", await ctx.kv.get(ctx, QUERY))
 
     asyncio.run(main())
