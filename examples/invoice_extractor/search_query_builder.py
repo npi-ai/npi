@@ -27,7 +27,8 @@ class SearchQueryBuilder(FunctionTool):
            ~m (month), or ~y (year) format if the criteria contains relative dates.
         5. Utilize the `save_query` tool to record the crafted search query.
        
-    ## Example
+    ## Examples
+    
     Instruction: search for emails sent by someone@example.com
     Steps:
         a. Extracted criteria: `sender="someone@example.com"`.

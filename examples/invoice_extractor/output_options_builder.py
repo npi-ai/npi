@@ -24,7 +24,8 @@ class OutputOptionsBuilder(FunctionTool):
            user to define any missing information, so you should always call this
            tool even if no criteria are present.
        
-    ## Example
+    ## Examples
+    
     Instruction: render the results as spreadsheets and save them to google drive
     Steps:
         a. Extracted criteria: `destination="google_drive"`.
