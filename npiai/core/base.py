@@ -73,7 +73,8 @@ class BaseTool(ABC):
         for ctx_var in fn.ctx_variables:
             query = args.pop(f"{ctx_var.name}{CTX_QUERY_POSTFIX}", ctx_var.query)
 
-            args[ctx_var.name] = await ctx.vector_db.ask(
+            args[ctx_var.name] = await ctx.vector_db.retrieve(
+                ctx=ctx,
                 query=query,
                 return_type=ctx_var.return_type,
                 constraints=ctx_var.constraints,

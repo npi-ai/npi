@@ -1,18 +1,21 @@
-from abc import ABC, abstractmethod
-from typing import TypeVar, Type
-
-_T = TypeVar("_T")
+from abc import ABC
 
 
 class BaseMemory(ABC):
-    @abstractmethod
-    async def save(self, info: str): ...
+    _context_id: str
 
-    @abstractmethod
-    async def retrieve(
-        self,
-        query: str,
-        return_type: Type[_T] = str,
-        constraints: str = None,
-        _is_retry: bool = False,
-    ) -> _T: ...
+    def __init__(self, context_id: str):
+        self._context_id = context_id
+
+    # @abstractmethod
+    # async def save(self, info: str): ...
+    #
+    # @abstractmethod
+    # async def ask(
+    #     self,
+    #     ctx: "Context",
+    #     query: str,
+    #     return_type: Type[_T] = str,
+    #     constraints: str = None,
+    #     _is_retry: bool = False,
+    # ) -> _T: ...

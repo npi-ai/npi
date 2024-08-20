@@ -30,10 +30,8 @@ class Container:
         async def root(full_path: str, request: Request):
             # ctx = Context.from_request(req=request)
             ctx = Context()
-            tool = ctx.get_tool()
-            if tool is None:
-                tool = self.tool_cls.from_context(ctx=ctx)
-                await tool.start()
+            tool = self.tool_cls.from_context(ctx=ctx)
+            await tool.start()
 
             try:
                 ctx.entry()

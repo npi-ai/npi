@@ -5,7 +5,7 @@ from typing import Annotated
 
 from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 
-from npiai import FunctionTool, function, FromContext
+from npiai import FunctionTool, function, FromVectorDB
 from npiai.context import Context
 from npiai.utils import logger, is_cloud_env
 from npiai.error.auth import UnauthorizedError
@@ -115,7 +115,7 @@ class Slack(FunctionTool):
 
     @function
     async def create_dm(
-        self, user_id: Annotated[str, FromContext(query="id of user {user}")]
+        self, user_id: Annotated[str, FromVectorDB(query="id of user {user}")]
     ):
         """
         Create a direct message channel with a specific user.
@@ -130,8 +130,8 @@ class Slack(FunctionTool):
     @function
     async def send_message(
         self,
-        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
-        message: Annotated[str, FromContext(query="id of message {message}")],
+        channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
+        message: Annotated[str, FromVectorDB(query="id of message {message}")],
     ):
         """
         Send a message to the Slack channel with the given channel ID.
@@ -154,7 +154,7 @@ class Slack(FunctionTool):
     @function
     async def fetch_history(
         self,
-        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
+        channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
         max_messages: int = 1,
     ):
         """
@@ -178,8 +178,8 @@ class Slack(FunctionTool):
     @function
     async def reply(
         self,
-        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
-        thread_id: Annotated[str, FromContext(query="id of thread {thread}")],
+        channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
+        thread_id: Annotated[str, FromVectorDB(query="id of thread {thread}")],
         message: str,
     ):
         """
@@ -207,8 +207,8 @@ class Slack(FunctionTool):
     @function
     async def wait_for_reply(
         self,
-        channel_id: Annotated[str, FromContext(query="id of channel {channel}")],
-        thread_id: Annotated[str, FromContext(query="id of thread {thread}")],
+        channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
+        thread_id: Annotated[str, FromVectorDB(query="id of thread {thread}")],
     ):
         """
         Wait for a reply to the given context in the Slack channel with the given channel ID.

@@ -1,5 +1,5 @@
 from typing import Annotated
-from npiai import FunctionTool, function, FromContext, agent, Context
+from npiai import FunctionTool, function, FromVectorDB, agent, Context
 from npiai.hitl_handler import ConsoleHandler
 import asyncio
 
@@ -11,7 +11,7 @@ class MyTool(FunctionTool):
     @function
     def get_test_id(
         self,
-        test_id: Annotated[int, FromContext(query="{user}'s test id")],
+        test_id: Annotated[int, FromVectorDB(query="{user}'s test id")],
     ):
         """
         Get test id
@@ -24,9 +24,8 @@ class MyTool(FunctionTool):
 
 async def main():
     async with agent.wrap(MyTool()) as tool:
-        tool.use_hitl(ConsoleHandler())
         ctx = Context()
-        ctx.bind(tool)
+        ctx.use_hitl(ConsoleHandler())
         result = await tool.chat(ctx=ctx, instruction="What's the test id for @Alice?")
         print(f"Result: {result}")
 

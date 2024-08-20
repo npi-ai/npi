@@ -3,7 +3,7 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class FromContext:
+class FromVectorDB:
     query: str
     constraints: str | None = None
     # generated attributes

@@ -103,8 +103,6 @@ class Negotiator(FunctionTool):
             agent.wrap(Gmail(creds=cred)),
         )
 
-        self.use_hitl(ConsoleHandler())
-
 
 async def run():
     llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
@@ -123,11 +121,14 @@ async def run():
 
     nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
     async with agent.wrap(nego, llm=llm) as negotiator:
+        ctx = Context()
+        ctx.use_hitl(ConsoleHandler())
+
         print("Negotiator: What's your task for me?")
         task = input("User: ")
         print("")
 
-        print(await negotiator.chat(ctx=Context(), instruction=task))
+        print(await negotiator.chat(ctx=ctx, instruction=task))
 
 
 def main():

@@ -5,7 +5,7 @@ from openai.types.chat import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from npiai.types.shot import Shot
-from npiai.types.from_context import FromContext
+from npiai.types.from_context import FromVectorDB
 from npiai.constant import CTX_QUERY_POSTFIX
 
 ToolFunction = Callable[..., Awaitable[Any]]
@@ -16,7 +16,7 @@ class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
-    ctx_variables: List[FromContext]
+    ctx_variables: List[FromVectorDB]
     ctx_param_name: str | None = None
     schema: Optional[Dict[str, Any]] = None
     model: Optional[Type[BaseModel]] = None

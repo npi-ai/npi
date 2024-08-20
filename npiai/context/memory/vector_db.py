@@ -1,43 +1,40 @@
-import datetime
 import json
-import uuid
-import asyncio
-from typing import List, Union, Dict, TYPE_CHECKING, TypeVar, Type, Any, Literal
 from textwrap import dedent
+from typing import Dict, TYPE_CHECKING, TypeVar, Type, Any
 
 from mem0 import Memory
-from litellm.types.completion import ChatCompletionMessageParam
 from pydantic import create_model, Field
 
 from npiai.utils import sanitize_schema, logger
-from npiai.types import RuntimeMessage
-
 from .base import BaseMemory
+
+if TYPE_CHECKING:
+    from npiai.context import Context
 
 _T = TypeVar("_T")
 
 
 class VectorDBMemory(BaseMemory):
-    _context_id: str
     _memory: Memory
     _query_cache: Dict[str, Any]
 
     def __init__(self, context_id: str):
-        self._context_id = context_id
+        super().__init__(context_id)
+        # TODO: init memory from config file
+        self._memory = Memory()
+        self._query_cache = {}
 
-    async def _ask_human(self, query: str):
+    async def _ask_human(self, ctx: "Context", query: str):
         """
         Ask human if no memory is found
 
         Args:
             query: Memory search query
         """
-        if not self._active_tool:
-            raise RuntimeError("No active tool found")
 
-        res = await self._active_tool.hitl.input(
-            ctx=self,
-            tool_name=self._active_tool.name,
+        res = await ctx.hitl.input(
+            ctx=ctx,
+            tool_name="Vector DB",
             message=f"Please provide the following information: {query}",
         )
 
@@ -73,17 +70,19 @@ class VectorDBMemory(BaseMemory):
         self._query_cache = {}
         logger.debug(f"Saved memory: {m}")
 
-    async def ask(
+    async def retrieve(
         self,
+        ctx: "Context",
         query: str,
         return_type: Type[_T] = str,
         constraints: str = None,
         _is_retry: bool = False,
     ) -> _T:
         """
-        Search the memory
+        Search the vector db
 
         Args:
+            ctx: NPi Context
             query: Memory search query
             return_type: Return type of the result
             constraints: Search constraints
@@ -99,8 +98,10 @@ class VectorDBMemory(BaseMemory):
                 return
 
             # invoke HITL and retry
-            await self._ask_human(query)
-            return await self.ask(query, return_type, constraints, _is_retry=True)
+            await self._ask_human(ctx, query)
+            return await self.retrieve(
+                ctx, query, return_type, constraints, _is_retry=True
+            )
 
         memories = self._memory.search(query, run_id=self._context_id, limit=10)
         logger.debug(f"Retrieved memories: {json.dumps(memories)}")
