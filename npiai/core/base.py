@@ -18,11 +18,9 @@ class BaseTool(ABC):
     provider: str = "private"
 
     _fn_map: Dict[str, FunctionRegistration]
-    _hitl: HITL | None
 
     def __init__(self):
         self._fn_map = {}
-        self._hitl = None
 
     @classmethod
     def from_context(cls, ctx: Context) -> "BaseTool":
@@ -30,13 +28,6 @@ class BaseTool(ABC):
         raise NotImplementedError(
             "subclasses must implement this method for npi cloud hosting"
         )
-
-    @property
-    def hitl(self) -> HITL:
-        if self._hitl is None:
-            raise AttributeError("HITL handler has not been set")
-
-        return self._hitl
 
     @property
     def tools(self) -> List[ChatCompletionToolParam]:
@@ -82,7 +73,7 @@ class BaseTool(ABC):
         for ctx_var in fn.ctx_variables:
             query = args.pop(f"{ctx_var.name}{CTX_QUERY_POSTFIX}", ctx_var.query)
 
-            args[ctx_var.name] = await ctx.ask(
+            args[ctx_var.name] = await ctx.vector_db.ask(
                 query=query,
                 return_type=ctx_var.return_type,
                 constraints=ctx_var.constraints,
@@ -91,9 +82,6 @@ class BaseTool(ABC):
         res = await fn.fn(**args)
 
         return str(res)
-
-    def use_hitl(self, hitl: HITL):
-        self._hitl = hitl
 
     def schema(self):
         """
