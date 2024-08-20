@@ -1,10 +1,16 @@
 from typing import List
 
 import questionary
+from questionary import Style
 
-from termcolor import colored
 from npiai.core import HITL
 from npiai.context import Context
+
+_PROMPT_STYLE = Style(
+    [
+        ("question", "magenta"),
+    ]
+)
 
 
 class ConsoleHandler(HITL):
@@ -16,12 +22,9 @@ class ConsoleHandler(HITL):
         default=False,
     ) -> bool:
         return await questionary.confirm(
-            colored(
-                f"[{tool_name}]: Please confirm: {message}",
-                color="magenta",
-                attrs=["bold"],
-            ),
+            message=f"[{tool_name}]: Please confirm: {message}",
             default=default,
+            style=_PROMPT_STYLE,
         ).ask_async()
 
     async def input(
@@ -31,9 +34,10 @@ class ConsoleHandler(HITL):
         message: str,
         default="",
     ) -> str:
-        print(colored(f"[{tool_name}]: {message}", color="magenta", attrs=["bold"]))
         return await questionary.text(
-            "Type your response:", default=default
+            message=f"[{tool_name}]: {message}:",
+            default=default,
+            style=_PROMPT_STYLE,
         ).ask_async()
 
     async def select(
@@ -45,11 +49,8 @@ class ConsoleHandler(HITL):
         default: str = None,
     ) -> str:
         return await questionary.select(
-            message=colored(
-                f"[{tool_name}]: {message}",
-                color="magenta",
-                attrs=["bold"],
-            ),
+            message=f"[{tool_name}]: {message}",
             choices=choices,
             default=default,
+            style=_PROMPT_STYLE,
         ).ask_async()
