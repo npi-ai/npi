@@ -6,6 +6,7 @@ from textwrap import dedent
 
 from googleapiclient.errors import HttpError
 from markdown import markdown
+from markdownify import markdownify as to_markdown
 from simplegmail.message import Message
 
 from npiai import FunctionTool, function, utils
@@ -99,7 +100,7 @@ class Gmail(FunctionTool):
             Subject: {message.subject}
             """
             )
-            + f"Content: {message.plain or message.html}"
+            + f"Content: {message.plain or to_markdown(message.html)}"
         )
 
     @function
