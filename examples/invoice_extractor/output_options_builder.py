@@ -2,7 +2,7 @@ from typing import Literal, List
 
 from npiai import FunctionTool, function, Context
 
-from constants import OUTPUT_FORMAT, OUTPUT_DESTINATION, OUTPUT_FILENAME
+from constants import StorageKeys
 
 
 class OutputOptionsBuilder(FunctionTool):
@@ -102,9 +102,9 @@ class OutputOptionsBuilder(FunctionTool):
             default=default_filename,
         )
 
-        await ctx.kv.save(OUTPUT_FORMAT, format)
-        await ctx.kv.save(OUTPUT_DESTINATION, destination)
-        await ctx.kv.save(OUTPUT_FILENAME, filename)
+        await ctx.kv.save(StorageKeys.OUTPUT_FORMAT, format)
+        await ctx.kv.save(StorageKeys.OUTPUT_DESTINATION, destination)
+        await ctx.kv.save(StorageKeys.OUTPUT_FILENAME, filename)
 
         return {
             "format": format,
@@ -127,8 +127,13 @@ if __name__ == "__main__":
 
             await tool.chat(ctx, "no options provided")
 
-            print("output format:", await ctx.kv.get(ctx, OUTPUT_FORMAT))
-            print("output destination:", await ctx.kv.get(ctx, OUTPUT_DESTINATION))
-            print("output filename:", await ctx.kv.get(ctx, OUTPUT_FILENAME))
+            print("output format:", await ctx.kv.get(ctx, StorageKeys.OUTPUT_FORMAT))
+            print(
+                "output destination:",
+                await ctx.kv.get(ctx, StorageKeys.OUTPUT_DESTINATION),
+            )
+            print(
+                "output filename:", await ctx.kv.get(ctx, StorageKeys.OUTPUT_FILENAME)
+            )
 
     asyncio.run(main())

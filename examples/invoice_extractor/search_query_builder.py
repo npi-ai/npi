@@ -1,6 +1,6 @@
 from npiai import FunctionTool, function, Context
 
-from constants import QUERY
+from constants import StorageKeys
 
 
 class SearchQueryBuilder(FunctionTool):
@@ -173,7 +173,7 @@ class SearchQueryBuilder(FunctionTool):
             ctx: NPi Context object.
             query: Gmail search query.
         """
-        await ctx.kv.save(QUERY, query)
+        await ctx.kv.save(StorageKeys.QUERY, query)
 
         return "Query saved"
 
@@ -192,6 +192,6 @@ if __name__ == "__main__":
 
             await tool.chat(ctx, "search for emails containing invoice")
 
-            print("query:", await ctx.kv.get(ctx, QUERY))
+            print("query:", await ctx.kv.get(ctx, StorageKeys.QUERY))
 
     asyncio.run(main())
