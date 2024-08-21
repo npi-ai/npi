@@ -181,6 +181,20 @@ class SearchQueryBuilder(FunctionTool):
             ctx: NPi Context object.
             query: Gmail search query.
         """
+        confirmed = await ctx.hitl.confirm(
+            ctx=ctx,
+            tool_name=self.name,
+            message=f"Does the search query `{query}` look good to you?",
+        )
+
+        if not confirmed:
+            query = await ctx.hitl.input(
+                ctx=ctx,
+                tool_name=self.name,
+                message=f"Amend the search query",
+                default=query,
+            )
+
         await ctx.kv.save(StorageKeys.QUERY, query)
 
         return "Query saved"
