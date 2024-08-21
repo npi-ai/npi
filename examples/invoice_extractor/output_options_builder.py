@@ -23,6 +23,7 @@ class OutputOptionsBuilder(FunctionTool):
            leaving unspecified fields as `None`. The tool will interact with the 
            user to define any missing information, so you should always call this
            tool even if no criteria are present.
+    Note that you should only call each tool once during the process.
        
     ## Examples
     

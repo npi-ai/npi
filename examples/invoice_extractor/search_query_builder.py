@@ -26,6 +26,7 @@ class SearchQueryBuilder(FunctionTool):
            by the tool. Note that you may need to convert the date to ~d (day), 
            ~m (month), or ~y (year) format if the criteria contains relative dates.
         5. Utilize the `save_query` tool to record the crafted search query.
+    Note that you should only call each tool once during the process.
        
     ## Examples
     
@@ -142,6 +143,11 @@ class SearchQueryBuilder(FunctionTool):
             default=has_pdf_attachments,
         )
 
+        additional_preferences = await hitl_input(
+            msg="Any additional criteria (e.g., unread emails only) for email search? Leave blank to skip",
+            default=None,
+        )
+
         filters = {
             "keywords": keywords,
             "sender": sender,
@@ -151,6 +157,7 @@ class SearchQueryBuilder(FunctionTool):
             "start_date": after_date,
             "end_date": before_date,
             "in_folder": in_folder,
+            "additional_preferences": additional_preferences,
             # "has_pdf_attachments": has_pdf_attachments,
         }
 
