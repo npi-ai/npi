@@ -113,7 +113,7 @@ class InvoiceOrganizer(FunctionTool):
         return dedent(
             f"""
             Processed {len(processed_messages)} messages:
-            {json.dumps(processed_messages)}
+            {json.dumps(processed_messages, ensure_ascii=False)}
             """
         )
 
@@ -198,7 +198,7 @@ if __name__ == "__main__":
             ctx.use_llm(llm)
 
             await tool.chat(
-                ctx, "summarize invoices in the last year and save as invoices.json"
+                ctx, "summarize invoices in the past 3 month and save as invoices.json"
             )
 
     asyncio.run(main())

@@ -1,6 +1,5 @@
 import json
 import os.path
-from json import JSONDecodeError
 
 from npiai import FunctionTool, Context, function
 
@@ -58,13 +57,14 @@ class InvoiceProcessor(FunctionTool):
         print(json.dumps(data, indent=2, ensure_ascii=False))
 
         output_file = await ctx.kv.get(StorageKeys.OUTPUT_FILENAME)
+        current_data = []
 
         try:
             if os.path.exists(output_file):
                 with open(output_file, "r") as f:
                     current_data = json.load(f)
-        except JSONDecodeError:
-            current_data = []
+        except Exception:
+            pass
 
         with open(output_file, "w") as f:
             current_data.append(data)
