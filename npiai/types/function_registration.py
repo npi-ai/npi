@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from npiai.types.shot import Shot
 from npiai.types.from_context import FromVectorDB
-from npiai.constant import CTX_QUERY_POSTFIX
 
 ToolFunction = Callable[..., Awaitable[Any]]
 
@@ -42,7 +41,6 @@ class FunctionRegistration:
     def get_tool_param(self) -> ChatCompletionToolParam:
         tool: ChatCompletionToolParam = {
             "type": "function",
-            "strict": True,
             "function": {
                 "name": self.name,
                 "description": self.description,
@@ -50,6 +48,7 @@ class FunctionRegistration:
         }
 
         if self.schema is not None:
+            tool["function"]["strict"] = True
             tool["function"]["parameters"] = self.schema
 
         return tool

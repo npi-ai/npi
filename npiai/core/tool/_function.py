@@ -159,16 +159,6 @@ class FunctionTool(BaseFunctionTool, ABC):
         for call in tool_calls:
             fn_name = call.function.name
             args = json.loads(call.function.arguments)
-            call_msg = f"[{self.name}]: Calling {fn_name}"
-
-            if args:
-                arg_list = ", ".join(f"{k}={json.dumps(v)}" for k, v in args.items())
-                call_msg += f"({arg_list})"
-            else:
-                call_msg += "()"
-
-            logger.info(call_msg)
-            await session.send_debug_message(call_msg)
 
             try:
                 res = await self.exec(session, fn_name, args)

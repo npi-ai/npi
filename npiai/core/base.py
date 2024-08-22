@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
@@ -6,9 +7,9 @@ from litellm.types.utils import ChatCompletionMessageToolCall
 from openai.types.chat import ChatCompletionToolParam
 
 from npiai.context import Context
-from npiai.core.hitl import HITL
 from npiai.types import FunctionRegistration
 from npiai.constant import CTX_QUERY_POSTFIX
+from npiai.utils import logger
 
 
 class BaseTool(ABC):
@@ -53,7 +54,10 @@ class BaseTool(ABC):
         ...
 
     async def exec(
-        self, ctx: Context, fn_name: str, args: Dict[str, Any] = None
+        self,
+        ctx: Context,
+        fn_name: str,
+        args: Dict[str, Any] = None,
     ) -> str:
         if fn_name not in self._fn_map:
             raise RuntimeError(
@@ -80,7 +84,35 @@ class BaseTool(ABC):
                 constraints=ctx_var.constraints,
             )
 
-        res = await fn.fn(**args)
+        if fn.model:
+            non_optional_args = {}
+
+            # if an optional field received `None`, remove it from args
+            for k, v in args.items():
+                if v is not None:
+                    non_optional_args[k] = v
+                    continue
+
+                field = fn.model.model_fields.get(k, None)
+
+                if field and field.is_required():
+                    non_optional_args[k] = v
+        else:
+            non_optional_args = args
+
+        # log call message
+        call_msg = f"[{self.name}]: Calling {fn_name}"
+
+        arg_list = ", ".join(
+            f"{k}={json.dumps(v) if k is not fn.ctx_param_name else 'NPiContext'}"
+            for k, v in non_optional_args.items()
+        )
+        call_msg += f"({arg_list})"
+
+        logger.info(call_msg)
+        await ctx.send_debug_message(call_msg)
+
+        res = await fn.fn(**non_optional_args)
 
         return str(res)
 
