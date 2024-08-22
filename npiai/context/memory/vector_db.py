@@ -18,13 +18,13 @@ class VectorDBMemory(BaseMemory):
     _memory: Memory
     _query_cache: Dict[str, Any]
 
-    def __init__(self, context_id: str):
-        super().__init__(context_id)
+    def __init__(self, context: "Context"):
+        super().__init__(context)
         # TODO: init memory from config file
         self._memory = Memory()
         self._query_cache = {}
 
-    async def _ask_human(self, ctx: "Context", query: str):
+    async def _ask_human(self, query: str):
         """
         Ask human if no memory is found
 
@@ -32,8 +32,8 @@ class VectorDBMemory(BaseMemory):
             query: Memory search query
         """
 
-        res = await ctx.hitl.input(
-            ctx=ctx,
+        res = await self._ctx.hitl.input(
+            ctx=self._ctx,
             tool_name="Vector DB",
             message=f"Please provide the following information: {query}",
         )
@@ -49,7 +49,7 @@ class VectorDBMemory(BaseMemory):
         """
         m = self._memory.add(
             data=info,
-            run_id=self._context_id,
+            run_id=self._ctx.id,
             metadata={"raw": info},
             prompt=dedent(
                 f"""
@@ -103,7 +103,7 @@ class VectorDBMemory(BaseMemory):
                 ctx, query, return_type, constraints, _is_retry=True
             )
 
-        memories = self._memory.search(query, run_id=self._context_id, limit=10)
+        memories = self._memory.search(query, run_id=self._ctx.id, limit=10)
         logger.debug(f"Retrieved memories: {json.dumps(memories)}")
 
         if len(memories) == 0:

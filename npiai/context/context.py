@@ -13,6 +13,7 @@ from .memory import VectorDBMemory, KVMemory
 
 if TYPE_CHECKING:
     from npiai.core import HITL
+    from npiai.llm import LLM
 
 
 class Task:
@@ -54,6 +55,7 @@ class Context:
     _failed_msg: str
     _last_screenshot: str | None
     _hitl: Union["HITL", None]
+    _llm: Union["LLM", None]
 
     @property
     def hitl(self) -> "HITL":
@@ -62,12 +64,19 @@ class Context:
 
         return self._hitl
 
+    @property
+    def llm(self) -> "LLM":
+        if self._llm is None:
+            raise AttributeError("LLM Client has not been set")
+
+        return self._llm
+
     def __init__(
         self,
     ) -> None:
         self.id = str(uuid.uuid4())
-        self.vector_db = VectorDBMemory(context_id=self.id)
-        self.kv = KVMemory(context_id=self.id)
+        self.vector_db = VectorDBMemory(context=self)
+        self.kv = KVMemory(context=self)
 
         self._q = asyncio.Queue()
         self._is_finished = False
@@ -79,6 +88,9 @@ class Context:
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
+
+    def use_llm(self, llm: "LLM") -> None:
+        self._llm = llm
 
     # @abstractmethod
     # NOTE: this method should not be abstract
