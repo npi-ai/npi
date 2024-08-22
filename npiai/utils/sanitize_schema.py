@@ -1,35 +1,24 @@
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, cast
 
 from pydantic import BaseModel
+import openai
 
 
 def sanitize_schema(model: Type[BaseModel]) -> Dict[str, Any]:
-    schema = model.model_json_schema()
+    schema = openai.pydantic_function_tool(model)
 
     # remove unnecessary title
     schema.pop("title", None)
 
-    for prop in schema.get("properties", {}).values():
+    properties = cast(dict, schema["function"]["parameters"].get("properties", {}))
+
+    for prop in properties.values():
         prop.pop("title", None)
-
-        # use a more compact format for optional fields
-        if (
-            "anyOf" in prop
-            and len(prop["anyOf"]) == 2
-            and prop["anyOf"][1]["type"] == "null"
-        ):
-            # copy the first type definition to props
-            t = prop["anyOf"][0]
-            for k, v in t.items():
-                prop[k] = v
-
-            prop.pop("anyOf", None)
-
-            if prop.get("default") is None:
-                prop.pop("default", None)
+        # remove default values since it's not supported in structured output
+        prop.pop("default", None)
 
     # remove empty properties
-    if len(schema.get("properties", {})) == 0:
+    if len(properties) == 0:
         schema.pop("properties", None)
 
-    return schema
+    return schema["function"]["parameters"]
