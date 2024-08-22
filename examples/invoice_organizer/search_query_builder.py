@@ -20,6 +20,7 @@ class SearchQueryBuilder(FunctionTool):
         """
         You are an agent helping user compose a Gmail search query by interpreting 
         natural language instructions. For any given instruction, you must:
+        
             1. Identify and extract key search criteria from the user's instruction, 
                including `keywords`, `sender`, and any other pertinent details.
             2. Engage with the `get_criteria` tool, inputting identified criteria and 
@@ -28,12 +29,26 @@ class SearchQueryBuilder(FunctionTool):
                tool even if no criteria are present.
             3. Receive the refined criteria from the `get_criteria` tool.
             4. Formulate a Gmail search query using the finalized criteria provided 
-               by the tool. If the criteria contains relative dates, convert them to 
-               ~d (day), ~m (month), or ~y (year) format, and use the `older_than` and
-               `newer_than` filters. Otherwise, keep the date as is and use the `before`
-               and `after` filters.
+               by the tool.
             5. Utilize the `save_query` tool to record the crafted search query.
+            
         Note that you should only call each tool once during the process.
+        
+        ## How to construct Gmail search query
+        
+        - Keywords: separate them with space
+        - Sender: use `from:<sender>` filter
+        - Recipient: use `to:<recipient>` filter
+        - Subject: use `subject:<subject>` filter
+        - Label: use `label:<label>` filter. There should be no space in label
+        - Start date: use `after:<date>` filter if it is an absolute date. Otherwise,
+          convert the date to ~d (day), ~m (month), or ~y (year) format, and use
+          `newer_than:<relative_start_date>` filter.
+        - End date: use `before:<date>` filter if it is an absolute date. Otherwise,
+          convert the date to relative format and use `older_than:<relative_end_date>`
+          filter.
+        - Folder: use `in:<folder>` filter
+        - Attachment filename pattern: use `filename:<pattern>` filter
            
         ## Examples
         
