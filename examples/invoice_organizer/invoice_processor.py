@@ -55,21 +55,19 @@ class InvoiceProcessor(FunctionTool):
             f"Saving into {await ctx.kv.get(StorageKeys.OUTPUT_FILENAME)} (format: {await ctx.kv.get(StorageKeys.OUTPUT_FORMAT)})"
         )
 
-        print(json.dumps(data, indent=2))
+        print(json.dumps(data, indent=2, ensure_ascii=False))
 
         output_file = await ctx.kv.get(StorageKeys.OUTPUT_FILENAME)
 
-        if not os.path.exists(output_file):
-            with open(output_file, "w"):
-                pass
+        try:
+            if os.path.exists(output_file):
+                with open(output_file, "r") as f:
+                    current_data = json.load(f)
+        except JSONDecodeError:
+            current_data = []
 
-        with open(output_file, "r+") as f:
-            try:
-                current_data = json.load(f)
-            except JSONDecodeError:
-                current_data = []
+        with open(output_file, "w") as f:
             current_data.append(data)
-            f.truncate(0)
             f.write(json.dumps(current_data, indent=2, ensure_ascii=False))
 
         return "Invoice processed"
