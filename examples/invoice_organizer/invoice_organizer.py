@@ -140,7 +140,17 @@ class InvoiceOrganizer(FunctionTool):
             ChatCompletionUserMessageParam(
                 role="user",
                 # TODO: parse the attachments?
-                content=message.plain or markdownify(message.html),
+                content=dedent(
+                    f"""
+                    Subject: {message.subject}
+                    Date: {message.date}
+                    From: {message.sender}
+                    To: {message.recipient}
+                    
+                    Content:
+                    {message.plain or markdownify(message.html)}
+                    """
+                ),
             ),
         ]
 
