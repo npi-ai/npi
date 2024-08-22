@@ -11,7 +11,7 @@ class KVMemory(BaseMemory):
     # TODO: connect to DB
     _storage: Dict[str, str] = {}
 
-    async def _ask_human(self, ctx: "Context", key: str):
+    async def _ask_human(self, key: str):
         """
         Ask human if no memory is found
 
@@ -19,8 +19,8 @@ class KVMemory(BaseMemory):
             key: Property key
         """
 
-        value = await ctx.hitl.input(
-            ctx=ctx,
+        value = await self._ctx.hitl.input(
+            ctx=self._ctx,
             tool_name="KV Storage",
             message=f"Please provide the following information: {key}",
         )
@@ -39,7 +39,6 @@ class KVMemory(BaseMemory):
 
     async def get(
         self,
-        ctx: "Context",
         key: str,
         _is_retry: bool = False,
     ) -> str:
@@ -47,7 +46,6 @@ class KVMemory(BaseMemory):
         Search the KV storage for information
 
         Args:
-            ctx: NPi Context
             key: Property key
             _is_retry: Retry flag
         """
@@ -57,8 +55,8 @@ class KVMemory(BaseMemory):
                 return
 
             # invoke HITL and retry
-            await self._ask_human(ctx, key)
-            return await self.get(ctx, key, _is_retry=True)
+            await self._ask_human(key)
+            return await self.get(key, _is_retry=True)
 
         value = self._storage.get(key, None)
 

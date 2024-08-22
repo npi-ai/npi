@@ -1,11 +1,15 @@
 from abc import ABC
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from npiai.context import Context
 
 
 class BaseMemory(ABC):
-    _context_id: str
+    _ctx: "Context"
 
-    def __init__(self, context_id: str):
-        self._context_id = context_id
+    def __init__(self, context: "Context"):
+        self._ctx = context
 
     # @abstractmethod
     # async def save(self, info: str): ...
