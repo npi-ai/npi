@@ -1,4 +1,6 @@
+import json
 from typing import Literal, List
+from textwrap import dedent
 
 from npiai import FunctionTool, function, Context
 
@@ -8,36 +10,40 @@ from constants import StorageKeys
 class OutputOptionsBuilder(FunctionTool):
     name = "output_options_builder"
 
-    description = """
-    Build data output options based on the search criteria. For example, 
-    to export data as spreadsheets, you may invoke this agent with 
-    `chat(instruction="output with spreadsheets")`
-    """
+    description = dedent(
+        """
+        Build data output options based on the search criteria. For example, 
+        to export data as spreadsheets, you may invoke this agent with 
+        `chat(instruction="output with spreadsheets")`
+        """
+    )
 
-    system_prompt = """
-    You are an agent helping user configurate data output options by interpreting 
-    natural language instructions. For any given instruction, you must:
-        1. Identify and extract key criteria from the user's instruction, 
-           including `format`, `destination`, and any other pertinent details.
-        2. Engage with the `set_output_options` tool, inputting identified criteria and 
-           leaving unspecified fields as `None`. The tool will interact with the 
-           user to define any missing information, so you should always call this
-           tool even if no criteria are present.
-    Note that you should only call each tool once during the process.
-       
-    ## Examples
-    
-    Instruction: render the results as spreadsheets and save them to google drive
-    Steps:
-        a. Extracted criteria: `destination="google_drive"`.
-        b. Interaction with `set_output_options`: 
-           `set_output_options(format="spreadsheet", destination="google_drive")`
+    system_prompt = dedent(
+        """
+        You are an agent helping user configurate data output options by interpreting 
+        natural language instructions. For any given instruction, you must:
+            1. Identify and extract key criteria from the user's instruction, 
+               including `format`, `destination`, and any other pertinent details.
+            2. Engage with the `set_output_options` tool, inputting identified criteria and 
+               leaving unspecified fields as `None`. The tool will interact with the 
+               user to define any missing information, so you should always call this
+               tool even if no criteria are present.
+        Note that you should only call the `set_output_options` tool once during the process.
            
-    Instruction: None
-    Steps:
-        a. Interaction with `set_output_options`: 
-           `set_output_options()`
-    """
+        ## Examples
+        
+        Instruction: render the results as spreadsheets and save them to google drive
+        Steps:
+            a. Extracted criteria: `destination="google_drive"`.
+            b. Interaction with `set_output_options`: 
+               `set_output_options(format="spreadsheet", destination="google_drive")`
+               
+        Instruction: None
+        Steps:
+            a. Interaction with `set_output_options`: 
+               `set_output_options()`
+        """
+    )
 
     @function
     async def set_output_options(
@@ -93,7 +99,7 @@ class OutputOptionsBuilder(FunctionTool):
         if not default_filename:
             match format:
                 case "spreadsheet":
-                    default_filename = "invoice.csv"
+                    default_filename = "invoice.xlsx"
                 case "csv":
                     default_filename = "invoice.csv"
                 case "json":
@@ -108,11 +114,13 @@ class OutputOptionsBuilder(FunctionTool):
         await ctx.kv.save(StorageKeys.OUTPUT_DESTINATION, destination)
         await ctx.kv.save(StorageKeys.OUTPUT_FILENAME, filename)
 
-        return {
+        options = {
             "format": format,
             "destination": destination,
             "filename": filename,
         }
+
+        return f"Output options saved: {json.dumps(options, ensure_ascii=False)}"
 
 
 if __name__ == "__main__":
@@ -129,13 +137,11 @@ if __name__ == "__main__":
 
             await tool.chat(ctx, "no options provided")
 
-            print("output format:", await ctx.kv.get(ctx, StorageKeys.OUTPUT_FORMAT))
+            print("output format:", await ctx.kv.get(StorageKeys.OUTPUT_FORMAT))
             print(
                 "output destination:",
-                await ctx.kv.get(ctx, StorageKeys.OUTPUT_DESTINATION),
+                await ctx.kv.get(StorageKeys.OUTPUT_DESTINATION),
             )
-            print(
-                "output filename:", await ctx.kv.get(ctx, StorageKeys.OUTPUT_FILENAME)
-            )
+            print("output filename:", await ctx.kv.get(StorageKeys.OUTPUT_FILENAME))
 
     asyncio.run(main())
