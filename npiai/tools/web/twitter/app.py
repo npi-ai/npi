@@ -230,7 +230,6 @@ class Twitter(BrowserTool):
             )
 
         return await ctx.hitl.input(
-            ctx,
             self.name,
             f"Please enter {cred_name} to continue the login process.",
         )

@@ -4,7 +4,6 @@ import questionary
 from questionary import Style
 
 from npiai.core import HITL
-from npiai.context import Context
 
 _PROMPT_STYLE = Style(
     [
@@ -16,7 +15,6 @@ _PROMPT_STYLE = Style(
 class ConsoleHandler(HITL):
     async def confirm(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         default=False,
@@ -29,7 +27,6 @@ class ConsoleHandler(HITL):
 
     async def input(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         default="",
@@ -42,7 +39,6 @@ class ConsoleHandler(HITL):
 
     async def select(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         choices: List[str],

@@ -324,9 +324,9 @@ class NavigatorAgent(BrowserAgentTool):
             case "back-to-top":
                 result = await self._browser_app.back_to_top()
             case "confirmation":
-                result = await ctx.hitl.confirm(ctx, self.name, action["description"])
+                result = await ctx.hitl.confirm(self.name, action["description"])
             case "human-intervention":
-                result = await ctx.hitl.input(ctx, self.name, action["description"])
+                result = await ctx.hitl.input(self.name, action["description"])
             case "done":
                 result = None
             case _:

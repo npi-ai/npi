@@ -4,6 +4,7 @@ from npiai.core.tool import (
     function,
     AgentTool,
     BrowserAgentTool,
+    ConfigAgentTool,
 )
 from npiai.core.hitl import HITL
 from npiai.llm import OpenAI, LLM
@@ -15,6 +16,7 @@ __all__ = [
     "FunctionTool",
     "AgentTool",
     "BrowserAgentTool",
+    "ConfigAgentTool",
     "function",
     "HITL",
     "OpenAI",

@@ -333,7 +333,6 @@ class Gmail(FunctionTool):
             bcc: The list of email addresses to bcc.
         """
         approved = await ctx.hitl.confirm(
-            ctx=ctx,
             tool_name=self.name,
             message=f"Continue sending the following email to {to}?\n{message}",
         )

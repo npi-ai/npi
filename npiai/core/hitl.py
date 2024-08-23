@@ -5,10 +5,14 @@ from npiai.context import Context
 
 
 class HITL(ABC):
+    ctx: Context
+
+    def bind_context(self, ctx: Context):
+        self.ctx = ctx
+
     @abstractmethod
     async def confirm(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         default=False,
@@ -17,7 +21,6 @@ class HITL(ABC):
     @abstractmethod
     async def input(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         default="",
@@ -26,7 +29,6 @@ class HITL(ABC):
     @abstractmethod
     async def select(
         self,
-        ctx: Context,
         tool_name: str,
         message: str,
         choices: List[str],
