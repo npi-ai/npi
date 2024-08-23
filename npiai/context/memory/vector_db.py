@@ -33,7 +33,6 @@ class VectorDBMemory(BaseMemory):
         """
 
         res = await self._ctx.hitl.input(
-            ctx=self._ctx,
             tool_name="Vector DB",
             message=f"Please provide the following information: {query}",
         )
@@ -72,7 +71,6 @@ class VectorDBMemory(BaseMemory):
 
     async def retrieve(
         self,
-        ctx: "Context",
         query: str,
         return_type: Type[_T] = str,
         constraints: str = None,
@@ -82,7 +80,6 @@ class VectorDBMemory(BaseMemory):
         Search the vector db
 
         Args:
-            ctx: NPi Context
             query: Memory search query
             return_type: Return type of the result
             constraints: Search constraints
@@ -98,10 +95,8 @@ class VectorDBMemory(BaseMemory):
                 return
 
             # invoke HITL and retry
-            await self._ask_human(ctx, query)
-            return await self.retrieve(
-                ctx, query, return_type, constraints, _is_retry=True
-            )
+            await self._ask_human(query)
+            return await self.retrieve(query, return_type, constraints, _is_retry=True)
 
         memories = self._memory.search(query, run_id=self._ctx.id, limit=10)
         logger.debug(f"Retrieved memories: {json.dumps(memories)}")

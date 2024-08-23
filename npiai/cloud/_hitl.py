@@ -7,9 +7,10 @@ from ._context import CloudContext
 
 
 class CloudHITL(HITL):
-    @staticmethod
+    ctx: CloudContext
+
     async def _send_action(
-        ctx: CloudContext,
+        self,
         action: Literal["input", "confirm", "select"],
         message: str,
         default: str | bool,
@@ -28,20 +29,18 @@ class CloudHITL(HITL):
         if action == "select":
             msg["choices"] = choices
 
-        await ctx.send(msg)
+        await self.ctx.send(msg)
 
-        result = await ctx.receive_action_result(action_id)
+        result = await self.ctx.receive_action_result(action_id)
         return result
 
     async def confirm(
         self,
-        ctx: CloudContext,
         tool_name: str,
         message: str,
         default=False,
     ) -> bool:
         res = await self._send_action(
-            ctx=ctx,
             action="confirm",
             message=f"[{tool_name}]: {message}",
             default=default,
@@ -51,13 +50,11 @@ class CloudHITL(HITL):
 
     async def input(
         self,
-        ctx: CloudContext,
         tool_name: str,
         message: str,
         default="",
     ) -> str:
         res = await self._send_action(
-            ctx=ctx,
             action="input",
             message=f"[{tool_name}]: {message}",
             default=default,
@@ -67,14 +64,12 @@ class CloudHITL(HITL):
 
     async def select(
         self,
-        ctx: CloudContext,
         tool_name: str,
         message: str,
         choices: List[str],
         default="",
     ):
         res = await self._send_action(
-            ctx=ctx,
             action="select",
             message=f"[{tool_name}]: {message}",
             default=default,

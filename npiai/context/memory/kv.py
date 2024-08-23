@@ -1,10 +1,7 @@
-from typing import Dict, TYPE_CHECKING
+from typing import Dict
 
 from npiai.utils import logger
 from .base import BaseMemory
-
-if TYPE_CHECKING:
-    from npiai.context import Context
 
 
 class KVMemory(BaseMemory):
@@ -20,7 +17,6 @@ class KVMemory(BaseMemory):
         """
 
         value = await self._ctx.hitl.input(
-            ctx=self._ctx,
             tool_name="KV Storage",
             message=f"Please provide the following information: {key}",
         )
@@ -40,13 +36,15 @@ class KVMemory(BaseMemory):
     async def get(
         self,
         key: str,
+        ask_human: bool = True,
         _is_retry: bool = False,
-    ) -> str:
+    ) -> str | None:
         """
         Search the KV storage for information
 
         Args:
             key: Property key
+            ask_human: Whether to ask human if no memory is found
             _is_retry: Retry flag
         """
 
@@ -60,8 +58,11 @@ class KVMemory(BaseMemory):
 
         value = self._storage.get(key, None)
 
-        if not value:
+        if not value and ask_human:
             logger.info(f"No property found for key: {key}")
             return await retry()
 
         return value
+
+    async def delete(self, key: str):
+        self._storage.pop(key, None)

@@ -2,12 +2,14 @@
 
 import asyncio
 import datetime
+import os
 import uuid
 from typing import List, Union, Dict, TYPE_CHECKING, Literal
 
 from litellm.types.completion import ChatCompletionMessageParam
 
 from npiai.types import RuntimeMessage
+from npiai.llm import OpenAI
 
 from .memory import VectorDBMemory, KVMemory
 
@@ -67,7 +69,11 @@ class Context:
     @property
     def llm(self) -> "LLM":
         if self._llm is None:
-            raise AttributeError("LLM Client has not been set")
+            # raise AttributeError("LLM Client has not been set")
+            return OpenAI(
+                api_key=os.environ.get("OPENAI_API_KEY", None),
+                model="gpt-4o",
+            )
 
         return self._llm
 
@@ -85,9 +91,11 @@ class Context:
         self._failed_msg = ""
         self._last_screenshot = None
         self._hitl = None
+        self._llm = None
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
+        hitl.bind_context(self)
 
     def use_llm(self, llm: "LLM") -> None:
         self._llm = llm
