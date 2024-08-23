@@ -196,3 +196,21 @@ class SearchQueryConfigs(ConfigAgentTool):
             )
 
         await ctx.kv.save(StorageKeys.QUERY, query)
+
+
+if __name__ == "__main__":
+    import asyncio
+    from npiai.hitl_handler import ConsoleHandler
+
+    from debug_context import DebugContext
+
+    async def main():
+        async with SearchQueryConfigs() as config:
+            ctx = DebugContext()
+            ctx.use_hitl(ConsoleHandler())
+
+            await config.chat(ctx, "search for emails containing invoice")
+
+            print("query:", await ctx.kv.get(StorageKeys.QUERY))
+
+    asyncio.run(main())
