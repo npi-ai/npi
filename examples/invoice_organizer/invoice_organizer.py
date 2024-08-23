@@ -18,8 +18,8 @@ from npiai.utils import logger
 from gmail_client import GmailClient
 from invoice_processor import InvoiceProcessor
 from constants import StorageKeys
-from output_options_builder import OutputOptionsBuilder
-from search_query_builder import SearchQueryBuilder
+from output_configs import OutputConfigs
+from search_query_configs import SearchQueryConfigs
 
 
 class InvoiceOrganizer(FunctionTool):
@@ -30,30 +30,8 @@ class InvoiceOrganizer(FunctionTool):
     system_prompt = dedent(
         """
         You are an agent helping user identify and organize invoice-like emails in
-        Gmail inbox. For any given instruction, you should:
-        
-        1. Configure output options: extract the output preferences, such as format
-           and filename, from the instruction and call the `output_options_builder`
-           tool to set up output options.
-        2. Build gmail search query: interpret the user's search criteria for locating 
-           the emails, which may include specific keywords, sender details, and other 
-           relevant filters. Then, call the `search_query_builder` tool to build a 
-           search query.
-        3. Process emails: call the `organize_invoices` tool to process the emails.
-        
-        ## Examples:
-        
-        Instruction: get invoices during the past week
-        Steps:
-            a. Call `output_options_builder(instruction="No output options provided")`
-            b. Call `search_query_builder(instruction="Search for emails in the last week")`
-            c. Call `organize_invoices()`
-            
-        Instruction: summarize invoices from a@example.com and save them in a spreadsheet
-        Steps:
-            a. Call `output_options_builder(instruction="Save as spreadsheet")`
-            b. Call `search_query_builder(instruction="Search for emails from a@example.com")`
-            c. Call `organize_invoices()`
+        Gmail inbox. For any given instruction, you should call the `organize_invoices` 
+        tool to process the emails.
         """
     )
 
@@ -64,11 +42,6 @@ class InvoiceOrganizer(FunctionTool):
     def __init__(self, creds: GoogleCredentials | None = None):
         super().__init__()
         self._processor = InvoiceProcessor()
-
-        self.add_tool(
-            agent.wrap(OutputOptionsBuilder()),
-            agent.wrap(SearchQueryBuilder()),
-        )
 
         if creds:
             self._creds = creds
@@ -192,12 +165,18 @@ if __name__ == "__main__":
             api_key=os.environ.get("OPENAI_API_KEY", None),
             model="gpt-4o",
         )
-        async with agent.wrap(InvoiceOrganizer(), llm) as tool:
-            ctx = DebugContext()
-            ctx.use_hitl(ConsoleHandler())
-            ctx.use_llm(llm)
 
-            await tool.chat(
+        ctx = DebugContext()
+        ctx.use_hitl(ConsoleHandler())
+        ctx.use_llm(llm)
+
+        async with agent.wrap(InvoiceOrganizer()) as organizer:
+            organizer.use_configs(
+                SearchQueryConfigs(),
+                OutputConfigs(),
+            )
+
+            await organizer.chat(
                 ctx, "summarize invoices in the past 3 month and save as invoices.json"
             )
 

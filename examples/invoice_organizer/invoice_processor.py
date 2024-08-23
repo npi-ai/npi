@@ -50,13 +50,13 @@ class InvoiceProcessor(FunctionTool):
 
         # TODO: save invoice data
 
-        print(
-            f"Saving into {await ctx.kv.get(StorageKeys.OUTPUT_FILENAME)} (format: {await ctx.kv.get(StorageKeys.OUTPUT_FORMAT)})"
-        )
+        print(f"Output options: {await ctx.kv.get(StorageKeys.OUTPUT_OPTIONS)}")
+
+        options = json.loads(await ctx.kv.get(StorageKeys.OUTPUT_OPTIONS))
 
         print(json.dumps(data, indent=2, ensure_ascii=False))
 
-        output_file = await ctx.kv.get(StorageKeys.OUTPUT_FILENAME)
+        output_file = options["filename"]
         current_data = []
 
         try:
