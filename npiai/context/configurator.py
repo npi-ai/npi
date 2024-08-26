@@ -19,8 +19,6 @@ class Configurator:
     model: Type[BaseModel]
     storage_key: str = str(uuid.uuid4())
 
-    name = "config_agent"
-    description = "Set up user preferences based on natural language instructions"
     system_prompt = dedent(
         """
         You are an agent helping user set up config fields by interpreting natural 
@@ -33,6 +31,10 @@ class Configurator:
                tool even if no criteria are present.
         """
     )
+
+    @property
+    def name(self) -> str:
+        return type(self).__name__
 
     async def setup(self, ctx: Context, instruction: str) -> str:
         await ctx.send_debug_message(f"[{self.name}] Setting up config fields")

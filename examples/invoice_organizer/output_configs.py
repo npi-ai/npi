@@ -21,16 +21,6 @@ class OutputConfigs(Configurator):
     model = OutputConfigsModel
     storage_key = StorageKeys.OUTPUT_OPTIONS
 
-    name = "output_options_builder"
-
-    description = dedent(
-        """
-        Build data output options based on the search criteria. For example, 
-        to export data as spreadsheets, you may invoke this agent with 
-        `chat(instruction="output with spreadsheets")`
-        """
-    )
-
     system_prompt = dedent(
         """
         You are an agent helping user configurate data output options by interpreting 
