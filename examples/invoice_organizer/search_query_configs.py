@@ -43,16 +43,6 @@ class SearchQueryConfigs(Configurator):
     model = SearchQueryConfigsModel
     storage_key = StorageKeys.QUERY
 
-    name = "search_query_builder"
-
-    description = dedent(
-        """
-        Build Gmail search query based on the search criteria. For example, 
-        to search for emails from someone@example.com, you may invoke this agent with 
-        `chat(instruction="search for emails sent by someone@example.com")`
-        """
-    )
-
     system_prompt = dedent(
         """
         You are an agent helping user compose a Gmail search query by interpreting 
