@@ -8,7 +8,7 @@ from litellm.types.completion import (
     ChatCompletionUserMessageParam,
 )
 
-from npiai import ConfigAgentTool, Context
+from npiai import Configurator, Context
 from npiai.types import FunctionRegistration
 from npiai.utils import sanitize_schema
 
@@ -39,7 +39,7 @@ class SearchQueryConfigsModel(BaseModel):
     )
 
 
-class SearchQueryConfigs(ConfigAgentTool):
+class SearchQueryConfigs(Configurator):
     model = SearchQueryConfigsModel
     storage_key = StorageKeys.QUERY
 
@@ -205,12 +205,12 @@ if __name__ == "__main__":
     from debug_context import DebugContext
 
     async def main():
-        async with SearchQueryConfigs() as config:
-            ctx = DebugContext()
-            ctx.use_hitl(ConsoleHandler())
+        ctx = DebugContext()
+        ctx.use_hitl(ConsoleHandler())
+        ctx.use_configs(SearchQueryConfigs())
 
-            await config.chat(ctx, "search for emails containing invoice")
+        await ctx.setup_configs("search for emails containing invoice")
 
-            print("query:", await ctx.kv.get(StorageKeys.QUERY))
+        print("query:", await ctx.kv.get(StorageKeys.QUERY))
 
     asyncio.run(main())

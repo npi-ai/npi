@@ -4,11 +4,10 @@ from npiai.core.tool import (
     function,
     AgentTool,
     BrowserAgentTool,
-    ConfigAgentTool,
 )
 from npiai.core.hitl import HITL
 from npiai.llm import OpenAI, LLM
-from npiai.core.base import Context
+from npiai.context import Context, Configurator
 from npiai.types import FromVectorDB
 
 __all__ = [
@@ -16,7 +15,7 @@ __all__ = [
     "FunctionTool",
     "AgentTool",
     "BrowserAgentTool",
-    "ConfigAgentTool",
+    "Configurator",
     "function",
     "HITL",
     "OpenAI",

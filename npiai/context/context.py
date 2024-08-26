@@ -9,13 +9,13 @@ from typing import List, Union, Dict, TYPE_CHECKING, Literal
 from litellm.types.completion import ChatCompletionMessageParam
 
 from npiai.types import RuntimeMessage
-from npiai.llm import OpenAI
+from npiai.llm import OpenAI, LLM
 
 from .memory import VectorDBMemory, KVMemory
 
 if TYPE_CHECKING:
-    from npiai.core import HITL
-    from npiai.llm import LLM
+    from npiai import HITL
+    from .configurator import Configurator
 
 
 class Task:
@@ -56,8 +56,10 @@ class Context:
     _result: str
     _failed_msg: str
     _last_screenshot: str | None
+
+    _llm: LLM | None
     _hitl: Union["HITL", None]
-    _llm: Union["LLM", None]
+    _configurators: List["Configurator"]
 
     @property
     def hitl(self) -> "HITL":
@@ -67,7 +69,7 @@ class Context:
         return self._hitl
 
     @property
-    def llm(self) -> "LLM":
+    def llm(self) -> LLM:
         if self._llm is None:
             # raise AttributeError("LLM Client has not been set")
             return OpenAI(
@@ -92,6 +94,7 @@ class Context:
         self._last_screenshot = None
         self._hitl = None
         self._llm = None
+        self._configurators = []
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -99,6 +102,13 @@ class Context:
 
     def use_llm(self, llm: "LLM") -> None:
         self._llm = llm
+
+    def use_configs(self, *config_agents: "Configurator"):
+        self._configurators.extend(config_agents)
+
+    async def setup_configs(self, instruction: str):
+        for config_agent in self._configurators:
+            await config_agent.setup(self, instruction)
 
     # @abstractmethod
     # NOTE: this method should not be abstract
