@@ -1,6 +1,6 @@
 from ._function import FunctionTool, function
 from ._browser import BrowserTool
-from ._agent import AgentTool, BrowserAgentTool, ConfigAgentTool
+from ._agent import AgentTool, BrowserAgentTool
 
 __all__ = [
     "function",
@@ -8,5 +8,4 @@ __all__ = [
     "BrowserTool",
     "AgentTool",
     "BrowserAgentTool",
-    "ConfigAgentTool",
 ]

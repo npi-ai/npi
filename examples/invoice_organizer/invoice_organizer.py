@@ -169,13 +169,12 @@ if __name__ == "__main__":
         ctx = DebugContext()
         ctx.use_hitl(ConsoleHandler())
         ctx.use_llm(llm)
+        ctx.use_configs(
+            SearchQueryConfigs(),
+            OutputConfigs(),
+        )
 
         async with agent.wrap(InvoiceOrganizer()) as organizer:
-            organizer.use_configs(
-                SearchQueryConfigs(),
-                OutputConfigs(),
-            )
-
             await organizer.chat(
                 ctx, "summarize invoices in the past 3 month and save as invoices.json"
             )

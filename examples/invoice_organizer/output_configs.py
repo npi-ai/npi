@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from constants import StorageKeys
-from npiai import ConfigAgentTool
+from npiai import Configurator
 
 
 class OutputConfigsModel(BaseModel):
@@ -17,7 +17,7 @@ class OutputConfigsModel(BaseModel):
     filename: str = Field(default="data.json", description="Output filename")
 
 
-class OutputConfigs(ConfigAgentTool):
+class OutputConfigs(Configurator):
     model = OutputConfigsModel
     storage_key = StorageKeys.OUTPUT_OPTIONS
 
@@ -66,12 +66,12 @@ if __name__ == "__main__":
     from debug_context import DebugContext
 
     async def main():
-        async with OutputConfigs() as configs:
-            ctx = DebugContext()
-            ctx.use_hitl(ConsoleHandler())
+        ctx = DebugContext()
+        ctx.use_hitl(ConsoleHandler())
+        ctx.use_configs(OutputConfigs())
 
-            await configs.chat(ctx, "save data to excel")
+        await ctx.setup_configs("save data to excel")
 
-            print("Output options:", await ctx.kv.get(StorageKeys.OUTPUT_OPTIONS))
+        print("Output options:", await ctx.kv.get(StorageKeys.OUTPUT_OPTIONS))
 
     asyncio.run(main())
