@@ -1,20 +1,17 @@
-import json
-import uuid
-from textwrap import dedent
-from typing import List, Any, Dict, Literal, get_origin, get_args, Type
-from pydantic import create_model, Field, BaseModel
-
-from npiai.types import FunctionRegistration
-from npiai.context import Context, Task
-from npiai.core.base import BaseAgentTool
-from npiai.core.tool._function import FunctionTool
-from npiai.core.tool._browser import BrowserTool
-from npiai.utils import sanitize_schema, get_type_annotation
+from typing import List
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from pydantic import create_model, Field
+
+from npiai.context import Context, Task
+from npiai.core.base import BaseAgentTool
+from npiai.core.tool._browser import BrowserTool
+from npiai.core.tool._function import FunctionTool
+from npiai.types import FunctionRegistration
+from npiai.utils import sanitize_schema
 
 
 class AgentTool(BaseAgentTool):
