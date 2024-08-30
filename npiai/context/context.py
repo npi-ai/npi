@@ -7,6 +7,7 @@ import uuid
 from typing import List, Union, Dict, TYPE_CHECKING, Literal
 
 from litellm.types.completion import ChatCompletionMessageParam
+from litellm import Message
 
 from npiai.types import RuntimeMessage
 from npiai.llm import OpenAI, LLM
@@ -25,7 +26,7 @@ class Task:
         self.task_id = str(uuid.uuid4())
         self.goal = goal
         self.born_at = datetime.datetime.now()
-        self.dialogues: List[Union[ChatCompletionMessageParam]] = []
+        self.dialogues: List[ChatCompletionMessageParam | Message] = []
         self.response: str
         self._session: Union["Context", None] = None
 
@@ -40,7 +41,7 @@ class Task:
     def set_session(self, session: "Context") -> None:
         self._session = session
 
-    def conversations(self) -> List[ChatCompletionMessageParam]:
+    def conversations(self) -> List[ChatCompletionMessageParam | Message]:
         """return the raw message"""
         return self.dialogues.copy()
 
@@ -50,6 +51,7 @@ class Context:
     vector_db: VectorDBMemory
     kv: KVMemory
 
+    _tasks: List[Task]
     _q: asyncio.Queue[RuntimeMessage]
     _is_finished: bool
     _is_failed: bool
@@ -95,6 +97,7 @@ class Context:
         self._hitl = None
         self._llm = None
         self._configurators = []
+        self._tasks = []
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -124,6 +127,7 @@ class Context:
         pass
 
     def with_task(self, task: Task) -> "Context":
+        self._tasks.append(task)
         task.set_session(self)
         return self
 
@@ -229,3 +233,18 @@ class Context:
 
     def get_failed_msg(self) -> str:
         return self._failed_msg
+
+    def get_history_messages(self, exclude_system=False):
+        messages = []
+
+        for task in self._tasks:
+            for msg in task.conversations():
+                if isinstance(msg, Message):
+                    messages.append(msg.json())
+                else:
+                    messages.append(msg)
+
+        if exclude_system:
+            messages = [msg for msg in messages if msg["role"] != "system"]
+
+        return messages

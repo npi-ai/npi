@@ -6,6 +6,11 @@ from npiai.types import FunctionRegistration, ExecutionStep
 
 
 class BasePlanner(ABC):
+    _rules: str | None = None
+
+    def __init__(self, rules: str | None = None):
+        self._rules = rules
+
     @abstractmethod
     async def generate_plan(
         self,

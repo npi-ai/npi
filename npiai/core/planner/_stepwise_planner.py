@@ -21,15 +21,21 @@ Use the provided list of tools, develop a detailed plan to accomplish a specifie
 The plan should consist of sequential steps where each step involves the use of a set of potential tools.
 If a step requires initiating a chat with an AI Agent, it should exclusively feature that tool.
 Ensure that the steps are presented in a clear and logical order. 
-Conclude the plan by executing the `export` function and include the final sequence of steps 
-and the corresponding tools as its argument.
+Conclude the plan by calling the `export` tool and include the final sequence of steps 
+and the corresponding tools' name as its argument.
 
 ## Available Tools
 
 Below is a list of tools, labeled with `tool_name: description`. 
 Tools accompanied by `(Agent)` initiate a chat with an AI agent and are to be used independently within a step.
+Note that you shouldn't call any tool in this list directly since they can only be included in the `potential_tools` list.
+The only tool you can use is `export`.
 
 {tools}
+
+## Additional Rules
+
+{rules}
 """
 
 
@@ -41,6 +47,7 @@ class StepResponse(BaseModel):
 
 
 class PlanResponse(BaseModel):
+    goal: str = Field(description="Overall goal for this plan")
     steps: List[StepResponse] = Field(description="A step-by-step execution plan")
 
 
@@ -67,7 +74,7 @@ class StepwisePlanner(BasePlanner):
     async def generate_plan(
         self,
         ctx: Context,
-        instruction: str,
+        task: str,
         tool: AgentTool | FunctionTool,
     ) -> Plan:
         fn_reg = FunctionRegistration(
@@ -81,11 +88,14 @@ class StepwisePlanner(BasePlanner):
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
-                content=__PROMPT__.format(tools=self._get_tool_list(tool)),
+                content=__PROMPT__.format(
+                    tools=self._get_tool_list(tool),
+                    rules=self._rules,
+                ),
             ),
             ChatCompletionUserMessageParam(
                 role="user",
-                content=instruction,
+                content=task,
             ),
         ]
         response = await ctx.llm.completion(
@@ -98,12 +108,12 @@ class StepwisePlanner(BasePlanner):
         response_message = response.choices[0].message
         tool_calls = response_message.get("tool_calls", None)
 
-        if not tool_calls:
+        await ctx.send_debug_message(f"[StepwisePlanner] Received {tool_calls}]")
+
+        if not tool_calls or tool_calls[0].function.name != "export":
             raise RuntimeError("No tool call received to devise an execution plan")
 
         args = json.loads(tool_calls[0].function.arguments)
-
-        await ctx.send_debug_message(f"[StepwisePlanner] Received {args}]")
 
         return await self.export(
             ctx=ctx,
@@ -126,7 +136,7 @@ class StepwisePlanner(BasePlanner):
             if agent:
                 sub_plan = await self.generate_plan(
                     ctx=ctx,
-                    instruction=step.task,
+                    task=step.task,
                     tool=agent,
                 )
 
@@ -142,4 +152,4 @@ class StepwisePlanner(BasePlanner):
                 )
             )
 
-        return Plan(steps=steps, tool=tool)
+        return Plan(goal=plan.goal, steps=steps, tool=tool)

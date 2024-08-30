@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING
 
 from .execution_step import ExecutionStep
 
@@ -9,5 +9,13 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class Plan:
+    goal: str
     steps: List[ExecutionStep]
     tool: "BaseTool"
+
+    def to_json_object(self) -> dict:
+        return {
+            "goal": self.goal,
+            "steps": [step.to_json_object() for step in self.steps],
+            "tool": self.tool.name,
+        }
