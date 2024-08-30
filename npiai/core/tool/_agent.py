@@ -127,6 +127,7 @@ class AgentTool(BaseAgentTool):
                     f"""
                     Analyze the chat history and develop a strategy to successfully execute the task described below. 
                     Use the lessons learned from the past results to shape your strategy for this new task.
+                    Review the previous actions and adjust the task to fit the goal if necessary.
                     You should stop further generation as soon as the new task is complete.
                     
                     ## Current Objective
@@ -141,7 +142,7 @@ class AgentTool(BaseAgentTool):
                     """
                 )
 
-                print(instruction)
+                await ctx.send_debug_message(f"Instruction:\n{instruction}")
 
                 await task.step([await self._generate_user_message(instruction)])
                 result = await self._call_llm(ctx, task)
