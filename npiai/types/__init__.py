@@ -1,10 +1,16 @@
-from npiai.types.function_registration import FunctionRegistration, ToolFunction
-from npiai.types.shot import Shot
-from npiai.types.tool_meta import ToolMeta
-from npiai.types.from_context import FromVectorDB
-from npiai.types.runtime_message import RuntimeMessage
+from .function_registration import FunctionRegistration, ToolFunction
+from .shot import Shot
+from .tool_meta import ToolMeta
+from .from_context import FromVectorDB
+from .runtime_message import RuntimeMessage
+from .execution_result import ExecutionResult
+from .execution_step import ExecutionStep
+from .plan import Plan
 
 __all__ = [
+    "Plan",
+    "ExecutionStep",
+    "ExecutionResult",
     "FunctionRegistration",
     "ToolFunction",
     "Shot",

@@ -1,53 +1,87 @@
 import json
-from typing import List
+from typing import List, Dict
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from pydantic import create_model, Field
+from pydantic import BaseModel, Field
 
 from npiai.context import Context
-from npiai.types import FunctionRegistration
+from npiai.types import FunctionRegistration, ExecutionStep, Plan
 from npiai.utils import sanitize_schema
+from npiai.core.tool import AgentTool, FunctionTool
+from npiai.core.base import BaseTool
 
 from ._base import BasePlanner
 
+
 __PROMPT__ = """
-Create a step-by-step plan to complete the given task using a designated set of tools. Identify the most appropriate tools from below, and articulate the plan clearly, concisely, and in logical order. Upon completion of the plan, call the `execute` function with the arranged steps as its argument.
+Use the provided list of tools, develop a detailed plan to accomplish a specified task. 
+The plan should consist of sequential steps where each step involves the use of a set of potential tools.
+If a step requires initiating a chat with an AI Agent, it should exclusively feature that tool.
+Ensure that the steps are presented in a clear and logical order. 
+Conclude the plan by executing the `export` function and include the final sequence of steps 
+and the corresponding tools as its argument.
 
 ## Available Tools
+
+Below is a list of tools, labeled with `tool_name: description`. 
+Tools accompanied by `(Agent)` initiate a chat with an AI agent and are to be used independently within a step.
+
 {tools}
 """
 
 
+class StepResponse(BaseModel):
+    task: str = Field(description="Detailed task of this step")
+    potential_tools: List[str] = Field(
+        description="A list of potential tools to invoke"
+    )
+
+
+class PlanResponse(BaseModel):
+    steps: List[StepResponse] = Field(description="A step-by-step execution plan")
+
+
 class StepwisePlanner(BasePlanner):
+    _fn_map: Dict[str, FunctionRegistration]
+
+    def _get_tool_list(self, tool: AgentTool | FunctionTool) -> str:
+        tools = []
+        self._fn_map = {}
+
+        functions = (
+            tool.tool.unpack_functions()
+            if isinstance(tool, AgentTool)
+            else tool.unpack_functions()
+        )
+
+        for fn in functions:
+            agent_mark = "(Agent)" if fn.is_agent() else ""
+            tools.append(f"- {fn.name}{agent_mark}: {fn.description}")
+            self._fn_map[fn.name] = fn
+
+        return "\n".join(tools)
+
     async def generate_plan(
         self,
         ctx: Context,
         instruction: str,
-        functions: List[FunctionRegistration],
-    ) -> List[str]:
-        tools = "\n".join(f"- {fn.name}: {fn.description}" for fn in functions)
-        model = create_model(
-            "StepwisePlanner",
-            plan=(
-                List[str],
-                Field(description="A step-by-step execution plan"),
-            ),
-        )
+        tool: AgentTool | FunctionTool,
+    ) -> Plan:
         fn_reg = FunctionRegistration(
-            fn=self.execute,
-            name="execute",
-            description="make up user configuration criteria",
+            fn=self.export,
+            name="export",
+            description="Export generated plan",
             ctx_variables=[],
-            model=model,
-            schema=sanitize_schema(model),
+            model=PlanResponse,
+            schema=sanitize_schema(PlanResponse),
         )
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
-                content=__PROMPT__.format(tools=tools),
+                content=__PROMPT__.format(tools=self._get_tool_list(tool)),
             ),
             ChatCompletionUserMessageParam(
                 role="user",
@@ -71,7 +105,41 @@ class StepwisePlanner(BasePlanner):
 
         await ctx.send_debug_message(f"[StepwisePlanner] Received {args}]")
 
-        return await self.execute(**args)
+        return await self.export(
+            ctx=ctx,
+            tool=tool,
+            plan=PlanResponse(**args),
+        )
 
-    async def execute(self, plan: List[str]):
-        return plan
+    async def export(self, ctx: Context, tool: BaseTool, plan: PlanResponse) -> Plan:
+        steps = []
+
+        for step in plan.steps:
+            sub_plan = None
+            agent = None
+
+            for fn_name in step.potential_tools:
+                if fn_name in self._fn_map and self._fn_map[fn_name].is_agent():
+                    agent = self._fn_map[fn_name].calling_agent
+                    break
+
+            if agent:
+                sub_plan = await self.generate_plan(
+                    ctx=ctx,
+                    instruction=step.task,
+                    tool=agent,
+                )
+
+            steps.append(
+                ExecutionStep(
+                    task=step.task,
+                    fn_candidates=[
+                        self._fn_map[name]
+                        for name in step.potential_tools
+                        if name in self._fn_map
+                    ],
+                    sub_plan=sub_plan,
+                )
+            )
+
+        return Plan(steps=steps, tool=tool)

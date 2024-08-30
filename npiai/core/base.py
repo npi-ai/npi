@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Literal
 
 from litellm.types.completion import ChatCompletionToolMessageParam
 from litellm.types.utils import ChatCompletionMessageToolCall

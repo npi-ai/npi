@@ -1,4 +1,7 @@
+import json
 from typing import List
+from textwrap import dedent
+from dataclasses import asdict
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
@@ -8,9 +11,8 @@ from pydantic import create_model, Field
 
 from npiai.context import Context, Task
 from npiai.core.base import BaseAgentTool
-from npiai.types import FunctionRegistration
+from npiai.types import FunctionRegistration, Plan, ExecutionResult
 from npiai.utils import sanitize_schema
-from npiai.core.planner import BasePlanner, StepwisePlanner
 
 from ._browser import BrowserTool
 from ._function import FunctionTool
@@ -18,7 +20,10 @@ from ._function import FunctionTool
 
 class AgentTool(BaseAgentTool):
     _tool: FunctionTool
-    _planner: BasePlanner = StepwisePlanner()
+
+    @property
+    def tool(self) -> FunctionTool:
+        return self._tool
 
     def __init__(self, tool: FunctionTool):
         super().__init__()
@@ -27,9 +32,6 @@ class AgentTool(BaseAgentTool):
         self.description = tool.description
         self.provider = tool.provider
 
-    def use_planner(self, planner: BasePlanner):
-        self._planner = planner
-
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
         model = create_model(
@@ -37,22 +39,31 @@ class AgentTool(BaseAgentTool):
             instruction=(
                 str,
                 Field(
-                    description=f"The task you want {self._tool.name} to do or "
-                    f"the message you want to chat with {self._tool.name}"
+                    description=dedent(
+                        f"""
+                        The task you want {self._tool.name} to do or 
+                        the message you want to chat with {self._tool.name}
+                        """
+                    )
                 ),
             ),
         )
 
         fn_reg = FunctionRegistration(
             fn=self.chat,
+            calling_agent=self,
             name="chat",
             ctx_variables=[],
             ctx_param_name="ctx",
-            description=f"This is an api of an AI Assistant, named {self.name}, the abilities of the assistant is:\n "
-            f"{self.description}\n"
-            f"You can use this function to direct the assistant to accomplish task for you.",
             model=model,
             schema=sanitize_schema(model),
+            description=dedent(
+                f"""
+                Initiate a conversation with an AI Agent named "{self.name}".
+                This agent has the following abilities: {self.description}.
+                Describe a scenario or pose a question to engage its assistance effectively.
+                """
+            ),
         )
 
         return [fn_reg]
@@ -75,19 +86,56 @@ class AgentTool(BaseAgentTool):
         if self._tool.system_prompt:
             await task.step([await self._generate_system_message()])
 
-        steps = await self._planner.generate_plan(
-            ctx=ctx,
-            instruction=instruction,
-            functions=self._tool.unpack_functions(),
-        )
-        final_result = ""
-
-        for step in steps:
-            await ctx.send_debug_message(f"[{self.name}] Executing step: {step}")
-            await task.step([await self._generate_user_message(step)])
-            final_result = await self._call_llm(ctx, task)
+        await task.step([await self._generate_user_message(instruction)])
+        final_result = await self._call_llm(ctx, task)
 
         return final_result
+
+    async def execute_plan(
+        self,
+        ctx: Context,
+        plan: Plan,
+        # TODO: use history from context
+        history: List[ExecutionResult] = None,
+    ) -> str:
+        """
+        Execute a pre-generated stepwise plan.
+
+        Args:
+            ctx: NPi Context
+            plan: Pre-generated plan
+            history: Execution history
+
+        Returns:
+            Final result
+        """
+        if history is None:
+            history = []
+
+        for step in plan.steps:
+            if step.sub_plan and isinstance(step.sub_plan.tool, AgentTool):
+                await step.sub_plan.tool.execute_plan(ctx, step.sub_plan, history)
+            else:
+                previous_results = [asdict(hist) for hist in history]
+
+                await self.chat(
+                    ctx=ctx,
+                    instruction=dedent(
+                        f"""
+                        Analyze the provided JSON data of previous outcomes and develop a strategy to 
+                        successfully execute the task described below. 
+                        Use the lessons learned from the past results to shape your strategy for this new task.
+                        
+                        ## JSON Data of Past Outcomes
+                        {json.dumps(previous_results, ensure_ascii=False)}
+                        
+                        ## New Task to Complete
+                        {step.task}
+                        """
+                    ),
+                )
+
+        return history[-1].result if len(history) else "No result"
 
     async def _generate_system_message(self) -> ChatCompletionSystemMessageParam:
         return ChatCompletionSystemMessageParam(

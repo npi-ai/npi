@@ -88,10 +88,9 @@ class Gmail(FunctionTool):
         return emails
 
     @staticmethod
-    def _message_to_string(message: Message) -> str:
-        return (
-            dedent(
-                f"""
+    def _message_to_string(message: Message, subject_only: bool = False) -> str:
+        result = dedent(
+            f"""
             Message ID: {message.id}
             Thread ID: {message.thread_id}
             Sender ID: {message.headers.get('Message-ID', message.id)}
@@ -99,9 +98,12 @@ class Gmail(FunctionTool):
             To: {message.recipient}
             Subject: {message.subject}
             """
-            )
-            + f"Content: {message.plain or to_markdown(message.html)}"
         )
+
+        if not subject_only:
+            result += f"Content: {message.plain or to_markdown(message.html)}"
+
+        return result
 
     @function
     def add_labels(self, message_ids: List[str], labels: List[str]) -> str:
@@ -294,13 +296,19 @@ class Gmail(FunctionTool):
         return "The following reply is sent:\n" + self._message_to_string(msg)
 
     @function
-    def search_emails(self, query: str = None, max_results: int = 100) -> str:
+    def search_emails(
+        self,
+        query: str = None,
+        max_results: int = 100,
+        subject_only: bool = False,
+    ) -> str:
         """
         Search for emails with a query.
 
         Args:
             query: A Gmail query to match emails.
             max_results: Maximum number of results to return.
+            subject_only: If true, only include emails subject in the result.
         """
         msgs = self._gmail_client.get_messages(
             query=query,
@@ -308,8 +316,20 @@ class Gmail(FunctionTool):
         )
 
         return json.dumps(
-            [self._message_to_string(m) for m in msgs], ensure_ascii=False
+            [self._message_to_string(m, subject_only) for m in msgs],
+            ensure_ascii=False,
         )
+
+    @function
+    def get_email_by_id(self, message_id: str) -> str:
+        """
+        Get the detailed email message by message ID.
+
+        Args:
+            message_id: The ID of the message.
+        """
+        msg = self._gmail_client.get_message_by_id(message_id)
+        return self._message_to_string(msg)
 
     @function
     async def send_email(

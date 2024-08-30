@@ -5,7 +5,17 @@ import inspect
 import json
 import re
 from abc import ABC
-from typing import Dict, List, Optional, Any, Type, Annotated, get_args, get_origin
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Any,
+    Type,
+    Annotated,
+    get_args,
+    get_origin,
+    Literal,
+)
 from textwrap import dedent
 
 import yaml

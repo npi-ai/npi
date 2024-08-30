@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from npiai.context import Context
-from npiai.types import FunctionRegistration
+from npiai.types import FunctionRegistration, ExecutionStep
 
 
 class BasePlanner(ABC):
@@ -12,4 +12,4 @@ class BasePlanner(ABC):
         ctx: Context,
         instruction: str,
         functions: List[FunctionRegistration],
-    ) -> List[str]: ...
+    ) -> List[ExecutionStep]: ...

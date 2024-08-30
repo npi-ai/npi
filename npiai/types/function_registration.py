@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Awaitable, List, Dict, Any, Type
+from typing import Callable, Optional, Awaitable, List, Dict, Any, Type, TYPE_CHECKING
 from dataclasses import dataclass, asdict
 
 from openai.types.chat import ChatCompletionToolParam
@@ -6,6 +6,9 @@ from pydantic import BaseModel
 
 from npiai.types.shot import Shot
 from npiai.types.from_context import FromVectorDB
+
+if TYPE_CHECKING:
+    from npiai import AgentTool
 
 ToolFunction = Callable[..., Awaitable[Any]]
 
@@ -16,10 +19,15 @@ class FunctionRegistration:
     description: str
     name: str
     ctx_variables: List[FromVectorDB]
-    ctx_param_name: str | None = None
+    ctx_param_name: Optional[str] = None
     schema: Optional[Dict[str, Any]] = None
     model: Optional[Type[BaseModel]] = None
     few_shots: Optional[List[Shot]] = None
+    # target agent for the `chat()` function
+    calling_agent: Optional["AgentTool"] = None
+
+    def is_agent(self):
+        return self.calling_agent is not None
 
     def get_meta(self):
         # params = {}
