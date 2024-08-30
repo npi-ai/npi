@@ -1,6 +1,7 @@
 """ the example of the calendar negotiator"""
 
 import asyncio
+import json
 import os
 from typing import List
 from pathlib import Path
@@ -9,51 +10,42 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-from npiai import FunctionTool, agent, OpenAI
+from npiai import FunctionTool, agent, OpenAI, StepwisePlanner, function
 from npiai.context import Context
 from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
+from npiai.types import RuntimeMessage
+from npiai.utils import logger
 
-
-PROMPT = """
-Your are a calendar negotiator. You have the ability to schedule meetings with anyone, anywhere, anytime.
-
-You can use the tools to help you to schedule the meeting.
-
-The tools you can use are: Google Calendar and Gmail:
-
-## Instructions
-
-You need to follow the instructions below step by step to schedule the meeting:
-
-1. Ask for the attendee's email address if not provided.
-2. Look for the user's available time slots from on Google Calendar if not provided.
-3. If the previous step fails, ask the user for available time slots.
-4. After the available time slots are determined, you should send an email to the attendee. 
-5. Wait for the attendee's reply to the email you sent. Do not proceed if the reply is not received.
-6. If the proposed dates are not available for the attendee, try again to schedule a new date.
-7. If the conversation reaches an agreement, you should create an event on the user's calendar.
-8. If email not provided, you can use 'console_feedback' to ask for providing email.
-
-## Rules
-
-Here are some rules for you to fulfill the task:
-
-1. You can only schedule the meeting with the user's available time.
-2. You must follow user's task.
-3. The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
-3. If you think you need to ask the user for more information to fill the properties, you can use the Human Feedback tool to ask the user for more information.
-4. If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the Human Feedback tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
-
-## Example
-Task: Schedule a meeting with test@gmail.com on Friday
-Steps:
-- google_calendar("check the {user_email_address} availability on Friday")
-- gmail("send an email to test@gmail.com asking their availability on Friday")
-- gmail("wait for response from test@gmail.com")
-- confirm_action("are you sure to schedule a meeting with test@gmail.com on Friday at <time>?")
-- google_calendar("create an event on Friday")
+RULES = """
+- You should ask for necessary information, e.g. meeting time and attendee's email, if not provided.
+- You should check the user's available time via Google Calendar.
+- You must negotiate with the attendee via Gmail to come to an agreement on meeting time.
+- You must wait for the attendee's response to the email you just sent.
+- The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
+- If you think you need to ask the user for more information to fill the properties, you can use the `ask_human` tool to ask the user for more information.
+- If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the `ask_human` tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
 """
+
+
+PROMPT = f"""
+Your are a calendar negotiator with the ability to schedule meetings with anyone, anywhere, anytime.
+"""
+
+
+class DebugContext(Context):
+    async def send(self, msg: RuntimeMessage):
+        match msg["type"]:
+            case "message":
+                logger.info(msg["message"])
+            case "execution_result":
+                logger.info(msg["result"])
+            case "debug":
+                logger.debug(msg["message"])
+            case "error":
+                logger.error(msg["message"])
+            case _:
+                logger.info(f"Context Message: {msg}")
 
 
 def load_google_credentials(secret_file: str, scopes: List[str], token_file: str):
@@ -99,13 +91,28 @@ class Negotiator(FunctionTool):
         )
 
         self.add_tool(
-            agent.wrap(GoogleCalendar(creds=cred)),
-            agent.wrap(Gmail(creds=cred)),
+            GoogleCalendar(creds=cred),
+            Gmail(creds=cred),
+        )
+
+    @function
+    async def ask_human(self, ctx: Context, question: str):
+        """
+        Ask human to provide information.
+
+        Args:
+            ctx: NPi Context
+            question: Question to ask
+        """
+
+        return await ctx.hitl.input(
+            tool_name=self.name,
+            message=question,
         )
 
 
 async def run():
-    llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
+    llm = OpenAI(model="gpt-4o", api_key=os.environ["OPENAI_API_KEY"])
 
     # You could get Google Secret JSON file on https://console.cloud.google.com/apis/credentials by steps:
     #
@@ -119,16 +126,28 @@ async def run():
     #
     # You may need to enable Google Calendar API and Gmail API in your Google Cloud Console.
 
-    nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
-    async with agent.wrap(nego, llm=llm) as negotiator:
-        ctx = Context()
+    # nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
+    nego = Negotiator(secret_file="./credentials/google_secret.json")
+
+    async with agent.wrap(nego) as negotiator:
+        ctx = DebugContext()
+        ctx.use_llm(llm)
         ctx.use_hitl(ConsoleHandler())
 
         print("Negotiator: What's your task for me?")
         task = input("User: ")
         print("")
 
-        print(await negotiator.chat(ctx=ctx, instruction=task))
+        planner = StepwisePlanner(rules=RULES)
+        plan = await planner.generate_plan(
+            ctx=ctx,
+            task=task,
+            tool=negotiator,
+        )
+
+        print("Plan:", json.dumps(plan.to_json_object(), indent=2))
+
+        print(await negotiator.execute_plan(ctx, plan))
 
 
 def main():
