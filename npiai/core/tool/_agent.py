@@ -130,9 +130,6 @@ class AgentTool(BaseAgentTool):
                     Review the previous actions and adjust the task to fit the goal if necessary.
                     You should stop further generation as soon as the new task is complete.
                     
-                    ## Current Objective
-                    {plan.goal}
-                    
                     ## New Task to Complete
                     {step.task}
                     
@@ -167,27 +164,28 @@ class AgentTool(BaseAgentTool):
         )
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
-        # system_msgs = [msg for msg in task.conversations() if msg["role"] == "system"]
+        system_msgs = [msg for msg in task.conversations() if msg["role"] == "system"]
 
         while True:
-            # messages = [*system_msgs, *ctx.get_history_messages(exclude_system=True)]
+            messages = [*system_msgs, *ctx.get_history_messages(exclude_system=True)]
 
             response = await ctx.llm.completion(
-                # messages=messages,
-                messages=task.conversations(),
+                messages=messages,
+                # messages=task.conversations(),
                 tools=self._tool.tools,
                 tool_choice="auto",
                 max_tokens=4096,
             )
-            await task.step([response.choices[0].message])
 
             response_message = response.choices[0].message
             tool_calls = response_message.get("tool_calls", None)
 
             if tool_calls is None:
+                await task.step([response_message])
                 return response_message.content
 
             results = await self._tool.call(tool_calls, ctx)
+            await task.step([response_message])
             await task.step(results)
 
 
