@@ -6,6 +6,7 @@ from npiai.core.tool import (
     BrowserAgentTool,
 )
 from npiai.core.hitl import HITL
+from npiai.core.planner import BasePlanner, StepwisePlanner
 from npiai.llm import OpenAI, LLM
 from npiai.context import Context, Configurator
 from npiai.types import FromVectorDB
@@ -22,4 +23,6 @@ __all__ = [
     "LLM",
     "Context",
     "FromVectorDB",
+    "BasePlanner",
+    "StepwisePlanner",
 ]

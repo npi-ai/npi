@@ -90,7 +90,7 @@ class FunctionTool(BaseFunctionTool, ABC):
 
     @property
     def functions(self):
-        return list(self._fn_map.values())
+        return self.unpack_functions()
 
     @property
     def sub_tools(self):

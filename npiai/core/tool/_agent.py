@@ -8,14 +8,17 @@ from pydantic import create_model, Field
 
 from npiai.context import Context, Task
 from npiai.core.base import BaseAgentTool
-from npiai.core.tool._browser import BrowserTool
-from npiai.core.tool._function import FunctionTool
 from npiai.types import FunctionRegistration
 from npiai.utils import sanitize_schema
+from npiai.core.planner import BasePlanner, StepwisePlanner
+
+from ._browser import BrowserTool
+from ._function import FunctionTool
 
 
 class AgentTool(BaseAgentTool):
     _tool: FunctionTool
+    _planner: BasePlanner = StepwisePlanner()
 
     def __init__(self, tool: FunctionTool):
         super().__init__()
@@ -23,6 +26,9 @@ class AgentTool(BaseAgentTool):
         self._tool = tool
         self.description = tool.description
         self.provider = tool.provider
+
+    def use_planner(self, planner: BasePlanner):
+        self._planner = planner
 
     def unpack_functions(self) -> List[FunctionRegistration]:
         # Wrap the chat function of this agent to FunctionRegistration
@@ -67,18 +73,36 @@ class AgentTool(BaseAgentTool):
         task = Task(goal=instruction)
         ctx.with_task(task)
         if self._tool.system_prompt:
-            await task.step(
-                [
-                    ChatCompletionSystemMessageParam(
-                        role="system", content=self._tool.system_prompt
-                    )
-                ]
-            )
+            await task.step([await self._generate_system_message()])
 
-        await task.step(
-            [ChatCompletionUserMessageParam(role="user", content=instruction)]
+        steps = await self._planner.generate_plan(
+            ctx=ctx,
+            instruction=instruction,
+            functions=self._tool.unpack_functions(),
         )
-        return await self._call_llm(ctx, task)
+        final_result = ""
+
+        for step in steps:
+            await ctx.send_debug_message(f"[{self.name}] Executing step: {step}")
+            await task.step([await self._generate_user_message(step)])
+            final_result = await self._call_llm(ctx, task)
+
+        return final_result
+
+    async def _generate_system_message(self) -> ChatCompletionSystemMessageParam:
+        return ChatCompletionSystemMessageParam(
+            role="system",
+            content=self._tool.system_prompt,
+        )
+
+    async def _generate_user_message(
+        self,
+        instruction: str,
+    ) -> ChatCompletionUserMessageParam:
+        return ChatCompletionUserMessageParam(
+            role="user",
+            content=instruction,
+        )
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
         while True:
@@ -112,50 +136,27 @@ class BrowserAgentTool(AgentTool):
     async def goto_blank(self):
         await self._tool.goto_blank()
 
-    async def chat(
+    async def _generate_user_message(
         self,
-        ctx: Context,
         instruction: str,
-    ) -> str:
-        if not self._tool.use_screenshot:
-            return await super().chat(ctx, instruction)
-
+    ) -> ChatCompletionUserMessageParam:
         screenshot = await self._tool.get_screenshot()
 
         if not screenshot:
-            return await super().chat(ctx, instruction)
+            return await super()._generate_user_message(instruction)
 
-        await ctx.setup_configs(instruction)
-
-        task = Task(goal=instruction)
-        ctx = ctx.fork(task)
-        if self._tool.system_prompt:
-            await task.step(
-                [
-                    ChatCompletionSystemMessageParam(
-                        role="system", content=self._tool.system_prompt
-                    )
-                ]
-            )
-
-        await task.step(
-            [
-                ChatCompletionUserMessageParam(
-                    role="user",
-                    content=[
-                        {
-                            "type": "text",
-                            "text": instruction,
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": screenshot,
-                            },
-                        },
-                    ],
-                )
-            ]
+        return ChatCompletionUserMessageParam(
+            role="user",
+            content=[
+                {
+                    "type": "text",
+                    "text": instruction,
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": screenshot,
+                    },
+                },
+            ],
         )
-
-        return await self._call_llm(ctx, task)
