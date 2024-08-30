@@ -21,7 +21,7 @@ RULES = """
 - You should ask for necessary information, e.g. meeting time and attendee's email, if not provided.
 - You should check the user's available time via Google Calendar.
 - You must negotiate with the attendee via Gmail to come to an agreement on meeting time.
-- You must wait for the attendee's response to the email you just sent.
+- You must wait for the attendee's response to the email you just sent using Gmail Agent.
 - The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
 - If you think you need to ask the user for more information to fill the properties, you can use the `ask_human` tool to ask the user for more information.
 - If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the `ask_human` tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
@@ -91,8 +91,8 @@ class Negotiator(FunctionTool):
         )
 
         self.add_tool(
-            GoogleCalendar(creds=cred),
-            Gmail(creds=cred),
+            agent.wrap(GoogleCalendar(creds=cred)),
+            agent.wrap(Gmail(creds=cred)),
         )
 
     @function

@@ -52,11 +52,12 @@ class PlanResponse(BaseModel):
 
 
 class StepwisePlanner(BasePlanner):
-    _fn_map: Dict[str, FunctionRegistration]
+    _fn_map: Dict[str, FunctionRegistration] = None
 
-    def _get_tool_list(self, tool: AgentTool | FunctionTool) -> str:
+    def _get_tool_list(
+        self, tool: AgentTool | FunctionTool, skip_build_fn_map=False
+    ) -> str:
         tools = []
-        self._fn_map = {}
 
         functions = (
             tool.tool.unpack_functions()
@@ -64,10 +65,27 @@ class StepwisePlanner(BasePlanner):
             else tool.unpack_functions()
         )
 
+        if not self._fn_map:
+            self._fn_map = {}
+
+        if not skip_build_fn_map:
+            for fn in functions:
+                self._fn_map[fn.name] = fn
+
         for fn in functions:
-            agent_mark = "(Agent)" if fn.is_agent() else ""
-            tools.append(f"- {fn.name}{agent_mark}: {fn.description}")
-            self._fn_map[fn.name] = fn
+            # remove newlines in tool description
+            description = fn.description.replace("\n", " ")
+
+            if fn.is_agent():
+                tools.append(f"- {fn.name}(Agent): {description}")
+                # tools.append("  Tools inside this agent:")
+                # sub_tools = self._get_tool_list(
+                #     fn.calling_agent, skip_build_fn_map=True
+                # )
+                # indent = "    "
+                # tools.append(indent + sub_tools.replace("\n-", f"\n{indent}-"))
+            else:
+                tools.append(f"- {fn.name}: {description}")
 
         return "\n".join(tools)
 
@@ -134,7 +152,8 @@ class StepwisePlanner(BasePlanner):
                     break
 
             if agent:
-                sub_plan = await self.generate_plan(
+                # init a new planner to generate sub plan
+                sub_plan = await StepwisePlanner().generate_plan(
                     ctx=ctx,
                     task=step.task,
                     tool=agent,
