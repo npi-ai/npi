@@ -28,8 +28,6 @@ and the corresponding tools' name as its argument.
 
 Below is a list of tools, labeled with `tool_name: description`. 
 Tools accompanied by `(Agent)` initiate a chat with an AI agent and are to be used independently within a step.
-Note that you shouldn't call any tool in this list directly since they can only be included in the `potential_tools` list.
-The only tool you can use is `export`.
 
 {tools}
 
@@ -95,9 +93,11 @@ class StepwisePlanner(BasePlanner):
         task: str,
         tool: AgentTool | FunctionTool,
     ) -> Plan:
+        fn = self.export
+        fn_name = fn.__name__
         fn_reg = FunctionRegistration(
-            fn=self.export,
-            name="export",
+            fn=fn,
+            name=fn_name,
             description="Export generated plan",
             ctx_variables=[],
             model=PlanResponse,
@@ -119,8 +119,8 @@ class StepwisePlanner(BasePlanner):
         response = await ctx.llm.completion(
             messages=messages,
             tools=[fn_reg.get_tool_param()],
-            tool_choice="required",
             max_tokens=4096,
+            tool_choice={"type": "function", "function": {"name": fn_name}},
         )
 
         response_message = response.choices[0].message
@@ -128,7 +128,7 @@ class StepwisePlanner(BasePlanner):
 
         await ctx.send_debug_message(f"[StepwisePlanner] Received {tool_calls}]")
 
-        if not tool_calls or tool_calls[0].function.name != "export":
+        if not tool_calls or tool_calls[0].function.name != fn_name:
             raise RuntimeError("No tool call received to devise an execution plan")
 
         args = json.loads(tool_calls[0].function.arguments)

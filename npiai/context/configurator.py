@@ -102,9 +102,12 @@ class Configurator:
         return results
 
     async def _parse_instruction(self, ctx: Context, instruction: str):
+        fn = self.compose_configs
+        fn_name = fn.__name__
+
         fn_reg = FunctionRegistration(
-            fn=self.compose_configs,
-            name="compose_configs",
+            fn=fn,
+            name=fn_name,
             ctx_variables=[],
             ctx_param_name="ctx",
             description="make up user configuration criteria",
@@ -143,9 +146,11 @@ class Configurator:
         return await self.compose_configs(ctx, **args)
 
     async def _finalize_configs(self, ctx: Context, configs: Dict[str, Any]):
+        fn = self.save_configs
+        fn_name = fn.__name__
         fn_reg = FunctionRegistration(
-            fn=self.save_configs,
-            name="save_configs",
+            fn=fn,
+            name=fn_name,
             ctx_variables=[],
             ctx_param_name="ctx",
             description="Save the composed config fields into context",

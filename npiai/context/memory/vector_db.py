@@ -124,8 +124,9 @@ class VectorDBMemory(BaseMemory):
         schema = sanitize_schema(callback_model)
 
         # TODO: use npi llm client?
+        fn_name = "callback"
         response = self._memory.llm.generate_response(
-            tool_choice="required",
+            tool_choice={"type": "function", "function": {"name": fn_name}},
             messages=[
                 {
                     "role": "system",
@@ -159,7 +160,7 @@ class VectorDBMemory(BaseMemory):
                 {
                     "type": "function",
                     "function": {
-                        "name": "callback",
+                        "name": fn_name,
                         "description": "Callback with retrieved information from the given memory",
                         "parameters": schema,
                     },
@@ -169,7 +170,7 @@ class VectorDBMemory(BaseMemory):
 
         tool_calls = response["tool_calls"]
 
-        if not tool_calls or tool_calls[0]["name"] != "callback":
+        if not tool_calls or tool_calls[0]["name"] != fn_name:
             logger.info(
                 f"No LLM callback found for query: {query}. Response: {json.dumps(response)}"
             )
