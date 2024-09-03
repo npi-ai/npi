@@ -36,6 +36,7 @@ and the corresponding tools' name as its argument.
 
 class StepResponse(BaseModel):
     task: str = Field(description="Detailed task of this step")
+    thought: str = Field(description="Detailed reason for this step")
     potential_tools: List[str] = Field(
         description="A list of potential tools to invoke"
     )
@@ -144,6 +145,7 @@ class StepwisePlanner(BasePlanner):
             steps.append(
                 ExecutionStep(
                     task=step.task,
+                    thought=step.thought,
                     fn_candidates=[
                         self._fn_map[name]
                         for name in step.potential_tools
