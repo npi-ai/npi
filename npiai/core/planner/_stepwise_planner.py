@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from npiai.context import Context
 from npiai.types import FunctionRegistration, ExecutionStep, Plan
 from npiai.utils import sanitize_schema
-from npiai.core.tool import AgentTool, FunctionTool
+from npiai.core.tool import AgentTool
 from npiai.core.base import BaseTool
 
 from ._base import BasePlanner
@@ -25,9 +25,6 @@ Conclude the plan by calling the `export` tool and include the final sequence of
 and the corresponding tools' name as its argument.
 
 ## Available Tools
-
-Below is a list of tools, labeled with `tool_name: description`. 
-Tools accompanied by `(Agent)` initiate a chat with an AI agent and are to be used independently within a step.
 
 {tools}
 
@@ -52,11 +49,12 @@ class PlanResponse(BaseModel):
 class StepwisePlanner(BasePlanner):
     _fn_map: Dict[str, FunctionRegistration] = None
 
-    def _get_tool_list(
-        self, tool: AgentTool | FunctionTool, skip_build_fn_map=False
-    ) -> str:
-        tools = []
+    @staticmethod
+    def _get_tool_list(tool: BaseTool) -> str:
+        tools = tool.tool.tools if isinstance(tool, AgentTool) else tool.tools
+        return json.dumps(tools)
 
+    def _build_fn_map(self, tool: BaseTool):
         functions = (
             tool.tool.unpack_functions()
             if isinstance(tool, AgentTool)
@@ -66,33 +64,17 @@ class StepwisePlanner(BasePlanner):
         if not self._fn_map:
             self._fn_map = {}
 
-        if not skip_build_fn_map:
-            for fn in functions:
-                self._fn_map[fn.name] = fn
-
         for fn in functions:
-            # remove newlines in tool description
-            description = fn.description.replace("\n", " ")
-
-            if fn.is_agent():
-                tools.append(f"- {fn.name}(Agent): {description}")
-                # tools.append("  Tools inside this agent:")
-                # sub_tools = self._get_tool_list(
-                #     fn.calling_agent, skip_build_fn_map=True
-                # )
-                # indent = "    "
-                # tools.append(indent + sub_tools.replace("\n-", f"\n{indent}-"))
-            else:
-                tools.append(f"- {fn.name}: {description}")
-
-        return "\n".join(tools)
+            self._fn_map[fn.name] = fn
 
     async def generate_plan(
         self,
         ctx: Context,
         task: str,
-        tool: AgentTool | FunctionTool,
+        tool: BaseTool,
     ) -> Plan:
+        self._build_fn_map(tool)
+
         fn = self.export
         fn_name = fn.__name__
         fn_reg = FunctionRegistration(
