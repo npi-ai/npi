@@ -30,6 +30,7 @@ and the corresponding tools' name as its argument.
 - Break Down the Task: Divide the goal into smaller, manageable steps that can be executed sequentially.
 - Identify Tools: For each step, list the potential tools that can be used to accomplish the task.
 - Sequence the Steps: Arrange the steps in a logical order that leads to the successful completion of the goal.
+- Single Call of Agents: If a step requires initiating a chat with an AI Agent, i.e., calling a tool with the postfix "_agent_chat", ensure that it is the only tool used in that step.
 
 ## Available Tools
 
