@@ -10,7 +10,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-from npiai import FunctionTool, agent, OpenAI, StepwisePlanner, function
+from npiai import FunctionTool, agent, OpenAI, function
+from npiai.core.planner import StepwisePlanner
+from npiai.core.optimizer import DedupOptimizer
 from npiai.context import Context
 from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
@@ -18,10 +20,10 @@ from npiai.types import RuntimeMessage
 from npiai.utils import logger
 
 RULES = """
-- You should ask for necessary information, e.g. meeting time and attendee's email, if not provided.
-- You should check the user's available time via Google Calendar.
-- You must negotiate with the attendee via Gmail to come to an agreement on meeting time.
-- You must wait for the attendee's response to the email you just sent using Gmail Agent.
+- You should Gather all necessary details for the meeting, including the preferred time and date, the duration, and the email addresses of attendees. If this information is not provided upfront, request it using the `ask_human` tool.
+- You should check the user's availability via Google Calendar.
+- You must send an invitation email to the intended attendee(s) to propose the meeting time, await their response, and adjust the schedule as needed based on their availability.
+- No need to create a draft email for the user to review. You can directly send the email to the attendee(s).
 - The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
 - If you think you need to ask the user for more information to fill the properties, you can use the `ask_human` tool to ask the user for more information.
 - If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the `ask_human` tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
@@ -147,7 +149,12 @@ async def run():
 
         print("Plan:", json.dumps(plan.to_json_object(), indent=2))
 
-        print(await negotiator.execute_plan(ctx, plan))
+        optimizer = DedupOptimizer(rules=RULES)
+        optimized_plan = await optimizer.optimize(ctx, plan)
+
+        print("Optimized Plan:", json.dumps(optimized_plan.to_json_object(), indent=2))
+
+        print(await negotiator.execute_plan(ctx, optimized_plan))
 
 
 def main():

@@ -13,7 +13,7 @@ class ExecutionStep:
     task: str
     thought: str
     id: str = field(default_factory=lambda: str(uuid4()))
-    fn_candidates: List[FunctionRegistration] = field(default_factory=list)
+    potential_tools: List[FunctionRegistration] = field(default_factory=list)
     sub_plan: Optional["Plan"] = None
 
     def to_json_object(self) -> dict:
@@ -21,6 +21,6 @@ class ExecutionStep:
             "id": self.id,
             "task": self.task,
             "thought": self.thought,
-            "fn_candidates": [fn.name for fn in self.fn_candidates],
+            "potential_tools": [fn.name for fn in self.potential_tools],
             "sub_plan": (self.sub_plan.to_json_object() if self.sub_plan else None),
         }

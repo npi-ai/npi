@@ -116,8 +116,8 @@ class AgentTool(BaseAgentTool):
         result = ""
 
         for step in plan.steps:
-            if step.sub_plan and isinstance(step.sub_plan.tool, AgentTool):
-                await step.sub_plan.tool.execute_plan(ctx, step.sub_plan)
+            if step.sub_plan and isinstance(step.sub_plan.toolset, AgentTool):
+                await step.sub_plan.toolset.execute_plan(ctx, step.sub_plan)
             else:
                 await ctx.send_debug_message(
                     f"[{self.name}] Performing task: {step.task}"
@@ -135,7 +135,7 @@ class AgentTool(BaseAgentTool):
                     
                     ## Preferred Tools
                     In formulating your strategy, give preference to the following tools:
-                    {[fn.name for fn in step.fn_candidates]}
+                    {[fn.name for fn in step.potential_tools]}
                     """
                 )
 

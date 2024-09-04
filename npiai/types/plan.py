@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 class Plan:
     goal: str
     steps: List[ExecutionStep]
-    tool: "BaseTool"
+    toolset: "BaseTool"
 
     def to_json_object(self) -> dict:
         return {
             "goal": self.goal,
             "steps": [step.to_json_object() for step in self.steps],
-            "tool": self.tool.name,
+            "toolset": self.toolset.name,
         }

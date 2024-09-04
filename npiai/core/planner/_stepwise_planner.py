@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from npiai.context import Context
 from npiai.types import FunctionRegistration, ExecutionStep, Plan
-from npiai.utils import sanitize_schema
+from npiai.utils import llm_tool_call
 from npiai.core.tool import AgentTool
 from npiai.core.base import BaseTool
 
@@ -24,6 +24,13 @@ Ensure that the steps are presented in a clear and logical order.
 Conclude the plan by calling the `export` tool and include the final sequence of steps 
 and the corresponding tools' name as its argument.
 
+## Instructions for Planning
+
+- Define the Goal: Clearly state the overall objective or purpose of the plan.
+- Break Down the Task: Divide the goal into smaller, manageable steps that can be executed sequentially.
+- Identify Tools: For each step, list the potential tools that can be used to accomplish the task.
+- Sequence the Steps: Arrange the steps in a logical order that leads to the successful completion of the goal.
+
 ## Available Tools
 
 {tools}
@@ -35,10 +42,10 @@ and the corresponding tools' name as its argument.
 
 
 class StepResponse(BaseModel):
-    task: str = Field(description="Detailed task of this step")
-    thought: str = Field(description="Detailed reason for this step")
+    task: str = Field(description="Specific task to be performed in this step")
+    thought: str = Field(description="Detailed rationale or reasoning behind this step")
     potential_tools: List[str] = Field(
-        description="A list of potential tools to invoke"
+        description="List of potential tools (presented by their names) that can be used in this step"
     )
 
 
@@ -76,16 +83,6 @@ class StepwisePlanner(BasePlanner):
     ) -> Plan:
         self._build_fn_map(tool)
 
-        fn = self.export
-        fn_name = fn.__name__
-        fn_reg = FunctionRegistration(
-            fn=fn,
-            name=fn_name,
-            description="Export generated plan",
-            ctx_variables=[],
-            model=PlanResponse,
-            schema=sanitize_schema(PlanResponse),
-        )
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
@@ -99,27 +96,19 @@ class StepwisePlanner(BasePlanner):
                 content=task,
             ),
         ]
-        response = await ctx.llm.completion(
+
+        plan_response = await llm_tool_call(
+            llm=ctx.llm,
+            model=PlanResponse,
+            tool=self.export,
+            tool_description="generate a plan",
             messages=messages,
-            tools=[fn_reg.get_tool_param()],
-            max_tokens=4096,
-            tool_choice={"type": "function", "function": {"name": fn_name}},
         )
-
-        response_message = response.choices[0].message
-        tool_calls = response_message.get("tool_calls", None)
-
-        await ctx.send_debug_message(f"[StepwisePlanner] Received {tool_calls}]")
-
-        if not tool_calls or tool_calls[0].function.name != fn_name:
-            raise RuntimeError("No tool call received to devise an execution plan")
-
-        args = json.loads(tool_calls[0].function.arguments)
 
         return await self.export(
             ctx=ctx,
             tool=tool,
-            plan=PlanResponse(**args),
+            plan=plan_response,
         )
 
     async def export(self, ctx: Context, tool: BaseTool, plan: PlanResponse) -> Plan:
@@ -146,7 +135,7 @@ class StepwisePlanner(BasePlanner):
                 ExecutionStep(
                     task=step.task,
                     thought=step.thought,
-                    fn_candidates=[
+                    potential_tools=[
                         self._fn_map[name]
                         for name in step.potential_tools
                         if name in self._fn_map
@@ -155,4 +144,4 @@ class StepwisePlanner(BasePlanner):
                 )
             )
 
-        return Plan(goal=plan.goal, steps=steps, tool=tool)
+        return Plan(goal=plan.goal, steps=steps, toolset=tool)
