@@ -24,7 +24,8 @@ RULES = """
 - You should check the user's availability via Google Calendar.
 - You must send an invitation email to the intended attendee(s) to propose the meeting time, await their response, and adjust the schedule as needed based on their availability.
 - No need to create a draft email for the user to review. You can directly send the email to the attendee(s).
-- The Google Calendar tool can only be used to manage the user's schedule, not the attendee's schedule.
+- You should handle the case where the attendee(s) propose a different time for the meeting. You should adjust the schedule accordingly and notify the user of the changes.
+- Once confirmed, you should create an event in Google Calendar.
 - If you think you need to ask the user for more information to fill the properties, you can use the `ask_human` tool to ask the user for more information.
 - If you need confirmation from the user to complete the task, or you want to ask the user a question, you can use the `ask_human` tool to do so. Especially, if the last assistant's message proposed a question, you should ask the user for response.
 """
