@@ -105,14 +105,6 @@ class AgentTool(BaseAgentTool):
         Returns:
             Final result
         """
-        await ctx.setup_configs(plan.goal)
-
-        task = Task(goal=plan.goal)
-        ctx.with_task(task)
-
-        if self._tool.system_prompt:
-            await task.step([await self._generate_system_message()])
-
         result = ""
 
         for step in plan.steps:
@@ -131,7 +123,8 @@ class AgentTool(BaseAgentTool):
                     You should stop further generation as soon as the new task is complete.
                     
                     ## New Task to Complete
-                    {step.task}
+                    Task: {step.task}
+                    Reasoning behind the task: {step.thought}
                     
                     ## Preferred Tools
                     In formulating your strategy, give preference to the following tools:
@@ -141,8 +134,7 @@ class AgentTool(BaseAgentTool):
 
                 await ctx.send_debug_message(f"Instruction:\n{instruction}")
 
-                await task.step([await self._generate_user_message(instruction)])
-                result = await self._call_llm(ctx, task)
+                result = await self.chat(ctx, instruction)
 
                 await ctx.send_debug_message(f"[{self.name}] Result: {result}")
 
