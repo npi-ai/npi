@@ -102,7 +102,7 @@ class StepwisePlanner(BasePlanner):
             llm=ctx.llm,
             model=PlanResponse,
             tool=self.export,
-            tool_description="generate a plan",
+            tool_description="Export the generated plan",
             messages=messages,
         )
 
@@ -132,15 +132,19 @@ class StepwisePlanner(BasePlanner):
                     tool=agent,
                 )
 
+            potential_tools = []
+
+            for name in step.potential_tools:
+                # in case the model returns `functions.[name]` instead of just `name`
+                tool_name = name.split(".")[-1]
+                if tool_name in self._fn_map:
+                    potential_tools.append(self._fn_map[tool_name])
+
             steps.append(
                 ExecutionStep(
                     task=step.task,
                     thought=step.thought,
-                    potential_tools=[
-                        self._fn_map[name]
-                        for name in step.potential_tools
-                        if name in self._fn_map
-                    ],
+                    potential_tools=potential_tools,
                     sub_plan=sub_plan,
                 )
             )
