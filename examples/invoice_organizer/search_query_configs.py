@@ -42,6 +42,7 @@ class SearchQueryConfigsModel(BaseModel):
 class SearchQueryConfigs(Configurator):
     model = SearchQueryConfigsModel
     storage_key = StorageKeys.QUERY
+    description = "Search query for Gmail"
 
     system_prompt = dedent(
         """

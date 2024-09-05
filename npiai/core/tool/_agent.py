@@ -1,3 +1,4 @@
+import json
 from typing import List
 from textwrap import dedent
 
@@ -78,7 +79,7 @@ class AgentTool(BaseAgentTool):
         ctx: Context,
         instruction: str,
     ) -> str:
-        await ctx.setup_configs(instruction)
+        # await ctx.setup_configs(instruction)
 
         task = Task(goal=instruction)
         ctx.with_task(task)
@@ -125,6 +126,10 @@ class AgentTool(BaseAgentTool):
                     ## New Task to Complete
                     Task: {step.task}
                     Reasoning behind the task: {step.thought}
+                    
+                    # Configuration Context
+                    The context for this task includes the following predefined configurations:
+                    {json.dumps(await ctx.export_configs(), ensure_ascii=False)}
                     
                     ## Preferred Tools
                     In formulating your strategy, give preference to the following tools:

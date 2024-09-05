@@ -27,14 +27,21 @@ and the corresponding tools' name as its argument.
 ## Instructions for Planning
 
 - Define the Goal: Clearly state the overall objective or purpose of the plan.
-- Break Down the Task: Divide the goal into smaller, manageable steps that can be executed sequentially.
+- Review the Context: Understand the existing configurations and rules that apply to the task.
+- Break Down the Task: Divide the goal into smaller, manageable steps that can be executed sequentially. Skip any unnecessary steps.
 - Identify Tools: For each step, list the potential tools that can be used to accomplish the task.
+- Provide Rationale: Explain the reasoning behind each step and why it is necessary to achieve the goal.
 - Sequence the Steps: Arrange the steps in a logical order that leads to the successful completion of the goal.
 - Single Call of Agents: If a step requires initiating a chat with an AI Agent, i.e., calling a tool with the postfix "_agent_chat", ensure that it is the only tool used in that step.
 
 ## Available Tools
 
 {tools}
+
+## Configuration Context
+
+The context for this planning task includes the following predefined configurations:
+{configs}
 
 ## Additional Rules
 
@@ -90,6 +97,7 @@ class StepwisePlanner(BasePlanner):
                 content=__PROMPT__.format(
                     tools=self._get_tool_list(tool),
                     rules=self._rules,
+                    configs=json.dumps(await ctx.export_configs(), ensure_ascii=False),
                 ),
             ),
             ChatCompletionUserMessageParam(

@@ -27,7 +27,9 @@ and ensures a clear, concise, and logical flow from beginning to end.
 
 ## Instructions for Optimization
 
+- Review the Context: Understand the existing configurations and rules that apply to the task.
 - Eliminate Redundancies: Look for any tasks that are duplicated or serve the same purpose. Remove or merge these tasks to prevent repetitive actions.
+- Skip Unnecessary Steps: Identify any tasks that do not contribute directly to achieving the goal. Eliminate these tasks to simplify the plan.
 - Streamline the Workflow: Arrange the tasks in a logical sequence that reflects the natural process. Each task must contribute directly to achieving the goal.
 - Enhance Efficiency: Consider the dependencies between tasks. Adjust the order or grouping of tasks to minimize delays in the plan's execution.
 - Keep Hierarchy: Ensure that the optimized plan maintains the hierarchical structure of the original plan, including sub-plans and nested steps.
@@ -51,6 +53,11 @@ type ExecutionStep = {{
     potential_tools: string[], // List of potential tools that can be used in this step
     sub_plan: Plan, // Sub-plan associated with this step (if applicable)
 }}
+
+## Configuration Context
+
+The context for this planning task includes the following predefined configurations:
+{configs}
 
 ## Additional Rules
 
@@ -121,6 +128,7 @@ class DedupOptimizer(BaseOptimizer):
                 content=__PROMPT__.format(
                     # tools=self._get_tool_list(),
                     rules=self._rules,
+                    configs=json.dumps(await ctx.export_configs(), ensure_ascii=False),
                 ),
             ),
             ChatCompletionUserMessageParam(

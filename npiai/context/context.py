@@ -110,8 +110,11 @@ class Context:
         self._configurators.extend(config_agents)
 
     async def setup_configs(self, instruction: str):
-        for config_agent in self._configurators:
-            await config_agent.setup(self, instruction)
+        for config in self._configurators:
+            await config.setup(self, instruction)
+
+    async def export_configs(self):
+        return [await config.export(self) for config in self._configurators]
 
     # @abstractmethod
     # NOTE: this method should not be abstract

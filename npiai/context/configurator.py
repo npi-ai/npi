@@ -10,7 +10,7 @@ from litellm.types.completion import (
 from pydantic import BaseModel
 
 from npiai.types import FunctionRegistration
-from npiai.utils import sanitize_schema, get_type_annotation
+from npiai.utils import sanitize_schema, get_type_annotation, llm_tool_call
 
 from .context import Context
 
@@ -18,6 +18,7 @@ from .context import Context
 class Configurator:
     model: Type[BaseModel]
     storage_key: str = str(uuid.uuid4())
+    description: str = ""
 
     system_prompt = dedent(
         """
@@ -35,6 +36,13 @@ class Configurator:
     @property
     def name(self) -> str:
         return type(self).__name__
+
+    async def export(self, ctx: Context):
+        return {
+            "name": self.storage_key,
+            "description": self.description,
+            "value": await ctx.kv.get(self.storage_key, ask_human=False),
+        }
 
     async def setup(self, ctx: Context, instruction: str) -> str:
         await ctx.send_debug_message(f"[{self.name}] Setting up config fields")
@@ -102,19 +110,6 @@ class Configurator:
         return results
 
     async def _parse_instruction(self, ctx: Context, instruction: str):
-        fn = self.compose_configs
-        fn_name = fn.__name__
-
-        fn_reg = FunctionRegistration(
-            fn=fn,
-            name=fn_name,
-            ctx_variables=[],
-            ctx_param_name="ctx",
-            description="make up user configuration criteria",
-            model=self.model,
-            schema=sanitize_schema(self.model),
-        )
-
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
@@ -126,24 +121,15 @@ class Configurator:
             ),
         ]
 
-        response = await ctx.llm.completion(
+        response = await llm_tool_call(
+            llm=ctx.llm,
+            model=self.model,
+            tool=self.compose_configs,
+            tool_description="make up user configuration criteria",
             messages=messages,
-            tools=[fn_reg.get_tool_param()],
-            tool_choice="required",
-            max_tokens=4096,
         )
 
-        response_message = response.choices[0].message
-        tool_calls = response_message.get("tool_calls", None)
-
-        if not tool_calls:
-            raise RuntimeError("No tool call received to compose configs")
-
-        args = json.loads(tool_calls[0].function.arguments)
-
-        await ctx.send_debug_message(f"[{self.name}] Received {args}")
-
-        return await self.compose_configs(ctx, **args)
+        return await self.compose_configs(ctx, **response.model_dump())
 
     async def _finalize_configs(self, ctx: Context, configs: Dict[str, Any]):
         fn = self.save_configs

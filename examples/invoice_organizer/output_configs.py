@@ -20,6 +20,7 @@ class OutputConfigsModel(BaseModel):
 class OutputConfigs(Configurator):
     model = OutputConfigsModel
     storage_key = StorageKeys.OUTPUT_OPTIONS
+    description = "Output options for invoice processing"
 
     system_prompt = dedent(
         """
