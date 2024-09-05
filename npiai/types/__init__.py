@@ -1,7 +1,7 @@
 from .function_registration import FunctionRegistration, ToolFunction
 from .shot import Shot
 from .tool_meta import ToolMeta
-from .from_context import FromVectorDB
+from .from_vector_db import FromVectorDB
 from .runtime_message import RuntimeMessage
 from .execution_result import ExecutionResult
 from .execution_step import ExecutionStep

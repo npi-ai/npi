@@ -5,7 +5,7 @@ from openai.types.chat import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from npiai.types.shot import Shot
-from npiai.types.from_context import FromVectorDB
+from npiai.types.from_vector_db import FromVectorDB
 
 if TYPE_CHECKING:
     from npiai import AgentTool
