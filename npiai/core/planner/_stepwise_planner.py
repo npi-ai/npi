@@ -27,7 +27,7 @@ and the corresponding tools' name as its argument.
 ## Instructions for Planning
 
 - Define the Goal: Clearly state the overall objective or purpose of the plan.
-- Review the Context: Understand the existing configurations and rules that apply to the task. Avoid asking for redundant information.
+- Review the Context: Understand the existing configurations and rules that apply to the task. Note that the context is visible to all tasks, so avoid asking for redundant information.
 - Break Down the Task: Divide the goal into smaller, manageable steps that can be executed sequentially.
 - Identify Tools: For each step, list the potential tools that can be used to accomplish the task.
 - Provide Rationale: Explain the reasoning behind each step and why it is necessary to achieve the goal.

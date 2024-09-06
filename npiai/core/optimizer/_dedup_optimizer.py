@@ -27,7 +27,7 @@ and ensures a clear, concise, and logical flow from beginning to end.
 
 ## Instructions for Optimization
 
-- Review the Context: Understand the existing configurations and rules that apply to the task.
+- Review the Context: Understand the existing configurations and rules that apply to the task. Note that the context is visible to all tasks, so avoid asking for redundant information.
 - Eliminate Redundancies: Look for any tasks that are duplicated or serve the same purpose. Remove or merge these tasks to prevent repetitive actions.
 - Skip Unnecessary Steps: Identify any tasks that do not contribute directly to achieving the goal. Eliminate these tasks to simplify the plan.
 - Streamline the Workflow: Arrange the tasks in a logical sequence that reflects the natural process. Each task must contribute directly to achieving the goal.

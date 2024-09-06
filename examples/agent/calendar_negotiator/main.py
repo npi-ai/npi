@@ -22,7 +22,7 @@ from npiai.utils import logger
 from meeting_configs import MeetingConfigs
 
 RULES = """
-- You should gather all necessary details for the meeting, including the preferred time and date, the duration, and the email addresses of attendees. If this information is not provided upfront, request it using the `ask_human` tool. Skip this step if the information is already provided.
+- Request necessary details for the meeting if not provided upfront, including the preferred time and date, the duration, and the email addresses of attendees. Skip this step if the information is already given.
 - You should check the user's availability via Google Calendar.
 - You must send an invitation email to the intended attendee(s) to propose the meeting time, await their response, and adjust the schedule as needed based on their availability.
 - No need to create a draft email for the user to review. You can directly send the email to the attendee(s).
