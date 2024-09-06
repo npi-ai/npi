@@ -161,6 +161,7 @@ if __name__ == "__main__":
     from debug_context import DebugContext
 
     async def main():
+        task = "summarize invoices in the past 3 month and save as invoices.json"
         llm = OpenAI(
             api_key=os.environ.get("OPENAI_API_KEY", None),
             model="gpt-4o",
@@ -173,10 +174,9 @@ if __name__ == "__main__":
             SearchQueryConfigs(),
             OutputConfigs(),
         )
+        await ctx.setup_configs(task)
 
         async with agent.wrap(InvoiceOrganizer()) as organizer:
-            await organizer.chat(
-                ctx, "summarize invoices in the past 3 month and save as invoices.json"
-            )
+            await organizer.chat(ctx, task)
 
     asyncio.run(main())

@@ -19,8 +19,10 @@ from npiai.hitl_handler import ConsoleHandler
 from npiai.types import RuntimeMessage
 from npiai.utils import logger
 
+from meeting_configs import MeetingConfigs
+
 RULES = """
-- You should Gather all necessary details for the meeting, including the preferred time and date, the duration, and the email addresses of attendees. If this information is not provided upfront, request it using the `ask_human` tool.
+- You should gather all necessary details for the meeting, including the preferred time and date, the duration, and the email addresses of attendees. If this information is not provided upfront, request it using the `ask_human` tool. Skip this step if the information is already provided.
 - You should check the user's availability via Google Calendar.
 - You must send an invitation email to the intended attendee(s) to propose the meeting time, await their response, and adjust the schedule as needed based on their availability.
 - No need to create a draft email for the user to review. You can directly send the email to the attendee(s).
@@ -136,10 +138,13 @@ async def run():
         ctx = DebugContext()
         ctx.use_llm(llm)
         ctx.use_hitl(ConsoleHandler())
+        ctx.use_configs(MeetingConfigs())
 
         print("Negotiator: What's your task for me?")
         task = input("User: ")
         print("")
+
+        await ctx.setup_configs(task)
 
         planner = StepwisePlanner(rules=RULES)
         plan = await planner.generate_plan(
