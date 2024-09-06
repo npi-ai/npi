@@ -132,18 +132,6 @@ class Configurator:
         return await self.compose_configs(ctx, **response.model_dump())
 
     async def _finalize_configs(self, ctx: Context, configs: Dict[str, Any]):
-        fn = self.save_configs
-        fn_name = fn.__name__
-        fn_reg = FunctionRegistration(
-            fn=fn,
-            name=fn_name,
-            ctx_variables=[],
-            ctx_param_name="ctx",
-            description="Save the composed config fields into context",
-            model=self.model,
-            schema=sanitize_schema(self.model),
-        )
-
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
@@ -154,7 +142,7 @@ class Configurator:
                     1. Parse the input provided in the JSON format to identify and extract 
                        necessary configuration criteria.
                     2. Convert each extracted field into its appropriate data type as 
-                       specified by the schema.
+                       specified by the schema. Do not transform relative dates.
                     3. Call the `save_configs` with the transformed config data.
                     """
                 ),
@@ -165,20 +153,12 @@ class Configurator:
             ),
         ]
 
-        response = await ctx.llm.completion(
+        response = await llm_tool_call(
+            llm=ctx.llm,
+            model=self.model,
+            tool=self.save_configs,
+            tool_description="save the composed config fields",
             messages=messages,
-            tools=[fn_reg.get_tool_param()],
-            tool_choice="required",
-            max_tokens=4096,
         )
 
-        response_message = response.choices[0].message
-        tool_calls = response_message.get("tool_calls", None)
-
-        if not tool_calls:
-            raise RuntimeError("No tool call received to save configs")
-
-        args = json.loads(tool_calls[0].function.arguments)
-        await ctx.send_debug_message(f"[{self.name}] Received {args}")
-
-        return await self.save_configs(ctx, **args)
+        return await self.save_configs(ctx, **response.model_dump())

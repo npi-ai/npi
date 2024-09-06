@@ -23,7 +23,7 @@ class MeetingConfigs(Configurator):
         You are an agent helping user configurate meeting scheduling options by interpreting 
         natural language instructions. For any given instruction, you must:
             1. Identify and extract key criteria from the user's instruction, including 
-               `date`, `time`, and any other pertinent details.
+               `date`, `time`, and any other pertinent details. Do not transform relative dates.
             2. Engage with the `compose_configs` tool, inputting identified criteria and 
                leaving unspecified fields as `None` or empty strings. The tool will interact with the 
                user to define any missing information, so you should always call this
