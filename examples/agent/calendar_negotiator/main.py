@@ -13,6 +13,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from npiai import FunctionTool, agent, OpenAI, function
 from npiai.core.planner import StepwisePlanner
 from npiai.core.optimizer import DedupOptimizer
+from npiai.core.task_tuner import HistorianTuner
 from npiai.context import Context
 from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
@@ -138,29 +139,64 @@ async def run():
         ctx = DebugContext()
         ctx.use_llm(llm)
         ctx.use_hitl(ConsoleHandler())
-        ctx.use_configs(MeetingConfigs())
+        # ctx.use_configs(MeetingConfigs())
 
-        print("Negotiator: What's your task for me?")
-        task = input("User: ")
-        print("")
+        # print("Negotiator: What's your task for me?")
+        # task = input("User: ")
+        # print("")
+        task = "Schedule a meeting with Daofeng"
 
-        await ctx.setup_configs(task)
+        # await ctx.setup_configs(task)
 
-        planner = StepwisePlanner(rules=RULES)
-        plan = await planner.generate_plan(
+        tuner = HistorianTuner()
+        task = await tuner.tune(
             ctx=ctx,
-            task=task,
+            instruction=task,
+            related_tasks=[
+                """
+                Schedule a meeting with John at 3 PM on Monday. 
+                Send an invitation to him and await his response.
+                If John proposes a different time, adjust the schedule accordingly.
+                
+                
+                
+                Information Needed:
+                - John's email address
+                - Topics or agenda for the meeting
+                """,
+                """
+                Ask Alice for her availability and schedule a meeting to discuss the project.
+                
+                Information Needed:
+                - Alice's email address
+                """,
+                """
+                Negotiate with Bob (bob@example.com) to find a suitable time for a meeting.
+                
+                Information Needed:
+                - User's preferred time and date
+                """,
+            ],
             tool=negotiator,
         )
 
-        print("Plan:", json.dumps(plan.to_json_object(), indent=2))
+        print("Tuned Task:", task)
 
-        optimizer = DedupOptimizer(rules=RULES)
-        optimized_plan = await optimizer.optimize(ctx, plan)
+        # planner = StepwisePlanner()
+        # plan = await planner.generate_plan(
+        #     ctx=ctx,
+        #     task=task,
+        #     tool=negotiator,
+        # )
+        #
+        # print("Plan:", json.dumps(plan.to_json_object(), indent=2))
+        #
+        # optimizer = DedupOptimizer()
+        # optimized_plan = await optimizer.optimize(ctx, plan)
+        #
+        # print("Optimized Plan:", json.dumps(optimized_plan.to_json_object(), indent=2))
 
-        print("Optimized Plan:", json.dumps(optimized_plan.to_json_object(), indent=2))
-
-        print(await negotiator.execute_plan(ctx, optimized_plan))
+        # print(await negotiator.execute_plan(ctx, optimized_plan))
 
 
 def main():
