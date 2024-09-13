@@ -11,9 +11,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 from npiai import FunctionTool, agent, OpenAI, function
-from npiai.core.planner import StepwisePlanner
 from npiai.core.optimizer import DedupOptimizer
-from npiai.core.task_tuner import HistorianTuner
+from npiai.core.planner import StepwisePlanner, ExperimentalO1Planner
+from npiai.core.task_tuner import HistorianTuner, ExperimentalO1Tunner
 from npiai.context import Context
 from npiai.tools import Gmail, GoogleCalendar
 from npiai.hitl_handler import ConsoleHandler
@@ -97,8 +97,8 @@ class Negotiator(FunctionTool):
         )
 
         self.add_tool(
-            agent.wrap(GoogleCalendar(creds=cred)),
-            agent.wrap(Gmail(creds=cred)),
+            (GoogleCalendar(creds=cred)),
+            (Gmail(creds=cred)),
         )
 
     @function
@@ -144,52 +144,56 @@ async def run():
         # print("Negotiator: What's your task for me?")
         # task = input("User: ")
         # print("")
-        task = "Schedule a meeting with Daofeng"
+        task = "Schedule a meeting with Daofeng. Negotiate a suitable time for the meeting."
 
         # await ctx.setup_configs(task)
 
-        tuner = HistorianTuner()
+        tuner = ExperimentalO1Tunner(
+            openai_api_key=os.environ["OPENAI_API_KEY"],
+            o1_model="o1-preview",
+        )
         task = await tuner.tune(
             ctx=ctx,
             instruction=task,
-            related_tasks=[
-                """
-                Schedule a meeting with John at 3 PM on Monday. 
-                Send an invitation to him and await his response.
-                If John proposes a different time, adjust the schedule accordingly.
-                
-                
-                
-                Information Needed:
-                - John's email address
-                - Topics or agenda for the meeting
-                """,
-                """
-                Ask Alice for her availability and schedule a meeting to discuss the project.
-                
-                Information Needed:
-                - Alice's email address
-                """,
-                """
-                Negotiate with Bob (bob@example.com) to find a suitable time for a meeting.
-                
-                Information Needed:
-                - User's preferred time and date
-                """,
-            ],
+            # related_tasks=[
+            #     """
+            #     Schedule a meeting with John at 3 PM on Monday.
+            #     Send an invitation to him and await his response.
+            #     If John proposes a different time, adjust the schedule accordingly.
+            #
+            #     Information Needed:
+            #     - John's email address
+            #     - Topics or agenda for the meeting
+            #     """,
+            #     """
+            #     Ask Alice for her availability and schedule a meeting to discuss the project.
+            #
+            #     Information Needed:
+            #     - Alice's email address
+            #     """,
+            #     """
+            #     Negotiate with Bob (bob@example.com) to find a suitable time for a meeting.
+            #
+            #     Information Needed:
+            #     - User's preferred time and date
+            #     """,
+            # ],
             tool=negotiator,
         )
 
         print("Tuned Task:", task)
 
-        # planner = StepwisePlanner()
-        # plan = await planner.generate_plan(
-        #     ctx=ctx,
-        #     task=task,
-        #     tool=negotiator,
-        # )
-        #
-        # print("Plan:", json.dumps(plan.to_json_object(), indent=2))
+        planner = ExperimentalO1Planner(
+            openai_api_key=os.environ["OPENAI_API_KEY"],
+            o1_model="o1-preview",
+        )
+        plan = await planner.generate_plan(
+            ctx=ctx,
+            task=task,
+            tool=negotiator,
+        )
+
+        print("Plan:", json.dumps(plan.to_json_object(), indent=2))
         #
         # optimizer = DedupOptimizer()
         # optimized_plan = await optimizer.optimize(ctx, plan)

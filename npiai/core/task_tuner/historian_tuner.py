@@ -1,5 +1,5 @@
 import json
-from typing import List, Dict
+from typing import List
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
@@ -8,12 +8,11 @@ from litellm.types.completion import (
 from pydantic import BaseModel, Field
 
 from npiai.context import Context
-from npiai.types import FunctionRegistration
 from npiai.utils import llm_tool_call
 from npiai.core.tool import AgentTool
 from npiai.core.base import BaseTool
 
-from ._base import BaseTaskTuner
+from .base import BaseTaskTuner
 
 
 __PROMPT__ = """
@@ -48,8 +47,6 @@ class TaskResponse(BaseModel):
 
 
 class HistorianTuner(BaseTaskTuner):
-    _fn_map: Dict[str, FunctionRegistration] = None
-
     @staticmethod
     def _get_tool_list(tool: BaseTool) -> str:
         tools = tool.tool.tools if isinstance(tool, AgentTool) else tool.tools

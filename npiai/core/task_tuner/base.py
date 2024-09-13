@@ -6,11 +6,6 @@ from npiai.core.base import BaseTool
 
 
 class BaseTaskTuner(ABC):
-    _rules: str | None = None
-
-    def __init__(self, rules: str | None = None):
-        self._rules = rules
-
     @abstractmethod
     async def tune(
         self,

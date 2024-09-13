@@ -13,7 +13,7 @@ from npiai.utils import llm_tool_call
 from npiai.core.tool import AgentTool
 from npiai.core.base import BaseTool
 
-from ._base import BasePlanner
+from .base import BasePlanner
 
 
 __PROMPT__ = """
