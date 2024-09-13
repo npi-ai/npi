@@ -190,7 +190,13 @@ class ExperimentalO1Planner(BasePlanner):
             if agent:
                 # init a new planner to generate sub plan
                 sub_plan = await ExperimentalO1Planner(
-                    openai_api_key=self._openai_api_key
+                    openai_api_key=self._openai_api_key,
+                    rules=dedent(
+                        f"""
+                        - **Avoid Redundant Steps**: This plan is expanding a step of the upper-level plan. Ensure that the sub-plan only includes steps that are specific to the current task and not already covered in the upper-level plan. 
+                         Upper-level plan: {plan.model_dump_json()}
+                        """
+                    ),
                 ).generate_plan(
                     ctx=ctx,
                     task=step.task,

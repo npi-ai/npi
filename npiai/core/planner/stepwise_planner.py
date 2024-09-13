@@ -1,4 +1,5 @@
 import json
+from textwrap import dedent
 from typing import List, Dict
 
 from litellm.types.completion import (
@@ -134,7 +135,14 @@ class StepwisePlanner(BasePlanner):
 
             if agent:
                 # init a new planner to generate sub plan
-                sub_plan = await StepwisePlanner().generate_plan(
+                sub_plan = await StepwisePlanner(
+                    rules=dedent(
+                        f"""
+                        - **Avoid Redundant Steps**: This plan is expanding a step of the upper-level plan. Ensure that the sub-plan only includes steps that are specific to the current task and not already covered in the upper-level plan. 
+                         Upper-level plan: {plan.model_dump_json()}
+                        """
+                    ),
+                ).generate_plan(
                     ctx=ctx,
                     task=step.task,
                     tool=agent,

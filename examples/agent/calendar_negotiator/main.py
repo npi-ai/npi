@@ -96,9 +96,16 @@ class Negotiator(FunctionTool):
             ],
         )
 
+        # warp in agent mode
+        # self.add_tool(
+        #     agent.wrap(GoogleCalendar(creds=cred)),
+        #     agent.wrap(Gmail(creds=cred)),
+        # )
+
+        # function mode
         self.add_tool(
-            (GoogleCalendar(creds=cred)),
-            (Gmail(creds=cred)),
+            GoogleCalendar(creds=cred),
+            Gmail(creds=cred),
         )
 
     @function
@@ -148,6 +155,7 @@ async def run():
 
         # await ctx.setup_configs(task)
 
+        # tuner = HistorianTuner()
         tuner = ExperimentalO1Tunner(
             openai_api_key=os.environ["OPENAI_API_KEY"],
             o1_model="o1-preview",
@@ -183,10 +191,13 @@ async def run():
 
         print("Tuned Task:", task)
 
+        # planner = StepwisePlanner()
+
         planner = ExperimentalO1Planner(
             openai_api_key=os.environ["OPENAI_API_KEY"],
             o1_model="o1-preview",
         )
+
         plan = await planner.generate_plan(
             ctx=ctx,
             task=task,
