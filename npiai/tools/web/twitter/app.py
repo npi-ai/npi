@@ -14,7 +14,6 @@ from npiai.context import Context
 from npiai.core.browser import NavigatorAgent
 from npiai.utils import logger, is_cloud_env
 from npiai.error.auth import UnauthorizedError
-from npiai.llm import LLM
 from npiai.constant import app
 
 __SYSTEM_PROMPT__ = """
@@ -116,7 +115,6 @@ class Twitter(BrowserTool):
         self,
         username: str = None,
         password: str = None,
-        navigator_llm: LLM = None,
         headless: bool = True,
     ):
         super().__init__(
@@ -127,7 +125,7 @@ class Twitter(BrowserTool):
         self._password = password or os.environ.get("TWITTER_PASSWORD", None)
         self.ctx = None
 
-        self.add_tool(NavigatorAgent(llm=navigator_llm, playwright=self.playwright))
+        self.add_tool(NavigatorAgent(playwright=self.playwright))
 
     @classmethod
     def from_context(cls, ctx: Context) -> "Twitter":
