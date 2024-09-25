@@ -9,7 +9,6 @@ from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
 
-from npiai.llm import LLM
 from npiai.utils import logger
 from npiai.context import Context, Task
 from npiai.core.browser import PlaywrightContext
@@ -152,7 +151,6 @@ class NavigatorAgent(BrowserAgentTool):
 
     def __init__(
         self,
-        llm: LLM,
         playwright: PlaywrightContext,
         max_steps: int = 42,
     ):
@@ -162,7 +160,6 @@ class NavigatorAgent(BrowserAgentTool):
 
         super().__init__(
             tool=self._browser_app,
-            llm=llm,
         )
 
         self.max_steps = max_steps
@@ -266,7 +263,7 @@ class NavigatorAgent(BrowserAgentTool):
                 return f"Maximum number of steps reached. Last response was: {response_str}"
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
-        response = await self.llm.completion(
+        response = await ctx.llm.completion(
             messages=task.conversations(),
             max_tokens=4096,
         )

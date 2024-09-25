@@ -1,5 +1,5 @@
 from npiai.core import NavigatorAgent
-from npiai import LLM, function, BrowserTool, Context, utils
+from npiai import function, BrowserTool, Context, utils
 
 __SYSTEM_PROMPT__ = """
 You are a general chromium-based autonomous agent helping user to finish any task on any webpage. For a given task,
@@ -12,13 +12,12 @@ class Chromium(BrowserTool):
     description = "Perform any task on any webpage"
     system_prompt = __SYSTEM_PROMPT__
 
-    def __init__(self, navigator_llm: LLM = None, headless: bool = True):
+    def __init__(self, headless: bool = True):
         super().__init__(
             headless=headless,
         )
         self.add_tool(
             NavigatorAgent(
-                llm=navigator_llm,
                 playwright=self.playwright,
             )
         )
