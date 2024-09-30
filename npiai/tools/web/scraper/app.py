@@ -1,7 +1,6 @@
 import csv
 import re
 import json
-import difflib
 from typing import List, Dict
 from textwrap import dedent
 
@@ -132,12 +131,12 @@ class Scraper(BrowserTool):
         if count == 0:
             return None
 
-        html = []
+        sections = []
 
         for elem in await locator.all():
-            html.append(await elem.inner_html())
+            sections.append(await elem.inner_html())
 
-        md = markdownify("\n".join(html))
+        md = markdownify("\n".join(sections))
 
         await ctx.send_debug_message(f"[{self.name}] Items markdown: {md}")
 
@@ -152,40 +151,40 @@ class Scraper(BrowserTool):
         ctx: Context,
         ancestor_selector: str,
     ) -> str | None:
-        locator = self.playwright.page.locator(ancestor_selector)
+        # check if there are mutation records
+        html = await self.playwright.page.evaluate(
+            """
+            () => {
+                const { addedNodes } = window;
+                
+                if (addedNodes?.length) {
+                    window.addedNodes = [];
+                    return addedNodes.map(node => node.outerHTML).join("\\n");
+                }
+                
+                return null;
+            }
+            """
+        )
 
-        if not await locator.count():
-            return None
+        if html is None:
+            locator = self.playwright.page.locator(ancestor_selector)
 
-        html = []
+            if not await locator.count():
+                return None
 
-        for elem in await locator.all():
-            html.append(await elem.inner_html())
+            sections = []
 
-        md = markdownify("\n".join(html))
+            for elem in await locator.all():
+                sections.append(await elem.inner_html())
 
-        await ctx.send_debug_message(f"[{self.name}] Ancestor markdown: {md}")
+            html = "\n".join(sections)
 
-        if not self._last_ancestor_md:
-            self._last_ancestor_md = md
-            return md
+        md = markdownify(html)
 
-        diff = difflib.ndiff(self._last_ancestor_md.splitlines(), md.splitlines())
-        self._last_ancestor_md = md
+        await ctx.send_debug_message(f"[{self.name}] Ancestor additions: {md}")
 
-        # get the additions in the new markdown
-        additions = []
-
-        for line in diff:
-            if line.startswith("+ "):
-                additions.append(line[2:])
-
-        await ctx.send_debug_message(f"[{self.name}] Added content: {additions}")
-
-        if not additions:
-            return None
-
-        return "\n".join(additions)
+        return md
 
     async def _llm_summarize(
         self,
@@ -275,6 +274,33 @@ class Scraper(BrowserTool):
         return parse_json_response(content)
 
     async def _load_more(self, ctx: Context, ancestor_selector: str):
+        # attach mutation observer to the ancestor element
+        await self.playwright.page.evaluate(
+            """
+            () => {
+                window.addedNodes = [];
+                window.npiObserver = new MutationObserver((records) => {
+                    for (const record of records) {
+                        for (const addedNode of record.addedNodes) {
+                            window.addedNodes.push(addedNode);
+                        }
+                    }
+                });
+            }
+            """
+        )
+
+        await self.playwright.page.evaluate(
+            f"""
+            () => {{
+                window.npiObserver.observe(
+                    document.querySelector("{ancestor_selector}"), 
+                    {{ childList: true, subtree: true }}
+                );
+            }}
+            """
+        )
+
         # check if the page is scrollable
         # if so, scroll to load more items
         if await self.is_scrollable():
@@ -293,3 +319,8 @@ class Scraper(BrowserTool):
             await ctx.send_debug_message(f"[{self.name}] Navigated to the next page")
 
         await self.playwright.page.wait_for_timeout(3000)
+
+        # clear the mutation observer
+        await self.playwright.page.evaluate(
+            "() => { window.npiObserver.disconnect(); }"
+        )
