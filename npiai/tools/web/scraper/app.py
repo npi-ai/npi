@@ -4,7 +4,7 @@ import json
 from typing import List, Dict
 from textwrap import dedent
 
-from markdownify import markdownify
+from markdownify import MarkdownConverter
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -13,6 +13,18 @@ from litellm.types.completion import (
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
 from npiai.utils import is_cloud_env, parse_json_response
+
+
+class NonBase64ImageConverter(MarkdownConverter):
+    def convert_img(self, el, text, convert_as_inline):
+        src = el.attrs.get("src", "")
+        if src.startswith("data:image"):
+            el.attrs["src"] = "<base64_image>"
+        return super().convert_img(el, text, convert_as_inline)
+
+
+def html_to_markdown(html: str, **options) -> str:
+    return NonBase64ImageConverter(**options).convert(html)
 
 
 class Scraper(BrowserTool):
@@ -136,7 +148,7 @@ class Scraper(BrowserTool):
         for elem in await locator.all():
             sections.append(await elem.inner_html())
 
-        md = markdownify("\n".join(sections))
+        md = html_to_markdown("\n".join(sections))
 
         await ctx.send_debug_message(f"[{self.name}] Items markdown: {md}")
 
@@ -180,7 +192,7 @@ class Scraper(BrowserTool):
 
             html = "\n".join(sections)
 
-        md = markdownify(html)
+        md = html_to_markdown(html)
 
         await ctx.send_debug_message(f"[{self.name}] Ancestor additions: {md}")
 
