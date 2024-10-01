@@ -343,7 +343,30 @@ class Scraper(BrowserTool):
             await self.back_to_top()
             await self._navigator.chat(
                 ctx=ctx,
-                instruction="Check if there is a pagination element on the webpage. If the element exists, navigate to the next page. If you can't see a pagination element, continue scrolling down while the page allows it, in an attempt to locate one. If there's no pagination element after exhaustive scrolling, stop and take no further action.",
+                instruction=dedent(
+                    """
+                    <Task>
+                    **Goal: Navigate to the Next Page (Once)**
+                    
+                    **Steps:**
+                    0. **Review the Action History:**
+                        - If you have already clicked on the pagination element, stop and do not attempt any other steps.
+                        - Avoid navigating to subsequent pages beyond the next page.
+                        
+                    1. **Check for Pagination Element:**
+                        - Inspect the webpage to determine if a pagination element is present.
+                        - If the pagination element is found, click to navigate to the next page and **stop there**.
+                    
+                    2. **Scroll Down if Necessary:**
+                        - If the pagination element is not immediately visible, begin scrolling down the page carefully.
+                        - Continue scrolling down while the webpage allows it, aiming to locate the pagination element.
+                    
+                    3. **Stop if Unsuccessful:**
+                        - If after thorough scrolling no pagination element is found, cease further actions.
+                        - At this point, stop and do not attempt any other steps.
+                    </Task>
+                    """
+                ),
             )
             # return to the top of the page to start over scraping
             await self.back_to_top()
@@ -352,5 +375,5 @@ class Scraper(BrowserTool):
 
         # clear the mutation observer
         await self.playwright.page.evaluate(
-            "() => { window.npiObserver.disconnect(); }"
+            "() => { window.npiObserver?.disconnect(); }"
         )
