@@ -238,7 +238,7 @@ class Scraper(BrowserTool):
             messages.append(response.choices[0].message)
 
             content = response.choices[0].message.content
-            match = re.match(r"```.*\n([\s\S]+)(```)?", content)
+            match = re.match(r"```.*\n([\s\S]+?)(```|$)", content)
 
             if match:
                 csv_table = match.group(1)
