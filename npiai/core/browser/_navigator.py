@@ -233,7 +233,7 @@ class NavigatorAgent(BrowserAgentTool):
                 [
                     {
                         "role": "system",
-                        "content": self._browser_app.system_prompt,
+                        "content": self.system_prompt,
                     }
                 ]
             )
