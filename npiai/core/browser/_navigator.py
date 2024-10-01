@@ -243,8 +243,7 @@ class NavigatorAgent(BrowserAgentTool):
             response = _parse_response(response_str)
 
             if not response:
-                # try again if the response can't be parsed correctly
-                continue
+                break
 
             result, elem_json = await self._run_action(response["action"], ctx)
             logger.info(result)
