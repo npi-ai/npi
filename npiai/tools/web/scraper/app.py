@@ -113,7 +113,7 @@ class Scraper(BrowserTool):
         while True:
             md = await get_md()
 
-            if md is None:
+            if not md:
                 break
 
             items = await self._llm_summarize(ctx, md, output_columns)
@@ -332,7 +332,7 @@ class Scraper(BrowserTool):
             await self._navigator.chat(
                 ctx=ctx,
                 # TODO: optimize the instruction
-                instruction="Check if there is a pagination element on the page. If so, navigate to the next page.",
+                instruction="Check if there is a pagination element on the webpage. If the element exists, navigate to the next page. If you can't see a pagination element, continue scrolling down while the page allows it, in an attempt to locate one. If there's no pagination element after exhaustive scrolling, stop and take no further action.",
             )
             await ctx.send_debug_message(f"[{self.name}] Navigated to the next page")
 
