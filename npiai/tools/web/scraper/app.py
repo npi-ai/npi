@@ -22,6 +22,12 @@ class NonBase64ImageConverter(MarkdownConverter):
             el.attrs["src"] = "<base64_image>"
         return super().convert_img(el, text, convert_as_inline)
 
+    def convert_div(self, el, text, convert_as_inline):
+        if convert_as_inline or not text:
+            return text
+
+        return f"{text}\n\n"
+
 
 def html_to_markdown(html: str, **options) -> str:
     return NonBase64ImageConverter(**options).convert(html)
