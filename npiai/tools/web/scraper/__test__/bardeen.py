@@ -7,6 +7,8 @@ from npiai.tools.web.scraper import Scraper
 
 class DebugContext(Context):
     async def send(self, msg: RuntimeMessage):
+        if msg["type"] == "screenshot":
+            return
         logger.debug(msg["message"] if "message" in msg else msg)
 
 
