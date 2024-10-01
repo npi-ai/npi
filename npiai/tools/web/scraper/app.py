@@ -30,7 +30,7 @@ class NonBase64ImageConverter(MarkdownConverter):
 
 
 def html_to_markdown(html: str, **options) -> str:
-    return NonBase64ImageConverter(**options).convert(html)
+    return NonBase64ImageConverter(**options).convert(html).strip()
 
 
 class Scraper(BrowserTool):
