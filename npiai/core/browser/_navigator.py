@@ -133,6 +133,7 @@ class Response(TypedDict):
     observation: str
     thoughts: str
     action: Action
+    result: str | None
 
 
 def _parse_response(response: str) -> Union[Response, None]:
@@ -255,6 +256,7 @@ class NavigatorAgent(BrowserAgentTool):
             # remove element id from history to reduce noise
             response["action"].pop("id", None)
             response["action"]["element"] = elem_json
+            response["result"] = result
             history.append(response)
             step += 1
 
