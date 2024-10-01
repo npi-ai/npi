@@ -130,7 +130,7 @@ class Scraper(BrowserTool):
 
             await self._load_more(ctx, ancestor_selector)
 
-        final_results = results[:limit]
+        final_results = results[:limit] if limit != -1 else results
 
         with open("scraper_output.json", "w") as f:
             f.write(json.dumps(final_results, indent=4, ensure_ascii=False))
