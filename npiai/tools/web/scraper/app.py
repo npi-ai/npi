@@ -22,11 +22,11 @@ class NonBase64ImageConverter(MarkdownConverter):
             el.attrs["src"] = "<base64_image>"
         return super().convert_img(el, text, convert_as_inline)
 
-    def convert_div(self, el, text, convert_as_inline):
-        if convert_as_inline or not text:
-            return text
-
-        return f"{text}\n\n"
+    # def convert_div(self, el, text, convert_as_inline):
+    #     if convert_as_inline or not text:
+    #         return text
+    #
+    #     return f"{text}\n\n"
 
 
 def html_to_markdown(html: str, **options) -> str:
@@ -128,7 +128,7 @@ class Scraper(BrowserTool):
             if limit != -1 and len(results) >= limit:
                 break
 
-            await self._load_more(ctx, ancestor_selector)
+            await self._load_more(ctx, ancestor_selector, items_selector)
 
         final_results = results[:limit] if limit != -1 else results
 
@@ -291,33 +291,40 @@ class Scraper(BrowserTool):
 
         return parse_json_response(content)
 
-    async def _load_more(self, ctx: Context, ancestor_selector: str):
+    async def _load_more(
+        self,
+        ctx: Context,
+        ancestor_selector: str,
+        items_selector: str | None,
+    ):
         # attach mutation observer to the ancestor element
         await self.playwright.page.evaluate(
             """
-            () => {
+            ([ancestor_selector, items_selector]) => {
                 window.addedNodes = [];
+                
                 window.npiObserver = new MutationObserver((records) => {
                     for (const record of records) {
                         for (const addedNode of record.addedNodes) {
-                            window.addedNodes.push(addedNode);
+                            if (addedNode.nodeType === Node.ELEMENT_NODE &&
+                                (addedNode.matches(items_selector) || addedNode.querySelector(items_selector))
+                            ) {
+                                window.addedNodes.push(addedNode);
+                            }
                         }
                     }
                 });
+                
+                window.npiObserver.observe(
+                    document.querySelector(ancestor_selector), 
+                    { childList: true, subtree: true }
+                );
             }
-            """
+            """,
+            [ancestor_selector, items_selector or "*"],
         )
 
-        await self.playwright.page.evaluate(
-            f"""
-            () => {{
-                window.npiObserver.observe(
-                    document.querySelector("{ancestor_selector}"), 
-                    {{ childList: true, subtree: true }}
-                );
-            }}
-            """
-        )
+        more_content_loaded = False
 
         # check if the page is scrollable
         # if so, scroll to load more items
@@ -325,18 +332,23 @@ class Scraper(BrowserTool):
             locator = self.playwright.page.locator(ancestor_selector)
             await locator.evaluate("el => el.scrollIntoView({block: 'end'})")
             await ctx.send_debug_message(f"[{self.name}] Scrolled to load more items")
-        else:
+            await self.playwright.page.wait_for_timeout(3000)
+            more_content_loaded = await self.playwright.page.evaluate(
+                "() => !!window.addedNodes?.length"
+            )
+
+        if not more_content_loaded:
             # otherwise, check if there is a pagination element
             # if so, navigate to the next page using navigator
             await self.back_to_top()
             await self._navigator.chat(
                 ctx=ctx,
-                # TODO: optimize the instruction
                 instruction="Check if there is a pagination element on the webpage. If the element exists, navigate to the next page. If you can't see a pagination element, continue scrolling down while the page allows it, in an attempt to locate one. If there's no pagination element after exhaustive scrolling, stop and take no further action.",
             )
+            # return to the top of the page to start over scraping
+            await self.back_to_top()
             await ctx.send_debug_message(f"[{self.name}] Navigated to the next page")
-
-        await self.playwright.page.wait_for_timeout(3000)
+            await self.playwright.page.wait_for_timeout(3000)
 
         # clear the mutation observer
         await self.playwright.page.evaluate(
