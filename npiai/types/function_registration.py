@@ -1,5 +1,5 @@
 from typing import Callable, Optional, Awaitable, List, Dict, Any, Type
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 from openai.types.chat import ChatCompletionToolParam
 from pydantic import BaseModel
@@ -15,8 +15,8 @@ class FunctionRegistration:
     fn: ToolFunction
     description: str
     name: str
-    ctx_variables: List[FromVectorDB]
-    ctx_param_name: str | None = None
+    ctx_variables: List[FromVectorDB] = field(default_factory=list)
+    ctx_param_name: Optional[str] = None
     schema: Optional[Dict[str, Any]] = None
     model: Optional[Type[BaseModel]] = None
     few_shots: Optional[List[Shot]] = None

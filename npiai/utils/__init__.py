@@ -6,6 +6,7 @@ from .is_template_str import is_template_str
 from .cloud import is_cloud_env
 from .get_type_annotation import get_type_annotation
 from .parse_json_response import parse_json_response
+from .llm_tool_call import llm_tool_call
 
 __all__ = [
     "logger",
@@ -16,4 +17,5 @@ __all__ = [
     "is_template_str",
     "get_type_annotation",
     "parse_json_response",
+    "llm_tool_call",
 ]
