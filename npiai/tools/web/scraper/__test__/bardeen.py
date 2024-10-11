@@ -1,15 +1,7 @@
 import asyncio
-from npiai import agent, Context
-from npiai.types import RuntimeMessage
-from npiai.utils import logger
+from npiai import agent
 from npiai.tools.web.scraper import Scraper
-
-
-class DebugContext(Context):
-    async def send(self, msg: RuntimeMessage):
-        if msg["type"] == "screenshot":
-            return
-        logger.debug(msg["message"] if "message" in msg else msg)
+from npiai.utils.test_utils import DebugContext
 
 
 async def main():
