@@ -28,6 +28,78 @@ class PageAnalyzer(BrowserTool):
         # wait for the page to become stable
         await self.playwright.page.wait_for_timeout(wait)
 
+    async def _validate_pagination(self, ctx: Context, selector: str) -> bool:
+        if not selector:
+            return False
+
+        handle = await self.playwright.page.evaluate_handle(
+            "selector => document.querySelector(selector)",
+            selector,
+        )
+
+        elem = handle.as_element()
+
+        if not elem:
+            return False
+
+        await self.back_to_top()
+        old_screenshot = await self.get_screenshot(full_page=True)
+
+        await self.click(elem)
+        await self.playwright.page.wait_for_timeout(1000)
+
+        new_screenshot = await self.get_screenshot(full_page=True)
+
+        def callback(is_next_page: bool):
+            """
+            Callback function to determine whether the pagination button is working.
+
+            Args:
+                is_next_page: A boolean value indicating whether the page is navigated to the next page or the content within pagination area is changed.
+            """
+            return is_next_page
+
+        res = await llm_tool_call(
+            llm=ctx.llm,
+            tool=callback,
+            messages=[
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=dedent(
+                        """
+                        Compare the screenshots of the page before and after clicking the pagination button to determine whether the pagination button is working.
+                        
+                        ## Instructions
+                        
+                        Follow the instructions to determine whether the pagination button is working:
+                        1. Examine the screenshots of the page before and after clicking the pagination button to understand the changes.
+                        2. Determine whether the page is navigated to the next page or the content within the pagination area is changed.
+                        3. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
+                        """
+                    ),
+                ),
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": old_screenshot,
+                            },
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": new_screenshot,
+                            },
+                        },
+                    ],
+                ),
+            ],
+        )
+
+        return callback(**res.model_dump())
+
     @staticmethod
     async def set_scraping_type(scraping_type: _ScrapingType) -> _ScrapingType:
         """
@@ -203,7 +275,13 @@ class PageAnalyzer(BrowserTool):
             ],
         )
 
-        return await self.get_selector_of_marker(**res.model_dump())
+        selector = await self.get_selector_of_marker(**res.model_dump())
+        await ctx.send_debug_message(f"Pagination button selector: {selector}")
+
+        is_working = await self._validate_pagination(ctx, selector)
+        await ctx.send_debug_message(f"Pagination button is working: {is_working}")
+
+        return selector if is_working else None
 
     @function
     async def infer_scraping_type(self, ctx: Context, url: str) -> _ScrapingType:
