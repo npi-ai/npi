@@ -6,6 +6,7 @@ from npiai import Context
 
 urls = [
     "https://www.bardeen.ai/playbooks",
+    "https://www.bardeen.ai/playbooks/get-data-from-the-currently-opened-imdb-com-title-page",
     "https://ifttt.com/explore",
     "https://retool.com/templates",
     "https://www.google.com/search?q=test",
@@ -14,6 +15,7 @@ urls = [
 
 
 async def main():
+    ctx = Context()
     async with PageAnalyzer(headless=False) as analyzer:
         for url in urls:
             print(f"Analyzing {url}:")
@@ -25,11 +27,18 @@ async def main():
             print("  - Support infinite scroll:", infinite_scroll)
 
             pagination = await analyzer.get_pagination_button(
-                ctx=Context(),
+                ctx=ctx,
                 url=url,
             )
 
             print("  - Pagination button:", pagination)
+
+            scraping_type = await analyzer.infer_scraping_type(
+                ctx=ctx,
+                url=url,
+            )
+
+            print("  - Inferred scraping type:", scraping_type)
 
             print()
 

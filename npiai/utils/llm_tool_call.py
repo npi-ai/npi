@@ -1,10 +1,10 @@
 import json
-from typing import List, Callable, Any
+from typing import List, Callable
 
 from litellm.types.completion import ChatCompletionMessageParam
+from pydantic import BaseModel
 
 from npiai.llm import LLM
-from .logger import logger
 from .parse_npi_function import parse_npi_function
 
 
@@ -12,7 +12,7 @@ async def llm_tool_call(
     llm: LLM,
     tool: Callable,
     messages: List[ChatCompletionMessageParam],
-) -> Any:
+) -> BaseModel:
     fn_reg = parse_npi_function(tool)
 
     if fn_reg.model is None:
