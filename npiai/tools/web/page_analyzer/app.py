@@ -44,18 +44,23 @@ class PageAnalyzer(BrowserTool):
 
         await self.back_to_top()
         old_screenshot = await self.get_screenshot(full_page=True)
+        old_url = await self.get_page_url()
+        old_title = await self.get_page_title()
 
+        await self.clear_bboxes()
         await self.click(elem)
-        await self.playwright.page.wait_for_timeout(1000)
+        await self.playwright.page.wait_for_timeout(3000)
 
         new_screenshot = await self.get_screenshot(full_page=True)
+        new_url = await self.get_page_url()
+        new_title = await self.get_page_title()
 
         def callback(is_next_page: bool):
             """
             Callback function to determine whether the pagination button is working.
 
             Args:
-                is_next_page: A boolean value indicating whether the page is navigated to the next page or the content within pagination area is changed.
+                is_next_page: A boolean value indicating whether the page is navigated to the next page or the content within pagination component is changed.
             """
             return is_next_page
 
@@ -69,18 +74,41 @@ class PageAnalyzer(BrowserTool):
                         """
                         Compare the screenshots of the page before and after clicking the pagination button to determine whether the pagination button is working.
                         
+                        ## Provided Context
+                        - The URL of the page before clicking the pagination button.
+                        - The title of the page before clicking the pagination button.
+                        - The URL of the page after clicking the pagination button.
+                        - The title of the page after clicking the pagination button.
+                        - The screenshot of the page before clicking the pagination button.
+                        - The screenshot of the page after clicking the pagination button.
+                        
                         ## Instructions
                         
                         Follow the instructions to determine whether the pagination button is working:
-                        1. Examine the screenshots of the page before and after clicking the pagination button to understand the changes.
-                        2. Determine whether the page is navigated to the next page or the content within the pagination area is changed.
-                        3. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
+                        1. Review the screenshot of the page before clicking the pagination button (the first screenshot) and think if the page actually supports pagination.
+                        2. Compare the old URL and the new URL to see if the page is navigated to the next page.
+                        3. Compare the old title and the new title to see the two pages are related.
+                        4. Compare the first screenshot (the screenshot before clicking the pagination button) with the second screenshot (the screenshot after clicking the pagination button) to see if there are any differences. 
+                        5. Check if previous page and the next page have the same structure but different content. If so, the pagination button is working.
+                        6. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
                         """
                     ),
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
                     content=[
+                        {
+                            "type": "text",
+                            "text": json.dumps(
+                                {
+                                    "old_url": old_url,
+                                    "old_title": old_title,
+                                    "new_url": new_url,
+                                    "new_title": new_title,
+                                },
+                                ensure_ascii=False,
+                            ),
+                        },
                         {
                             "type": "image_url",
                             "image_url": {
