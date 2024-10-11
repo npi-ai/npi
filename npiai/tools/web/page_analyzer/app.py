@@ -1,5 +1,6 @@
 import json
 from textwrap import dedent
+from typing import Literal
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
@@ -9,6 +10,8 @@ from litellm.types.completion import (
 
 from npiai import BrowserTool, function, Context
 from npiai.utils import llm_tool_call
+
+_ScrapingType = Literal["list-like", "single"]
 
 
 class PageAnalyzer(BrowserTool):
@@ -20,10 +23,20 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
-    async def _load_page(self, url: str):
+    async def _load_page(self, url: str, wait: int = 1000):
         await self.playwright.page.goto(url)
         # wait for the page to become stable
-        await self.playwright.page.wait_for_timeout(1000)
+        await self.playwright.page.wait_for_timeout(wait)
+
+    @staticmethod
+    async def set_scraping_type(scraping_type: _ScrapingType) -> _ScrapingType:
+        """
+        Set the inferrd scraping type of the page.
+
+        Args:
+            scraping_type: Inferred scraping type of the page. 'list-like' if the page contains a list of items, otherwise 'single'.
+        """
+        return scraping_type
 
     async def get_selector_of_marker(self, marker_id: int = -1) -> str | None:
         """
@@ -52,7 +65,8 @@ class PageAnalyzer(BrowserTool):
         Args:
             url: URL of the page
         """
-        await self._load_page(url)
+        # use long wait time for pages to be fully loaded
+        await self._load_page(url, wait=3000)
 
         return await self.playwright.page.evaluate(
             """
@@ -81,7 +95,7 @@ class PageAnalyzer(BrowserTool):
                           html.offsetHeight,
                       );
                      
-                      const stepSize = pageHeight / 20;
+                      const stepSize = pageHeight / 10;
                       let current = 0;
                       
                       const interval = setInterval(() => {
@@ -96,7 +110,7 @@ class PageAnalyzer(BrowserTool):
                                     resolve(mutateElementsCount >= threshold);
                                 }, 1000);
                             }
-                      }, 100);
+                      }, 300);
                 });
             }
             """,
@@ -189,4 +203,69 @@ class PageAnalyzer(BrowserTool):
             ],
         )
 
-        return await self.get_selector_of_marker(res.marker_id)
+        return await self.get_selector_of_marker(**res.model_dump())
+
+    @function
+    async def infer_scraping_type(self, ctx: Context, url: str) -> _ScrapingType:
+        """
+        Infer the scraping type of the page. Returns 'list-like' if the page contains a list of items, otherwise 'single'.
+
+        Args:
+            ctx: NPi Context
+            url: URL of the page
+        """
+        await self._load_page(url)
+        page_url = await self.get_page_url()
+        page_title = await self.get_page_title()
+        screenshot = await self.get_screenshot(full_page=True)
+
+        res = await llm_tool_call(
+            llm=ctx.llm,
+            tool=self.set_scraping_type,
+            messages=[
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=dedent(
+                        """
+                        Analyze the given page and determine the scraping type of the page. The scraping type is 'list-like' if the page contains a list of similar items, otherwise 'single'.
+                        
+                        ## Provided Context
+                        
+                        - A screenshot of the target page.
+                        - The URL of the page.
+                        - The title of the page.
+                        
+                        ## Instructions
+                        
+                        Follow the instructions to determine the scraping type of the page:
+                        1. Examine the screenshot to understand the context of the page.
+                        2. Determine whether the page contains a list of similar items or not. Typically, a list-like page contains multiple items with similar structures, such as search results or product listings.
+                        3. If the page contains a list of similar items, call the tool with 'list-like'. Otherwise, call the tool with 'single'.
+                        """
+                    ),
+                ),
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=[
+                        {
+                            "type": "text",
+                            "text": json.dumps(
+                                {
+                                    "url": page_url,
+                                    "title": page_title,
+                                },
+                                ensure_ascii=False,
+                            ),
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": screenshot,
+                            },
+                        },
+                    ],
+                ),
+            ],
+        )
+
+        return await self.set_scraping_type(**res.model_dump())
