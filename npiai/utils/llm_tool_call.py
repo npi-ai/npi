@@ -33,6 +33,6 @@ async def llm_tool_call(
 
     args = json.loads(tool_calls[0].function.arguments)
 
-    logger.debug(f"[{fn_reg.name}] Received: {args}")
+    # logger.debug(f"[{fn_reg.name}] Received: {args}")
 
     return fn_reg.model(**args)

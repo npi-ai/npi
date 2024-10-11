@@ -20,6 +20,11 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
+    async def _load_page(self, url: str):
+        await self.playwright.page.goto(url)
+        # wait for the page to become stable
+        await self.playwright.page.wait_for_timeout(1000)
+
     async def get_selector_of_marker(self, marker_id: int = -1) -> str | None:
         """
         Get the CSS selector of the element with the given marker ID. If the marker ID is -1, it means the marker is not found and None is returned.
@@ -40,7 +45,65 @@ class PageAnalyzer(BrowserTool):
         )
 
     @function
-    async def get_pagination_button(self, ctx: Context, url: str):
+    async def support_infinite_scroll(self, url: str) -> bool:
+        """
+        Open the given URL and determine whether the page supports infinite scroll.
+
+        Args:
+            url: URL of the page
+        """
+        await self._load_page(url)
+
+        return await self.playwright.page.evaluate(
+            """
+            () => {
+                let mutateElementsCount = 0;
+                const threshold = 10;
+                
+                const npiScrollObserver = new MutationObserver((records) => {
+                    mutateElementsCount += records.length;
+                });
+                
+                npiScrollObserver.observe(
+                    document.body, 
+                    { childList: true, subtree: true }
+                );
+                
+                return new Promise((resolve) => {
+                      const body = document.body;
+                      const html = document.documentElement;
+                    
+                      const pageHeight = Math.max(
+                          body.scrollHeight,
+                          body.offsetHeight,
+                          html.clientHeight,
+                          html.scrollHeight,
+                          html.offsetHeight,
+                      );
+                     
+                      const stepSize = pageHeight / 20;
+                      let current = 0;
+                      
+                      const interval = setInterval(() => {
+                          current += stepSize;
+                          window.scrollTo(0, current);
+                          
+                            if (current >= pageHeight || mutateElementsCount >= threshold) {
+                                clearInterval(interval);
+                                npiScrollObserver.disconnect();
+                                
+                                setTimeout(() => {
+                                    resolve(mutateElementsCount >= threshold);
+                                }, 1000);
+                            }
+                      }, 100);
+                });
+            }
+            """,
+        )
+
+    @function
+    async def get_pagination_button(self, ctx: Context, url: str) -> str | None:
         """
         Open the given URL and determine whether there is a pagination button. If there is, return the CSS selector of the pagination button. Otherwise, return None.
 
@@ -48,7 +111,7 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.playwright.page.goto(url)
+        await self._load_page(url)
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
