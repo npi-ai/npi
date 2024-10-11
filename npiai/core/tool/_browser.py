@@ -61,7 +61,7 @@ class BrowserTool(FunctionTool):
         """
         await self.playwright.page.goto("about:blank")
 
-    async def get_screenshot(self) -> str | None:
+    async def get_screenshot(self, full_page: bool = False) -> str | None:
         """Get the screenshot of the current page"""
         if (
             not self.playwright
@@ -71,7 +71,10 @@ class BrowserTool(FunctionTool):
             return None
 
         try:
-            screenshot = await self.playwright.page.screenshot(caret="initial")
+            screenshot = await self.playwright.page.screenshot(
+                caret="initial",
+                full_page=full_page,
+            )
             return "data:image/png;base64," + base64.b64encode(screenshot).decode()
         except Error as e:
             logger.error(e)
@@ -89,14 +92,14 @@ class BrowserTool(FunctionTool):
         """Check if the current page is scrollable"""
         return await self.playwright.page.evaluate("() => npi.isScrollable()")
 
-    async def get_interactive_elements(self, screenshot: str):
+    async def get_interactive_elements(self, screenshot: str, full_page: bool = False):
         """Get the interactive elements of the current page"""
         return await self.playwright.page.evaluate(
-            """async (screenshot) => {
-                const { elementsAsJSON, addedIDs } = await npi.snapshot(screenshot);
+            """async (screenshot, fullPage) => {
+                const { elementsAsJSON, addedIDs } = await npi.snapshot(screenshot, fullPage);
                 return [elementsAsJSON, addedIDs];
             }""",
-            screenshot,
+            [screenshot, full_page],
         )
 
     async def get_element_by_marker_id(self, elem_id: str):
@@ -136,9 +139,12 @@ class BrowserTool(FunctionTool):
         """Wait for the current page to be stable"""
         await self.playwright.page.evaluate("() => npi.stable()")
 
-    async def add_bboxes(self):
+    async def add_bboxes(self, full_page: bool = False):
         """Add bounding boxes to the interactive elements on the current page"""
-        await self.playwright.page.evaluate("() => npi.addBboxes()")
+        await self.playwright.page.evaluate(
+            "(fullPage) => npi.addBboxes(fullPage)",
+            full_page,
+        )
 
     async def clear_bboxes(self):
         """Clear the bounding boxes on the current page"""
