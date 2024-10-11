@@ -95,7 +95,7 @@ class BrowserTool(FunctionTool):
     async def get_interactive_elements(self, screenshot: str, full_page: bool = False):
         """Get the interactive elements of the current page"""
         return await self.playwright.page.evaluate(
-            """async (screenshot, fullPage) => {
+            """async ([screenshot, fullPage]) => {
                 const { elementsAsJSON, addedIDs } = await npi.snapshot(screenshot, fullPage);
                 return [elementsAsJSON, addedIDs];
             }""",
