@@ -243,6 +243,9 @@ class Scraper(BrowserTool):
         items_selector: str | None,
         limit: int = -1,
     ) -> str | None:
+        # convert relative links to absolute links
+        await self._process_relative_links()
+
         if items_selector is None:
             return await self._get_ancestor_md(ctx, ancestor_selector)
         else:
@@ -489,4 +492,20 @@ class Scraper(BrowserTool):
         # clear the mutation observer
         await self.playwright.page.evaluate(
             "() => { window.npiObserver?.disconnect(); }"
+        )
+
+    async def _process_relative_links(self):
+        await self.playwright.page.evaluate(
+            """
+            [...document.querySelectorAll('a[href]')].forEach(a => {
+                const href = a.getAttribute('href');
+                
+                if (!href) {
+                    return;
+                }
+                
+                const url = new URL(href, window.location.href);
+                a.setAttribute('href', url.href);
+            });
+            """
         )
