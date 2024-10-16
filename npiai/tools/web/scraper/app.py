@@ -12,7 +12,7 @@ from litellm.types.completion import (
 
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
-from npiai.utils import is_cloud_env, parse_json_response
+from npiai.utils import is_cloud_env, llm_tool_call
 
 
 class NonBase64ImageConverter(MarkdownConverter):
@@ -180,32 +180,37 @@ class Scraper(BrowserTool):
             limit=10,
         )
 
-        messages = [
-            ChatCompletionSystemMessageParam(
-                role="system",
-                content=dedent(
-                    """
-                    Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. Respond with the columns in a list format: ['column1', 'column2', ...]
-                    """
+        def callback(columns: List[str]):
+            """
+            Callback with the inferred columns.
+
+            Args:
+                columns: The inferred columns.
+            """
+            return columns
+
+        res = await llm_tool_call(
+            llm=ctx.llm,
+            tool=callback,
+            messages=[
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=dedent(
+                        """
+                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. Respond with the columns in a list format: ['column1', 'column2', ...]
+                        """
+                    ),
                 ),
-            ),
-            ChatCompletionUserMessageParam(
-                role="user",
-                content=md,
-            ),
-        ]
-
-        response = await ctx.llm.completion(
-            messages=messages,
-            max_tokens=4096,
-        )
-        content = response.choices[0].message.content
-
-        await ctx.send_debug_message(
-            f"[{self.name}] Columns inference response: {content}"
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=md,
+                ),
+            ],
         )
 
-        return parse_json_response(content)
+        await ctx.send_debug_message(f"[{self.name}] Columns inference response: {res}")
+
+        return callback(**res.model_dump())
 
     async def _get_md(
         self,
