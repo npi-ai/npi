@@ -10,7 +10,25 @@ async def main():
             url="https://www.bardeen.ai/playbooks",
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item-link",
-            output_columns=["Apps Name", "Description", "Category", "Time Saved"],
+            output_file=".cache/bardeen.json",
+            output_columns=[
+                {
+                    "name": "Apps Name",
+                    "description": "The name of the app",
+                },
+                {
+                    "name": "Description",
+                    "description": "The description of the app",
+                },
+                {
+                    "name": "Category",
+                    "description": "The category of the app",
+                },
+                {
+                    "name": "Time Saved",
+                    "description": "The time saved by using the app",
+                },
+            ],
             limit=42,
         )
 

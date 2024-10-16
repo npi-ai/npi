@@ -1,7 +1,9 @@
 import csv
 import re
 import json
+import os
 from typing import List, Dict
+from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 
 from markdownify import MarkdownConverter
@@ -13,6 +15,11 @@ from litellm.types.completion import (
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
 from npiai.utils import is_cloud_env, llm_tool_call
+
+
+class Column(TypedDict):
+    name: Annotated[str, "Name of the column"]
+    description: Annotated[str | None, "Brief description of the column"]
 
 
 class NonBase64ImageConverter(MarkdownConverter):
@@ -72,7 +79,7 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         url: str,
-        output_columns: List[str],
+        output_columns: List[Column],
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
@@ -145,6 +152,8 @@ class Scraper(BrowserTool):
 
         final_results = results[:limit] if limit != -1 else results
 
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
         with open(output_file, "w") as f:
             f.write(json.dumps(final_results, indent=4, ensure_ascii=False))
 
@@ -157,7 +166,7 @@ class Scraper(BrowserTool):
         url: str,
         ancestor_selector: str | None,
         items_selector: str | None,
-    ) -> List[str]:
+    ) -> List[Column] | None:
         """
         Infer the columns of the output table by finding the common nature of the items to summarize.
 
@@ -180,12 +189,15 @@ class Scraper(BrowserTool):
             limit=10,
         )
 
-        def callback(columns: List[str]):
+        if not md:
+            return None
+
+        def callback(columns: List[Column]):
             """
             Callback with the inferred columns.
 
             Args:
-                columns: The inferred columns.
+                columns: The inferred columns. Each column is a dictionary with 'name' and 'description' keys, where 'description' is optional.
             """
             return columns
 
@@ -197,7 +209,7 @@ class Scraper(BrowserTool):
                     role="system",
                     content=dedent(
                         """
-                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. Respond with the columns in a list format: ['column1', 'column2', ...]
+                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table.
                         """
                     ),
                 ),
@@ -324,15 +336,27 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         md: str,
-        output_columns: List[str],
+        output_columns: List[Column],
     ) -> List[Dict[str, str]]:
+        column_defs = ""
+
+        for column in output_columns:
+            column_defs += (
+                f"{column['name']}: {column['description'] or 'No description'}\n"
+            )
+
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
                 content=dedent(
                     f"""
                     You are a web scraper agent helping user summarize the content of a webpage into a table.
-                    For the given markdown content, summarize the content into a table with the following columns: {json.dumps(output_columns, ensure_ascii=False)}.
+                    For the given markdown content, summarize the content into a table with the following columns:
+                    
+                    # Column Definitions
+                    {column_defs}
+                    
+                    # Response Format
                     Respond with the table in CSV format.
                     """
                 ),
