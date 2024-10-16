@@ -357,7 +357,7 @@ class Scraper(BrowserTool):
                     {column_defs}
                     
                     # Response Format
-                    Respond with the table in CSV format.
+                    Respond with the table in CSV format. Each column value should be enclosed in double quotes and separated by commas.
                     """
                 ),
             ),
