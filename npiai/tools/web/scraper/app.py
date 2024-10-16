@@ -44,14 +44,12 @@ class Scraper(BrowserTool):
         """
     )
 
-    _last_ancestor_md: str | None
     _navigator: NavigatorAgent
 
     def __init__(self, headless: bool = True):
         super().__init__(
             headless=headless,
         )
-        self._last_ancestor_md = None
         self._navigator = NavigatorAgent(
             playwright=self.playwright,
         )
@@ -70,9 +68,10 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         url: str,
+        output_columns: List[str],
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
-        output_columns: List[str] | None = None,
+        pagination_button_selector: str | None = None,
         limit: int = -1,
     ) -> str:
         """
@@ -81,9 +80,10 @@ class Scraper(BrowserTool):
         Args:
             ctx: NPi context.
             url: The URL to open.
+            output_columns: The columns of the output table. If not provided, use the `infer_columns` function to infer the columns.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
-            output_columns: The columns of the output table. If None, they are automatically generated.
+            pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
         """
         if limit == 0:
@@ -91,27 +91,18 @@ class Scraper(BrowserTool):
 
         await self.playwright.page.goto(url)
 
-        if ancestor_selector is None:
+        if not ancestor_selector:
             ancestor_selector = "body"
-
-        if items_selector is None:
-
-            async def get_md():
-                return await self._get_ancestor_md(ctx, ancestor_selector)
-
-        else:
-
-            async def get_md():
-                return await self._get_items_md(ctx, items_selector)
-
-        if output_columns is None:
-            md = await get_md()
-            output_columns = await self._infer_columns(ctx, md)
 
         results = []
 
         while True:
-            md = await get_md()
+            md = await self._get_md(
+                ctx=ctx,
+                ancestor_selector=ancestor_selector,
+                items_selector=items_selector,
+                limit=limit - len(results) if limit != -1 else -1,
+            )
 
             if not md:
                 break
@@ -128,7 +119,9 @@ class Scraper(BrowserTool):
             if limit != -1 and len(results) >= limit:
                 break
 
-            await self._load_more(ctx, ancestor_selector, items_selector)
+            await self._load_more(
+                ctx, ancestor_selector, items_selector, pagination_button_selector
+            )
 
         final_results = results[:limit] if limit != -1 else results
 
@@ -137,30 +130,109 @@ class Scraper(BrowserTool):
 
         return f"Saved {len(final_results)} items to scraper_output.json"
 
-    async def _get_items_md(self, ctx: Context, items_selector: str) -> str | None:
-        locator = self.playwright.page.locator(
-            items_selector + ":not([data-npi-visited])"
+    @function
+    async def infer_columns(
+        self,
+        ctx: Context,
+        ancestor_selector: str | None,
+        items_selector: str | None,
+    ) -> List[str]:
+        """
+        Infer the columns of the output table from the items to summarize.
+
+        Args:
+            ctx: NPi context.
+            ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
+            items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
+        """
+
+        if not ancestor_selector:
+            ancestor_selector = "body"
+
+        md = await self._get_md(
+            ctx=ctx,
+            ancestor_selector=ancestor_selector,
+            items_selector=items_selector,
+            limit=10,
         )
 
-        count = await locator.count()
+        messages = [
+            ChatCompletionSystemMessageParam(
+                role="system",
+                content=dedent(
+                    """
+                    Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. Respond with the columns in a list format: ['column1', 'column2', ...]
+                    """
+                ),
+            ),
+            ChatCompletionUserMessageParam(
+                role="user",
+                content=md,
+            ),
+        ]
+
+        response = await ctx.llm.completion(
+            messages=messages,
+            max_tokens=4096,
+        )
+        content = response.choices[0].message.content
+
+        await ctx.send_debug_message(
+            f"[{self.name}] Columns inference response: {content}"
+        )
+
+        return parse_json_response(content)
+
+    async def _get_md(
+        self,
+        ctx: Context,
+        ancestor_selector: str,
+        items_selector: str | None,
+        limit: int = -1,
+    ) -> str | None:
+        if items_selector is None:
+            return await self._get_ancestor_md(ctx, ancestor_selector, limit)
+        else:
+            return await self._get_items_md(ctx, items_selector, limit)
+
+    async def _get_items_md(
+        self,
+        ctx: Context,
+        items_selector: str,
+        limit: int = -1,
+    ) -> str | None:
+        if limit == 0:
+            return None
+
+        htmls = await self.playwright.page.evaluate(
+            """
+            ([items_selector, limit]) => {
+                const items = document.querySelectorAll(items_selector);
+                const elems = limit === -1 ? items : Array.from(items).slice(0, limit);
+                
+                return elems.map(elem => {
+                    elem.setAttribute("data-npi-visited", "true");
+                    return elem.outerHTML;
+                });
+            }
+            """,
+            [items_selector, limit],
+        )
+
+        count = len(htmls)
 
         await ctx.send_debug_message(f"[{self.name}] Found {count} items to summarize")
 
         if count == 0:
             return None
 
-        sections = []
+        sections = [
+            "<section>\n" + html_to_markdown(html) + "\n</section>" for html in htmls
+        ]
 
-        for elem in await locator.all():
-            sections.append(await elem.inner_html())
-
-        md = html_to_markdown("\n".join(sections))
+        md = "\n".join(sections)
 
         await ctx.send_debug_message(f"[{self.name}] Items markdown: {md}")
-
-        await locator.evaluate_all(
-            'elems => elems.forEach(el => el.setAttribute("data-npi-visited", "true"))'
-        )
 
         return md
 
@@ -168,37 +240,50 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         ancestor_selector: str,
+        limit: int = -1,
     ) -> str | None:
+        if limit == 0:
+            return None
+
         # check if there are mutation records
-        html = await self.playwright.page.evaluate(
+        htmls = await self.playwright.page.evaluate(
             """
-            () => {
+            (limit) => {
                 const { addedNodes } = window;
                 
                 if (addedNodes?.length) {
+                    const nodes = limit === -1 ? addedNodes : addedNodes.slice(0, limit);
                     window.addedNodes = [];
-                    return addedNodes.map(node => node.outerHTML).join("\\n");
+                    
+                    return nodes.map(node => {
+                        node.setAttribute("data-npi-visited", "true");
+                        return node.outerHTML;
+                    });
                 }
                 
                 return null;
             }
-            """
+            """,
+            limit,
         )
 
-        if html is None:
+        if htmls is None:
             locator = self.playwright.page.locator(ancestor_selector)
 
             if not await locator.count():
                 return None
 
-            sections = []
+            htmls = []
 
+            # use all ancestors here to avoid missing any items
             for elem in await locator.all():
-                sections.append(await elem.inner_html())
+                htmls.append(await elem.inner_html())
 
-            html = "\n".join(sections)
+        sections = [
+            "<section>\n" + html_to_markdown(html) + "\n</section>" for html in htmls
+        ]
 
-        md = html_to_markdown(html)
+        md = "\n".join(sections)
 
         await ctx.send_debug_message(f"[{self.name}] Ancestor additions: {md}")
 
@@ -263,39 +348,12 @@ class Scraper(BrowserTool):
 
         return list(csv.DictReader(final_response_content.splitlines()))
 
-    async def _infer_columns(self, ctx: Context, md: str) -> List[str]:
-        messages = [
-            ChatCompletionSystemMessageParam(
-                role="system",
-                content=dedent(
-                    """
-                    Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. Respond with the columns in a list format: ['column1', 'column2', ...]
-                    """
-                ),
-            ),
-            ChatCompletionUserMessageParam(
-                role="user",
-                content=md,
-            ),
-        ]
-
-        response = await ctx.llm.completion(
-            messages=messages,
-            max_tokens=4096,
-        )
-        content = response.choices[0].message.content
-
-        await ctx.send_debug_message(
-            f"[{self.name}] Columns inference response: {content}"
-        )
-
-        return parse_json_response(content)
-
     async def _load_more(
         self,
         ctx: Context,
         ancestor_selector: str,
         items_selector: str | None,
+        pagination_button_selector: str | None = None,
     ):
         # attach mutation observer to the ancestor element
         await self.playwright.page.evaluate(
@@ -329,48 +387,45 @@ class Scraper(BrowserTool):
         # check if the page is scrollable
         # if so, scroll to load more items
         if await self.is_scrollable():
-            locator = self.playwright.page.locator(ancestor_selector)
-            await locator.evaluate("el => el.scrollIntoView({block: 'end'})")
+            await self.playwright.page.evaluate(
+                """
+                (ancestor_selector) => {
+                    let elem;
+                    const items = document.querySelectorAll('[data-npi-visited]');
+                    
+                    if (items.length) {
+                        const elem = items[items.length - 1];
+                        elem?.scrollIntoView();
+                    } else {
+                        const elem = document.querySelector(ancestor_selector);
+                        elem?.scrollIntoView({ block: 'end' });
+                    }
+                }
+                """,
+                ancestor_selector,
+            )
             await ctx.send_debug_message(f"[{self.name}] Scrolled to load more items")
             await self.playwright.page.wait_for_timeout(3000)
             more_content_loaded = await self.playwright.page.evaluate(
                 "() => !!window.addedNodes?.length"
             )
 
-        if not more_content_loaded:
-            # otherwise, check if there is a pagination element
-            # if so, navigate to the next page using navigator
-            await self.back_to_top()
-            await self._navigator.chat(
-                ctx=ctx,
-                instruction=dedent(
-                    """
-                    <Task>
-                    **Goal: Navigate to the Next Page (Once)**
-                    
-                    **Steps:**
-                    0. **Review the Action History:**
-                        - If you have already clicked on the pagination element, stop and do not attempt any other steps.
-                        - Avoid navigating to subsequent pages beyond the next page.
-                        
-                    1. **Check for Pagination Element:**
-                        - Inspect the webpage to determine if a pagination element is present.
-                        - If the pagination element is found, click to navigate to the next page and **stop there**.
-                    
-                    2. **Scroll Down if Necessary:**
-                        - If the pagination element is not immediately visible, begin scrolling down the page carefully.
-                        - Continue scrolling down while the webpage allows it, aiming to locate the pagination element.
-                    
-                    3. **Stop if Unsuccessful:**
-                        - If after thorough scrolling no pagination element is found, cease further actions.
-                        - At this point, stop and do not attempt any other steps.
-                    </Task>
-                    """
-                ),
+        if not more_content_loaded and pagination_button_selector:
+            handle = await self.playwright.page.evaluate_handle(
+                "selector => document.querySelector(selector)",
+                pagination_button_selector,
             )
-            # return to the top of the page to start over scraping
-            await self.back_to_top()
-            await ctx.send_debug_message(f"[{self.name}] Navigated to the next page")
+
+            elem = handle.as_element()
+
+            if not elem:
+                await ctx.send_debug_message(
+                    f"[{self.name}] Pagination button not found"
+                )
+                return
+
+            await self.click(elem)
+            await ctx.send_debug_message(f"[{self.name}] Clicked pagination button")
             await self.playwright.page.wait_for_timeout(3000)
 
         # clear the mutation observer
