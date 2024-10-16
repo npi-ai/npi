@@ -25,15 +25,23 @@ class Column(TypedDict):
 class NonBase64ImageConverter(MarkdownConverter):
     def convert_img(self, el, text, convert_as_inline):
         src = el.attrs.get("src", "")
+
+        if not src:
+            return ""
+
         if src.startswith("data:image"):
             el.attrs["src"] = "<base64_image>"
+
         return super().convert_img(el, text, convert_as_inline)
 
-    # def convert_div(self, el, text, convert_as_inline):
-    #     if convert_as_inline or not text:
-    #         return text
-    #
-    #     return f"{text}\n\n"
+    def convert_div(self, el, text, convert_as_inline):
+        if text:
+            text = text.strip("\n")
+
+        if convert_as_inline or not text:
+            return text
+
+        return f"{text}\n"
 
 
 def html_to_markdown(html: str, **options) -> str:
@@ -232,7 +240,7 @@ class Scraper(BrowserTool):
         limit: int = -1,
     ) -> str | None:
         if items_selector is None:
-            return await self._get_ancestor_md(ctx, ancestor_selector, limit)
+            return await self._get_ancestor_md(ctx, ancestor_selector)
         else:
             return await self._get_items_md(ctx, items_selector, limit)
 
@@ -283,31 +291,22 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         ancestor_selector: str,
-        limit: int = -1,
     ) -> str | None:
-        if limit == 0:
-            return None
 
         # check if there are mutation records
         htmls = await self.playwright.page.evaluate(
             """
-            (limit) => {
+            () => {
                 const { addedNodes } = window;
                 
                 if (addedNodes?.length) {
-                    const nodes = limit === -1 ? addedNodes : addedNodes.slice(0, limit);
                     window.addedNodes = [];
-                    
-                    return nodes.map(node => {
-                        node.setAttribute("data-npi-visited", "true");
-                        return node.outerHTML;
-                    });
+                    return addedNodes.map(node => node.outerHTML);
                 }
                 
                 return null;
             }
             """,
-            limit,
         )
 
         if htmls is None:
