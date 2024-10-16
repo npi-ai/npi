@@ -14,6 +14,15 @@ async def main():
 
         print("Inferred columns:", columns)
 
+        await scraper.summarize(
+            ctx=DebugContext(),
+            url="https://www.bardeen.ai/playbooks",
+            ancestor_selector=".playbook_list",
+            items_selector=".playbook_list .playbook_item-link",
+            output_columns=columns,
+            limit=10,
+        )
+
 
 if __name__ == "__main__":
     asyncio.run(main())
