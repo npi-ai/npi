@@ -1,6 +1,5 @@
 import csv
 import re
-import json
 import os
 from typing import List, Dict
 from typing_extensions import TypedDict, Annotated
@@ -34,14 +33,14 @@ class NonBase64ImageConverter(MarkdownConverter):
 
         return super().convert_img(el, text, convert_as_inline)
 
-    def convert_div(self, el, text, convert_as_inline):
-        if text:
-            text = text.strip("\n")
-
-        if convert_as_inline or not text:
-            return text
-
-        return f"{text}\n"
+    # def convert_div(self, el, text, convert_as_inline):
+    #     if text:
+    #         text = text.strip("\n")
+    #
+    #     if convert_as_inline or not text:
+    #         return text
+    #
+    #     return f"{text}\n"
 
 
 def html_to_markdown(html: str, **options) -> str:
@@ -95,7 +94,7 @@ class Scraper(BrowserTool):
         limit: int = -1,
     ) -> str:
         """
-        Summarize the content of a webpage into a table (JSON format).
+        Summarize the content of a webpage into a csv table.
 
         Args:
             ctx: NPi context.
@@ -116,56 +115,61 @@ class Scraper(BrowserTool):
             ancestor_selector = "body"
 
         if not output_file:
-            output_file = "scraper_output.json"
-
-        results = []
-
-        while True:
-            remaining = (
-                min(self._batch_size, limit - len(results)) if limit != -1 else -1
-            )
-
-            md = await self._get_md(
-                ctx=ctx,
-                ancestor_selector=ancestor_selector,
-                items_selector=items_selector,
-                limit=remaining,
-            )
-
-            if not md:
-                break
-
-            items = await self._llm_summarize(ctx, md, output_columns)
-
-            await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
-
-            if not items:
-                break
-
-            results.extend(items)
-
-            await ctx.send_debug_message(
-                f"[{self.name}] Summarized {len(results)} items in total"
-            )
-
-            if limit != -1 and len(results) >= limit:
-                break
-
-            await self._load_more(
-                ctx,
-                ancestor_selector,
-                items_selector,
-                pagination_button_selector,
-            )
-
-        final_results = results[:limit] if limit != -1 else results
+            output_file = "scraper_output.csv"
 
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-        with open(output_file, "w") as f:
-            f.write(json.dumps(final_results, indent=4, ensure_ascii=False))
+        with open(output_file, "w", newline="") as f:
+            column_names = [column["name"] for column in output_columns]
+            writer = csv.DictWriter(f, fieldnames=column_names)
+            writer.writeheader()
+            f.flush()
 
-        return f"Saved {len(final_results)} items to {output_file}"
+            count = 0
+
+            while True:
+                remaining = min(self._batch_size, limit - count) if limit != -1 else -1
+
+                md = await self._get_md(
+                    ctx=ctx,
+                    ancestor_selector=ancestor_selector,
+                    items_selector=items_selector,
+                    limit=remaining,
+                )
+
+                if not md:
+                    break
+
+                items = await self._llm_summarize(ctx, md, output_columns)
+
+                await ctx.send_debug_message(
+                    f"[{self.name}] Summarized {len(items)} items"
+                )
+
+                if not items:
+                    break
+
+                items_slice = items[:remaining] if limit != -1 else items
+                writer.writerows(items_slice)
+                f.flush()
+
+                count += len(items_slice)
+
+                await ctx.send_debug_message(
+                    f"[{self.name}] Summarized {count} items in total"
+                )
+
+                if limit != -1 and count >= limit:
+                    break
+
+                await self._load_more(
+                    ctx,
+                    ancestor_selector,
+                    items_selector,
+                    pagination_button_selector,
+                )
+
+        return f"Saved {count} items to {output_file}"
 
     @function
     async def infer_columns(
@@ -356,7 +360,7 @@ class Scraper(BrowserTool):
                     {column_defs}
                     
                     # Response Format
-                    Respond with the table in CSV format. Each column value should be enclosed in double quotes and separated by commas.
+                    Respond with the table in CSV format. Each column value should be enclosed in double quotes and separated by commas. Note that **column names must exactly match the provided column definitions**.
                     """
                 ),
             ),
