@@ -26,7 +26,7 @@ async def main():
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
             output_columns=columns,
-            output_file=".cache/bardeen.json",
+            output_file=".cache/bardeen.csv",
             limit=10,
         )
 
