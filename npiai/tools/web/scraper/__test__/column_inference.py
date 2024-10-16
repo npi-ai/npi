@@ -20,15 +20,17 @@ async def main():
 
         print("Inferred columns:", json.dumps(columns, indent=2))
 
-        await scraper.summarize(
+        stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url=url,
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
             output_columns=columns,
-            output_file=".cache/bardeen.csv",
             limit=10,
         )
+
+        async for items in stream:
+            print("Chunk:", json.dumps(items, indent=2))
 
 
 if __name__ == "__main__":
