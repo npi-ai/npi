@@ -154,17 +154,21 @@ class Scraper(BrowserTool):
     async def infer_columns(
         self,
         ctx: Context,
+        url: str,
         ancestor_selector: str | None,
         items_selector: str | None,
     ) -> List[str]:
         """
-        Infer the columns of the output table from the items to summarize.
+        Infer the columns of the output table by finding the common nature of the items to summarize.
 
         Args:
             ctx: NPi context.
+            url: The URL to open.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
         """
+
+        await self.playwright.page.goto(url)
 
         if not ancestor_selector:
             ancestor_selector = "body"
