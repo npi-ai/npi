@@ -1,9 +1,8 @@
+import os
 import pathlib
 import tempfile
-import os
-import uuid
 from urllib.request import urlretrieve
-import traceback
+
 from playwright.async_api import (
     async_playwright,
     Playwright,
@@ -13,7 +12,7 @@ from playwright.async_api import (
     FileChooser,
 )
 
-__BROWSER_UTILS_VERSION__ = "0.0.3"
+__BROWSER_UTILS_VERSION__ = "0.0.4"
 
 
 def _prepare_browser_utils():
