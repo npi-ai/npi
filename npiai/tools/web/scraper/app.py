@@ -76,6 +76,7 @@ class Scraper(BrowserTool):
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
+        output_file: str | None = None,
         limit: int = -1,
     ) -> str:
         """
@@ -88,6 +89,7 @@ class Scraper(BrowserTool):
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
+            output_file: The file path to save the output. If None, the output is saved to 'scraper_output.json'.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
         """
         if limit == 0:
@@ -97,6 +99,9 @@ class Scraper(BrowserTool):
 
         if not ancestor_selector:
             ancestor_selector = "body"
+
+        if not output_file:
+            output_file = "scraper_output.json"
 
         results = []
 
@@ -140,10 +145,10 @@ class Scraper(BrowserTool):
 
         final_results = results[:limit] if limit != -1 else results
 
-        with open("scraper_output.json", "w") as f:
+        with open(output_file, "w") as f:
             f.write(json.dumps(final_results, indent=4, ensure_ascii=False))
 
-        return f"Saved {len(final_results)} items to scraper_output.json"
+        return f"Saved {len(final_results)} items to {output_file}"
 
     @function
     async def infer_columns(
