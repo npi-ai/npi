@@ -1,16 +1,18 @@
 import asyncio
+import json
+
 from npiai.tools.web.scraper import Scraper
 from npiai.utils.test_utils import DebugContext
 
 
 async def main():
     async with Scraper(headless=False, batch_size=10) as scraper:
-        await scraper.summarize(
+        stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url="https://www.bardeen.ai/playbooks",
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item-link",
-            output_file=".cache/bardeen.csv",
+            limit=42,
             output_columns=[
                 {
                     "name": "Apps Involved",
@@ -29,8 +31,10 @@ async def main():
                     "description": "The URL of the playbook",
                 },
             ],
-            limit=42,
         )
+
+        async for items in stream:
+            print("Chunk:", json.dumps(items, indent=2))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import csv
 import re
 import os
-from typing import List, Dict
+from typing import List, Dict, AsyncGenerator
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 
@@ -81,6 +81,80 @@ class Scraper(BrowserTool):
             )
         return cls()
 
+    async def summarize_stream(
+        self,
+        ctx: Context,
+        url: str,
+        output_columns: List[Column],
+        ancestor_selector: str | None = None,
+        items_selector: str | None = None,
+        pagination_button_selector: str | None = None,
+        limit: int = -1,
+    ) -> AsyncGenerator[List[Dict[str, str]], None]:
+        """
+        Summarize the content of a webpage into a csv table represented as a stream of item objects.
+
+        Args:
+            ctx: NPi context.
+            url: The URL to open.
+            output_columns: The columns of the output table. If not provided, use the `infer_columns` function to infer the columns.
+            ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
+            items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
+            pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
+            limit: The maximum number of items to summarize. If -1, all items are summarized.
+
+        Returns:
+            A stream of items. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
+        """
+        if limit == 0:
+            return
+
+        await self.playwright.page.goto(url)
+
+        if not ancestor_selector:
+            ancestor_selector = "body"
+
+        count = 0
+
+        while True:
+            remaining = min(self._batch_size, limit - count) if limit != -1 else -1
+
+            md = await self._get_md(
+                ctx=ctx,
+                ancestor_selector=ancestor_selector,
+                items_selector=items_selector,
+                limit=remaining,
+            )
+
+            if not md:
+                break
+
+            items = await self._llm_summarize(ctx, md, output_columns)
+
+            await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
+
+            if not items:
+                break
+
+            items_slice = items[:remaining] if limit != -1 else items
+            count += len(items_slice)
+
+            yield items_slice
+
+            await ctx.send_debug_message(
+                f"[{self.name}] Summarized {count} items in total"
+            )
+
+            if limit != -1 and count >= limit:
+                break
+
+            await self._load_more(
+                ctx,
+                ancestor_selector,
+                items_selector,
+                pagination_button_selector,
+            )
+
     @function
     async def summarize(
         self,
@@ -106,17 +180,6 @@ class Scraper(BrowserTool):
             output_file: The file path to save the output. If None, the output is saved to 'scraper_output.json'.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
         """
-        if limit == 0:
-            return "No items to summarize"
-
-        await self.playwright.page.goto(url)
-
-        if not ancestor_selector:
-            ancestor_selector = "body"
-
-        if not output_file:
-            output_file = "scraper_output.csv"
-
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
         with open(output_file, "w", newline="") as f:
@@ -127,47 +190,20 @@ class Scraper(BrowserTool):
 
             count = 0
 
-            while True:
-                remaining = min(self._batch_size, limit - count) if limit != -1 else -1
+            stream = self.summarize_stream(
+                ctx=ctx,
+                url=url,
+                output_columns=output_columns,
+                ancestor_selector=ancestor_selector,
+                items_selector=items_selector,
+                pagination_button_selector=pagination_button_selector,
+                limit=limit,
+            )
 
-                md = await self._get_md(
-                    ctx=ctx,
-                    ancestor_selector=ancestor_selector,
-                    items_selector=items_selector,
-                    limit=remaining,
-                )
-
-                if not md:
-                    break
-
-                items = await self._llm_summarize(ctx, md, output_columns)
-
-                await ctx.send_debug_message(
-                    f"[{self.name}] Summarized {len(items)} items"
-                )
-
-                if not items:
-                    break
-
-                items_slice = items[:remaining] if limit != -1 else items
-                writer.writerows(items_slice)
+            async for items in stream:
+                writer.writerows(items)
+                count += len(items)
                 f.flush()
-
-                count += len(items_slice)
-
-                await ctx.send_debug_message(
-                    f"[{self.name}] Summarized {count} items in total"
-                )
-
-                if limit != -1 and count >= limit:
-                    break
-
-                await self._load_more(
-                    ctx,
-                    ancestor_selector,
-                    items_selector,
-                    pagination_button_selector,
-                )
 
         return f"Saved {count} items to {output_file}"
 
@@ -176,8 +212,8 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         url: str,
-        ancestor_selector: str | None,
-        items_selector: str | None,
+        ancestor_selector: str | None = None,
+        items_selector: str | None = None,
     ) -> List[Column] | None:
         """
         Infer the columns of the output table by finding the common nature of the items to summarize.
@@ -209,7 +245,7 @@ class Scraper(BrowserTool):
             Callback with the inferred columns.
 
             Args:
-                columns: The inferred columns. Each column is a dictionary with 'name' and 'description' keys, where 'description' is optional.
+                columns: The inferred columns.
             """
             return columns
 
