@@ -44,15 +44,19 @@ class Scraper(BrowserTool):
         """
     )
 
+    # The maximum number of items to summarize in a single batch
+    _batch_size: int
+
     _navigator: NavigatorAgent
 
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = True, batch_size: int = 10):
         super().__init__(
             headless=headless,
         )
         self._navigator = NavigatorAgent(
             playwright=self.playwright,
         )
+        self._batch_size = batch_size
         self.add_tool(self._navigator)
 
     @classmethod
@@ -97,11 +101,15 @@ class Scraper(BrowserTool):
         results = []
 
         while True:
+            remaining = (
+                min(self._batch_size, limit - len(results)) if limit != -1 else -1
+            )
+
             md = await self._get_md(
                 ctx=ctx,
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
-                limit=limit - len(results) if limit != -1 else -1,
+                limit=remaining,
             )
 
             if not md:
@@ -116,11 +124,18 @@ class Scraper(BrowserTool):
 
             results.extend(items)
 
+            await ctx.send_debug_message(
+                f"[{self.name}] Summarized {len(results)} items in total"
+            )
+
             if limit != -1 and len(results) >= limit:
                 break
 
             await self._load_more(
-                ctx, ancestor_selector, items_selector, pagination_button_selector
+                ctx,
+                ancestor_selector,
+                items_selector,
+                pagination_button_selector,
             )
 
         final_results = results[:limit] if limit != -1 else results
@@ -204,11 +219,13 @@ class Scraper(BrowserTool):
         if limit == 0:
             return None
 
+        unvisited_selector = items_selector + ":not([data-npi-visited])"
+
         htmls = await self.playwright.page.evaluate(
             """
-            ([items_selector, limit]) => {
-                const items = document.querySelectorAll(items_selector);
-                const elems = limit === -1 ? items : Array.from(items).slice(0, limit);
+            ([unvisited_selector, limit]) => {
+                const items = [...document.querySelectorAll(unvisited_selector)];
+                const elems = limit === -1 ? items : items.slice(0, limit);
                 
                 return elems.map(elem => {
                     elem.setAttribute("data-npi-visited", "true");
@@ -216,7 +233,7 @@ class Scraper(BrowserTool):
                 });
             }
             """,
-            [items_selector, limit],
+            [unvisited_selector, limit],
         )
 
         count = len(htmls)
