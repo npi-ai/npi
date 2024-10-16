@@ -1,4 +1,7 @@
 import asyncio
+import json
+from textwrap import indent
+
 from npiai.tools.web.page_analyzer import PageAnalyzer
 
 # from npiai.utils.test_utils import DebugContext
@@ -9,7 +12,7 @@ urls = [
     "https://www.bardeen.ai/playbooks/get-data-from-the-currently-opened-imdb-com-title-page",
     "https://ifttt.com/explore",
     "https://retool.com/templates",
-    "https://www.google.com/search?q=test",
+    "https://www.google.com/search?q=test&hl=ja",
     "https://www.amazon.com/s?k=test",
     "https://github.com/facebook/react/issues",
 ]
@@ -40,6 +43,14 @@ async def main():
             )
 
             print("  - Inferred scraping type:", scraping_type)
+
+            if scraping_type == "list-like":
+                anchors = await analyzer.get_similar_items(ctx, url)
+
+                print(
+                    "  - Possible selectors:",
+                    indent(json.dumps(anchors, indent=2), "    ").lstrip(),
+                )
 
             print()
 
