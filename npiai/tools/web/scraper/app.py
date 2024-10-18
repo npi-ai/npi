@@ -5,7 +5,6 @@ from typing import List, Dict, AsyncGenerator
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 
-from markdownify import MarkdownConverter
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -13,38 +12,12 @@ from litellm.types.completion import (
 
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
-from npiai.utils import is_cloud_env, llm_tool_call
+from npiai.utils import is_cloud_env, llm_tool_call, html_to_markdown
 
 
 class Column(TypedDict):
     name: Annotated[str, "Name of the column"]
     description: Annotated[str | None, "Brief description of the column"]
-
-
-class NonBase64ImageConverter(MarkdownConverter):
-    def convert_img(self, el, text, convert_as_inline):
-        src = el.attrs.get("src", "")
-
-        if not src:
-            return ""
-
-        if src.startswith("data:image"):
-            el.attrs["src"] = "<base64_image>"
-
-        return super().convert_img(el, text, convert_as_inline)
-
-    # def convert_div(self, el, text, convert_as_inline):
-    #     if text:
-    #         text = text.strip("\n")
-    #
-    #     if convert_as_inline or not text:
-    #         return text
-    #
-    #     return f"{text}\n"
-
-
-def html_to_markdown(html: str, **options) -> str:
-    return NonBase64ImageConverter(**options).convert(html).strip()
 
 
 class Scraper(BrowserTool):

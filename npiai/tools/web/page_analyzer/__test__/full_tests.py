@@ -3,6 +3,7 @@ import json
 from textwrap import indent
 
 from npiai.tools.web.page_analyzer import PageAnalyzer
+from npiai.tools.web.twitter import Twitter
 
 # from npiai.utils.test_utils import DebugContext
 from npiai import Context
@@ -15,12 +16,20 @@ urls = [
     "https://www.google.com/search?q=test&hl=ja",
     "https://www.amazon.com/s?k=test",
     "https://github.com/facebook/react/issues",
+    "https://github.com/facebook/react/issues/31207",
+    "https://www.amazon.co.jp/product-reviews/B0BX2C4WYX/",
+    "https://news.ycombinator.com/item?id=41853810",
+    "https://x.com/home",
 ]
 
 
 async def main():
     ctx = Context()
-    async with PageAnalyzer(headless=False) as analyzer:
+
+    # login with twitter
+    async with Twitter(headless=False) as twitter:
+        analyzer = PageAnalyzer(playwright=twitter.playwright)
+
         for url in urls:
             print(f"Analyzing {url}:")
 
@@ -45,11 +54,11 @@ async def main():
             print("  - Inferred scraping type:", scraping_type)
 
             if scraping_type == "list-like":
-                anchors = await analyzer.get_similar_items(ctx, url)
+                selectors = await analyzer.infer_similar_items_selector(ctx, url)
 
                 print(
                     "  - Possible selectors:",
-                    indent(json.dumps(anchors, indent=2), "    ").lstrip(),
+                    indent(json.dumps(selectors, indent=2), "    ").lstrip(),
                 )
 
             print()
