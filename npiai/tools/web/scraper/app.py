@@ -4,6 +4,7 @@ import os
 from typing import List, Dict, AsyncGenerator
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
+from playwright.async_api import TimeoutError
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
@@ -269,6 +270,15 @@ class Scraper(BrowserTool):
 
         unvisited_selector = items_selector + ":not([data-npi-visited])"
 
+        # wait for the first unvisited item to be attached to the DOM
+        try:
+            await self.playwright.page.locator(unvisited_selector).first.wait_for(
+                state="attached",
+                timeout=30_000,
+            )
+        except TimeoutError:
+            return None
+
         htmls = await self.playwright.page.evaluate(
             """
             ([unvisited_selector, limit]) => {
@@ -325,6 +335,12 @@ class Scraper(BrowserTool):
 
         if htmls is None:
             locator = self.playwright.page.locator(ancestor_selector)
+
+            # wait for the ancestor element to be attached to the DOM
+            try:
+                await locator.first.wait_for(state="attached", timeout=30_000)
+            except TimeoutError:
+                return None
 
             if not await locator.count():
                 return None
