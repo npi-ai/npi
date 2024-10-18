@@ -1,18 +1,11 @@
 import base64
 
-from markdownify import MarkdownConverter
 from playwright.async_api import ElementHandle, Error
 
 from npiai.core.browser import PlaywrightContext
-from npiai.utils import logger
+from npiai.utils import logger, html_to_markdown
 
 from ._function import FunctionTool, function
-
-
-class MdConverter(MarkdownConverter):
-    # skip <noscript> tags
-    def convert_noscript(self, _el, _text, _convert_as_inline):
-        return ""
 
 
 class BrowserTool(FunctionTool):
@@ -41,7 +34,7 @@ class BrowserTool(FunctionTool):
     async def get_text(self):
         """Get the text content (as markdown) of the current page"""
         html = await self.playwright.page.evaluate("() => document.body.innerHTML")
-        return MdConverter().convert(html)
+        return html_to_markdown(html)
 
     async def start(self):
         """Start the Browser App"""

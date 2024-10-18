@@ -8,6 +8,7 @@ from .get_type_annotation import get_type_annotation
 from .parse_json_response import parse_json_response
 from .llm_tool_call import llm_tool_call
 from .parse_npi_function import parse_npi_function
+from .html_to_markdown import html_to_markdown
 
 __all__ = [
     "logger",
@@ -20,4 +21,5 @@ __all__ = [
     "parse_json_response",
     "llm_tool_call",
     "parse_npi_function",
+    "html_to_markdown",
 ]

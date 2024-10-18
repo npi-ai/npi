@@ -2,6 +2,7 @@ import json
 from textwrap import dedent
 from typing import Literal, List
 from typing_extensions import TypedDict
+from playwright.async_api import TimeoutError
 
 
 from litellm.types.completion import (
@@ -11,7 +12,7 @@ from litellm.types.completion import (
 
 
 from npiai import BrowserTool, function, Context
-from npiai.utils import llm_tool_call
+from npiai.utils import llm_tool_call, html_to_markdown
 
 _ScrapingType = Literal["list-like", "single"]
 
@@ -33,7 +34,13 @@ class PageAnalyzer(BrowserTool):
 
     async def _load_page(self, url: str, wait: int = 1000):
         await self.playwright.page.goto(url)
+
         # wait for the page to become stable
+        try:
+            await self.playwright.page.wait_for_load_state("networkidle", timeout=3000)
+        except TimeoutError:
+            pass
+
         await self.playwright.page.wait_for_timeout(wait)
 
     async def _validate_pagination(self, ctx: Context, selector: str) -> bool:
@@ -179,24 +186,14 @@ class PageAnalyzer(BrowserTool):
         if not anchor_ids:
             return None
 
-        # extract the first 3 elements and expand their anchors
+        # extract the first 3 elements
         # to find common items and ancestor selector
         return await self.playwright.page.evaluate(
             """(anchorIds) => {
                 try {
                     const anchorElements = anchorIds.map(id => npi.getElement(id));
-                    
-                    const expandedAnchors = new Set(anchorElements.flatMap(el => {
-                        return npi.selectorUtils.expandAnchorFrom(el) || [];
-                    }));
-                    
-                    let selectors;
-                    
-                    if (expandedAnchors.size >= 2) {
-                        selectors = npi.selectorUtils.getCommonItemsAndAncestor(...expandedAnchors);
-                    } else {
-                        selectors = npi.selectorUtils.getCommonItemsAndAncestor(...anchorElements);
-                    }
+                                        
+                    const selectors = npi.selectorUtils.getCommonItemsAndAncestor(...anchorElements);
                     
                     if (!selectors) {
                         return null;
@@ -204,14 +201,14 @@ class PageAnalyzer(BrowserTool):
                     
                     const splitSelectors = selectors.items.split(' ');
                     const lastSelector = splitSelectors.at(-1);
-                    const isDirectChildren = splitSelectors.at(-2) === '>';
+                    const isDirectChildrenSelector = splitSelectors.at(-2) === '>';
                     
                     if (!lastSelector) {
                         return null;
                     }
                                         
                     if (
-                      splitSelectors.length === 2 &&
+                      !isDirectChildrenSelector &&
                       !lastSelector.startsWith('.') && 
                       !lastSelector.startsWith('[')
                     ) {
@@ -219,20 +216,9 @@ class PageAnalyzer(BrowserTool):
                       return null;
                     }
                     
-                    const matches = [...document.querySelectorAll(selectors.items)];
-                    
-                    if (matches.length < 3 || matches.length > 1000) {
-                        return null;
-                    }
-                    
-                    const anchorsSelector = matches
-                        .slice(0, 3)
-                        .map(el => npi.getUniqueSelector(el))
-                        .join(", ");
-                    
                     return {
                         ...selectors,
-                        anchors: anchorsSelector,
+                        anchors: anchorElements.map(el => npi.getUniqueSelector(el)).join(', '),
                     }
                 } catch {
                     return null;
@@ -461,7 +447,11 @@ class PageAnalyzer(BrowserTool):
         return await self.set_scraping_type(**res.model_dump())
 
     @function
-    async def get_similar_items(self, ctx: Context, url: str) -> CommonSelectors | None:
+    async def infer_similar_items_selector(
+        self,
+        ctx: Context,
+        url: str,
+    ) -> CommonSelectors | None:
         """
         Open the given URL and determine whether there are similar elements representing a meaningful list of items. If there are, return the common selector of the similar elements, the ancestor selector, and the selectors of the anchor elements. Otherwise, return None.
 
@@ -475,22 +465,25 @@ class PageAnalyzer(BrowserTool):
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
         raw_screenshot = await self.get_screenshot(full_page=True)
-        elements, _ = await self.get_interactive_elements(
-            screenshot=raw_screenshot,
-            full_page=True,
+
+        contentful_elements = await self.playwright.page.evaluate(
+            """
+            (screenshot) => npi.getMostContentfulElements(screenshot)
+            """,
+            raw_screenshot,
         )
+
         annotated_screenshot = await self.get_screenshot(full_page=True)
 
-        filtered_elements = []
+        elements_as_markdown = []
 
-        for elem in elements:
-            if elem["role"] != "button" and (
-                len(elem["accessibleName"]) > 10
-                or len(elem["accessibleDescription"]) > 10
-            ):
-                filtered_elements.append(elem)
-
-        # print("filtered_elements:", filtered_elements)
+        for el in contentful_elements:
+            elements_as_markdown.append(
+                {
+                    "id": el["id"],
+                    "content": html_to_markdown(el["html"]),
+                }
+            )
 
         res = await llm_tool_call(
             llm=ctx.llm,
@@ -504,10 +497,10 @@ class PageAnalyzer(BrowserTool):
                         
                         ## Provided Context
                         
-                        - An annotated screenshot of the target page where the interactive elements are surrounded with rectangular bounding boxes in different colors. At the top left of each bounding box is a small rectangle in the same color as the bounding box. This is the label and it contains a number indicating the ID of that box. The label number starts from 0.
+                        - An annotated screenshot of the target page where the contextful elements are surrounded with rectangular bounding boxes in different colors. At the top left of each bounding box is a small rectangle in the same color as the bounding box. This is the label and it contains a number indicating the ID of that box. The label number starts from 0.
                         - The URL of the page.
                         - The title of the page.
-                        - An array of the interactive elements on the page. The elements are described as JSON objects defined in the Element Object section. Some irrelevant elements are filtered out.
+                        - An array of the most contextful elements on the page. The elements are described as JSON objects defined in the Element Object section. Some irrelevant elements are filtered out.
                         
                         ## Element Object
 
@@ -515,19 +508,15 @@ class PageAnalyzer(BrowserTool):
                         
                         type Element = {
                           id: string; // The Marker ID of the element
-                          tag: string; // The tag of the element
-                          role: string | null; // The WAI-ARIA accessible role of the element
-                          accessibleName: string; // The WAI-ARIA accessible name of the element
-                          accessibleDescription: string; // The WAI-ARIA accessible description of the element
-                          attributes: Record<string, string>; // Some helpful attributes of the element
-                          options?: string[]; // Available options of an <select> element. This property is only provided when the element is a <select> element.
+                          content: string; // The content of the element in Markdown format
+                          groupId: string; // The ID of the group that the element belongs to
                         }
                         
                         ## Instructions
                         
                         Follow the instructions to determine whether there is a pagination button on the current page for navigating to the next page:
-                        1. Examine the screenshots, the URL, and the title of the page to understand the context, and then think about what the current page is.
-                        2. Go through the elements array, pay attention to the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
+                        1. Examine the screenshot, the URL, and the title of the page to understand the context, and then think about what the current page is.
+                        2. Go through the elements array, grab the semantic information of the elements via the "content" property. Pay attention to the elements with the same group ID as they are under the same parent element.
                         3. Check if there are similar elements representing **the most meaningful list** of items. Typically, these elements link to the detail pages of the items. Note that these elements should not be the pagination buttons and should contain enough meaningful information, not just some short phrases.
                         4. If you find meaningful similar elements, call the tool with a list of the IDs of the elements to compute the common selectors. Otherwise, call the tool with an empty list.
                         """
@@ -542,7 +531,7 @@ class PageAnalyzer(BrowserTool):
                                 {
                                     "url": page_url,
                                     "title": page_title,
-                                    "elements": filtered_elements,
+                                    "elements": elements_as_markdown,
                                 },
                                 ensure_ascii=False,
                             ),
