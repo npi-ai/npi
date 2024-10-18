@@ -133,6 +133,7 @@ class Response(TypedDict):
     observation: str
     thoughts: str
     action: Action
+    result: str | None
 
 
 def _parse_response(response: str) -> Union[Response, None]:
@@ -233,7 +234,7 @@ class NavigatorAgent(BrowserAgentTool):
                 [
                     {
                         "role": "system",
-                        "content": self._browser_app.system_prompt,
+                        "content": self.system_prompt,
                     }
                 ]
             )
@@ -243,8 +244,7 @@ class NavigatorAgent(BrowserAgentTool):
             response = _parse_response(response_str)
 
             if not response:
-                # try again if the response can't be parsed correctly
-                continue
+                break
 
             result, elem_json = await self._run_action(response["action"], ctx)
             logger.info(result)
@@ -256,6 +256,7 @@ class NavigatorAgent(BrowserAgentTool):
             # remove element id from history to reduce noise
             response["action"].pop("id", None)
             response["action"]["element"] = elem_json
+            response["result"] = result
             history.append(response)
             step += 1
 
