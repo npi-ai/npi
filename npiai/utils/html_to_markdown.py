@@ -13,17 +13,26 @@ class CompactConverter(MarkdownConverter):
 
         return super().convert_img(el, text, convert_as_inline)
 
-    def convert_noscript(self, _el, _text, _convert_as_inline):
+    def convert_noscript(self, el, text, convert_as_inline):
         return ""
 
-    # def convert_div(self, el, text, convert_as_inline):
-    #     if text:
-    #         text = text.strip("\n")
-    #
-    #     if convert_as_inline or not text:
-    #         return text
-    #
-    #     return f"{text}\n"
+    def convert_div(self, el, text, convert_as_inline):
+        aria_label = el.attrs.get("aria-label", "")
+
+        if aria_label and aria_label not in text:
+            # print(f"{aria_label=} {text=} {el=}\n\n")
+            return f"\n{text.rstrip()} (aria-label: {aria_label})"
+
+        return text.rstrip() + " " if text else ""
+
+        #
+        # if text:
+        #     text = text.strip("\n")
+        #
+        # if convert_as_inline or not text:
+        #     return text
+        #
+        # return f"{text}\n"
 
 
 def html_to_markdown(html: str, **options) -> str:
