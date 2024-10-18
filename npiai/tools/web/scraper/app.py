@@ -229,7 +229,7 @@ class Scraper(BrowserTool):
                     role="system",
                     content=dedent(
                         """
-                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table.
+                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. If the item includes a link to detail information, you can include a column for the link.
                         """
                     ),
                 ),
