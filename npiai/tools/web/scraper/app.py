@@ -36,10 +36,8 @@ class Scraper(BrowserTool):
 
     _navigator: NavigatorAgent
 
-    def __init__(self, headless: bool = True, batch_size: int = 10):
-        super().__init__(
-            headless=headless,
-        )
+    def __init__(self, batch_size: int = 10, **kwargs):
+        super().__init__(**kwargs)
         self._navigator = NavigatorAgent(
             playwright=self.playwright,
         )
@@ -82,7 +80,7 @@ class Scraper(BrowserTool):
         if limit == 0:
             return
 
-        await self.playwright.page.goto(url)
+        await self.load_page(url)
 
         if not ancestor_selector:
             ancestor_selector = "body"
@@ -198,7 +196,7 @@ class Scraper(BrowserTool):
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
         """
 
-        await self.playwright.page.goto(url)
+        await self.load_page(url)
 
         if not ancestor_selector:
             ancestor_selector = "body"

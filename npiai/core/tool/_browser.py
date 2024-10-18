@@ -1,6 +1,6 @@
 import base64
 
-from playwright.async_api import ElementHandle, Error
+from playwright.async_api import ElementHandle, Error, TimeoutError
 
 from npiai.core.browser import PlaywrightContext
 from npiai.utils import logger, html_to_markdown
@@ -29,6 +29,17 @@ class BrowserTool(FunctionTool):
         super().__init__()
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
+
+    async def load_page(self, url: str, wait: int = 1000):
+        await self.playwright.page.goto(url)
+
+        # wait for the page to become stable
+        try:
+            await self.playwright.page.wait_for_load_state("networkidle", timeout=3000)
+        except TimeoutError:
+            pass
+
+        await self.playwright.page.wait_for_timeout(wait)
 
     @function
     async def get_text(self):

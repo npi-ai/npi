@@ -38,6 +38,6 @@ class Chromium(BrowserTool):
         Args:
             url: The URL to open.
         """
-        await self.playwright.page.goto(url)
+        await self.load_page(url)
 
         return f"Opened {await self.get_page_url()}, page title: {await self.get_page_title()}"

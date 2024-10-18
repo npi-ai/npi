@@ -32,17 +32,6 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
-    async def _load_page(self, url: str, wait: int = 1000):
-        await self.playwright.page.goto(url)
-
-        # wait for the page to become stable
-        try:
-            await self.playwright.page.wait_for_load_state("networkidle", timeout=3000)
-        except TimeoutError:
-            pass
-
-        await self.playwright.page.wait_for_timeout(wait)
-
     async def _validate_pagination(self, ctx: Context, selector: str) -> bool:
         if not selector:
             return False
@@ -236,7 +225,7 @@ class PageAnalyzer(BrowserTool):
             url: URL of the page
         """
         # use long wait time for pages to be fully loaded
-        await self._load_page(url, wait=3000)
+        await self.load_page(url, wait=3000)
 
         return await self.playwright.page.evaluate(
             """
@@ -295,7 +284,7 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self._load_page(url)
+        await self.load_page(url)
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
@@ -390,7 +379,7 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self._load_page(url)
+        await self.load_page(url)
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
         screenshot = await self.get_screenshot(full_page=True)
@@ -459,7 +448,7 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self._load_page(url)
+        await self.load_page(url)
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
