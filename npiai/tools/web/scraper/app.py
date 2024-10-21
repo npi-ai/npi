@@ -1,7 +1,7 @@
 import csv
 import re
 import os
-from typing import List, Dict, AsyncGenerator
+from typing import List, Dict, AsyncGenerator, Literal
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 from playwright.async_api import TimeoutError
@@ -14,6 +14,15 @@ from litellm.types.completion import (
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
 from npiai.utils import is_cloud_env, llm_tool_call, html_to_markdown
+
+from .prompts import (
+    MULTI_COLUMN_INFERENCE_PROMPT,
+    MULTI_COLUMN_SCRAPING_PROMPT,
+    SINGLE_COLUMN_INFERENCE_PROMPT,
+    SINGLE_COLUMN_SCRAPING_PROMPT,
+)
+
+ScrapingType = Literal["single", "list-like"]
 
 
 class Column(TypedDict):
@@ -58,6 +67,7 @@ class Scraper(BrowserTool):
         ctx: Context,
         url: str,
         output_columns: List[Column],
+        scraping_type: ScrapingType,
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
@@ -70,6 +80,7 @@ class Scraper(BrowserTool):
             ctx: NPi context.
             url: The URL to open.
             output_columns: The columns of the output table. If not provided, use the `infer_columns` function to infer the columns.
+            scraping_type: The type of scraping to perform. If 'single', summarize the content into a single row. If 'list-like', summarize the content into multiple rows.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
@@ -101,7 +112,12 @@ class Scraper(BrowserTool):
             if not md:
                 break
 
-            items = await self._llm_summarize(ctx, md, output_columns)
+            items = await self._llm_summarize(
+                ctx=ctx,
+                md=md,
+                output_columns=output_columns,
+                scraping_type=scraping_type,
+            )
 
             await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
 
@@ -133,6 +149,7 @@ class Scraper(BrowserTool):
         ctx: Context,
         url: str,
         output_columns: List[Column],
+        scraping_type: ScrapingType,
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
@@ -146,6 +163,7 @@ class Scraper(BrowserTool):
             ctx: NPi context.
             url: The URL to open.
             output_columns: The columns of the output table. If not provided, use the `infer_columns` function to infer the columns.
+            scraping_type: The type of scraping to perform. If 'single', summarize the content into a single row. If 'list-like', summarize the content into multiple rows.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
@@ -166,6 +184,7 @@ class Scraper(BrowserTool):
                 ctx=ctx,
                 url=url,
                 output_columns=output_columns,
+                scraping_type=scraping_type,
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
                 pagination_button_selector=pagination_button_selector,
@@ -184,6 +203,7 @@ class Scraper(BrowserTool):
         self,
         ctx: Context,
         url: str,
+        scraping_type: ScrapingType,
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
     ) -> List[Column] | None:
@@ -193,6 +213,7 @@ class Scraper(BrowserTool):
         Args:
             ctx: NPi context.
             url: The URL to open.
+            scraping_type: The type of scraping to perform. If 'single', infer the columns based on a single item. If 'list-like', infer the columns based on a list of items.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
         """
@@ -221,23 +242,19 @@ class Scraper(BrowserTool):
             """
             return columns
 
+        prompt = (
+            MULTI_COLUMN_INFERENCE_PROMPT
+            if scraping_type == "list-like"
+            else SINGLE_COLUMN_INFERENCE_PROMPT
+        )
+
         res = await llm_tool_call(
             llm=ctx.llm,
             tool=callback,
             messages=[
                 ChatCompletionSystemMessageParam(
                     role="system",
-                    content=dedent(
-                        """
-                        Imagine you are summarizing the content of a webpage into a table. Each item is represented as a markdown section and is surrounded by a <section> tag. Follow the steps below to infer the columns of the output table:
-                        
-                        1. **Identify Common Themes**: Begin by examining the provided markdown sections to discern common themes or shared attributes across the items.
-                        
-                        2. **Determine Table Columns**: Based on the common themes identified, propose relevant columns. If each item contains a link to detailed information, consider including a 'URL' column.
-                           
-                        3. **Single Item Scenario**: If there's only one item, focus on developing columns that encapsulate the essential details of the item. This might involve deeper analysis to identify unique attributes.
-                        """
-                    ),
+                    content=prompt,
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
@@ -271,6 +288,17 @@ class Scraper(BrowserTool):
         items_selector: str,
         limit: int = -1,
     ) -> str | None:
+        """
+        Get the markdown content of the items to summarize
+
+        Args:
+            ctx: NPi context.
+            items_selector: The selector of the items to summarize.
+            limit: The maximum number of items to summarize.
+
+        Returns:
+            The markdown content of the items to summarize.
+        """
         if limit == 0:
             return None
 
@@ -322,6 +350,16 @@ class Scraper(BrowserTool):
         ctx: Context,
         ancestor_selector: str,
     ) -> str | None:
+        """
+        Get the markdown content of the ancestor element
+
+        Args:
+            ctx: NPi context.
+            ancestor_selector: The selector of the ancestor element.
+
+        Returns:
+            The markdown content of the ancestor element.
+        """
 
         # check if there are mutation records
         htmls = await self.playwright.page.evaluate(
@@ -372,7 +410,21 @@ class Scraper(BrowserTool):
         ctx: Context,
         md: str,
         output_columns: List[Column],
+        scraping_type: ScrapingType,
     ) -> List[Dict[str, str]]:
+        """
+        Summarize the content of a webpage into a table using LLM.
+
+        Args:
+            ctx: NPi context.
+            md: The markdown content to summarize.
+            output_columns: The columns of the output table.
+            scraping_type: The type of scraping to perform. If 'single', summarize the content into a single row. If 'list-like', summarize the content into multiple rows.
+
+        Returns:
+            The summarized items as a list of dictionaries.
+        """
+
         column_defs = ""
 
         for column in output_columns:
@@ -380,21 +432,16 @@ class Scraper(BrowserTool):
                 f"{column['name']}: {column['description'] or 'No description'}\n"
             )
 
+        prompt = (
+            MULTI_COLUMN_SCRAPING_PROMPT
+            if scraping_type == "list-like"
+            else SINGLE_COLUMN_SCRAPING_PROMPT
+        )
+
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
-                content=dedent(
-                    f"""
-                    You are a web scraper agent helping user summarize the content of a webpage into a table.
-                    For the given markdown content, summarize the content into a table with the following columns:
-                    
-                    # Column Definitions
-                    {column_defs}
-                    
-                    # Response Format
-                    Respond with the table in CSV format. Each column value should be enclosed in double quotes and separated by commas. Note that **column names must exactly match the provided column definitions**.
-                    """
-                ),
+                content=prompt.format(column_defs=column_defs),
             ),
             ChatCompletionUserMessageParam(
                 role="user",

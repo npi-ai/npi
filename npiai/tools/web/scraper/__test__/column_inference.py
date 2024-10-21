@@ -14,6 +14,7 @@ async def main():
         columns = await scraper.infer_columns(
             ctx=DebugContext(),
             url=url,
+            scraping_type="list-like",
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
         )
@@ -23,6 +24,7 @@ async def main():
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url=url,
+            scraping_type="list-like",
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
             output_columns=columns,

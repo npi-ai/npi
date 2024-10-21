@@ -55,6 +55,7 @@ async def main():
         columns = await scraper.infer_columns(
             ctx=ctx,
             url=url,
+            scraping_type="list-like",
             ancestor_selector=selectors["ancestor"],
             items_selector=selectors["items"],
         )
@@ -67,6 +68,7 @@ async def main():
         stream = scraper.summarize_stream(
             ctx=ctx,
             url=url,
+            scraping_type="list-like",
             ancestor_selector=selectors["ancestor"],
             items_selector=selectors["items"],
             output_columns=columns,
