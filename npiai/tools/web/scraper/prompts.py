@@ -4,10 +4,22 @@ Imagine you are summarizing the content of a webpage into a table with **multipl
 1. **Identify Common Themes**: Begin by examining the provided markdown sections to discern common themes or shared attributes across the items.
 
 2. **Determine Table Columns**: Based on the common themes identified, propose relevant columns. If each item contains a link to detailed information, consider including a 'URL' column.
+
+# Column Types
+
+- **text**: Columns that contain textual information.
+- **link**: Columns that contain URLs or hyperlinks.
+- **image**: Columns that contain image URLs.
 """
 
 SINGLE_COLUMN_INFERENCE_PROMPT = """
 Imagine you are summarizing the content of a webpage into a table with **a single row** of data. Suggest columns that encapsulate the essential details of the content. If the content includes multiple headings, consider using them as column names.
+
+# Column Types
+
+- **text**: Columns that contain textual information.
+- **link**: Columns that contain URLs or hyperlinks.
+- **image**: Columns that contain image URLs.
 """
 
 MULTI_COLUMN_SCRAPING_PROMPT = """
@@ -15,7 +27,14 @@ You are a web scraper agent helping user summarize the content of a webpage into
 
 # Column Definitions
 
+The columns are defined as the following json object:
 {column_defs}
+
+# Column Types
+
+- **text**: Columns that contain textual information.
+- **link**: Columns that contain URLs or hyperlinks.
+- **image**: Columns that contain image URLs.
 
 # Response Format
 
@@ -28,7 +47,15 @@ SINGLE_COLUMN_SCRAPING_PROMPT = """
 You are a web scraper agent helping user summarize the content of a webpage into a table with **a single row** of data. Summarize the content into a table with the following columns:
 
 # Column Definitions
+
+The columns are defined as the following json object:
 {column_defs}
+
+# Column Types
+
+- **text**: Columns that contain textual information.
+- **link**: Columns that contain URLs or hyperlinks.
+- **image**: Columns that contain image URLs.
 
 # Response Format
 
