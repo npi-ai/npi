@@ -10,6 +10,7 @@ async def main():
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url="https://www.bardeen.ai/playbooks",
+            scraping_type="list-like",
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item-link",
             limit=42,

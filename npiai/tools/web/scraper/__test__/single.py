@@ -10,14 +10,16 @@ async def main():
         columns = await scraper.infer_columns(
             ctx=DebugContext(),
             url="https://www.bardeen.ai/playbooks/get-data-from-the-currently-opened-imdb-com-title-page",
+            scraping_type="single",
         )
         print("Inferred columns:", json.dumps(columns, indent=2))
 
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url="https://www.bardeen.ai/playbooks/get-data-from-the-currently-opened-imdb-com-title-page",
-            limit=1,
+            scraping_type="single",
             output_columns=columns,
+            limit=1,
         )
 
         async for items in stream:
