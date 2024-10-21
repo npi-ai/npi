@@ -2,7 +2,6 @@ import json
 from textwrap import dedent
 from typing import Literal, List
 from typing_extensions import TypedDict
-from playwright.async_api import TimeoutError
 
 
 from litellm.types.completion import (
@@ -332,8 +331,8 @@ class PageAnalyzer(BrowserTool):
                         Follow the instructions to determine whether there is a pagination button on the current page for navigating to the next page:
                         1. Examine the screenshots, the URL, and the title of the page to understand the context, and then think about what the current page is.
                         2. Go through the elements array, pay attention to the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
-                        3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page.
-                        4. If you find a pagination button, call the tool with the ID of the element to retrieve the CSS selector. Otherwise, call the tool with -1 as the marker ID.
+                        3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page. It usually contains text like "Next", "More", or "Load More".
+                        4. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
                         """
                     ),
                 ),
