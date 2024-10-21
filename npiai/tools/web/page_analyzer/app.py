@@ -2,6 +2,7 @@ import json
 from textwrap import dedent
 from typing import Literal, List
 from typing_extensions import TypedDict
+from playwright.async_api import Error as PlaywrightError
 
 
 from litellm.types.completion import (
@@ -51,7 +52,12 @@ class PageAnalyzer(BrowserTool):
         old_title = await self.get_page_title()
 
         await self.clear_bboxes()
-        await self.click(elem)
+
+        try:
+            await self.click(elem)
+        except PlaywrightError:
+            return False
+
         await self.playwright.page.wait_for_timeout(3000)
 
         new_screenshot = await self.get_screenshot(full_page=True)
@@ -92,7 +98,7 @@ class PageAnalyzer(BrowserTool):
                         2. Compare the old URL and the new URL to see if the page is navigated to the next page.
                         3. Compare the old title and the new title to see the two pages are related.
                         4. Compare the first screenshot (the screenshot before clicking the pagination button) with the second screenshot (the screenshot after clicking the pagination button) to see if there are any differences. 
-                        5. Check if previous page and the next page have the same structure but different content. If so, the pagination button is working.
+                        5. Check if previous page and the next page have the same structure but different content. If so, the pagination button is working. Note that opening or closing a popup/modal in the same page is not considered as pagination.
                         6. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
                         """
                     ),
@@ -161,7 +167,8 @@ class PageAnalyzer(BrowserTool):
         )
 
     async def compute_common_selectors(
-        self, anchor_ids: List[int]
+        self,
+        anchor_ids: List[int],
     ) -> CommonSelectors | None:
         """
         Expand the anchors with the given IDs and compute the common items and ancestor selector.
@@ -216,24 +223,35 @@ class PageAnalyzer(BrowserTool):
         )
 
     @function
-    async def support_infinite_scroll(self, url: str) -> bool:
+    async def support_infinite_scroll(
+        self,
+        url: str,
+        items_selector: str = None,
+    ) -> bool:
         """
         Open the given URL and determine whether the page supports infinite scroll.
 
         Args:
             url: URL of the page
+            items_selector: CSS selector of the items on the page
         """
         # use long wait time for pages to be fully loaded
         await self.load_page(url, wait=3000)
 
         return await self.playwright.page.evaluate(
             """
-            () => {
+            (items_selector) => {
                 let mutateElementsCount = 0;
-                const threshold = 10;
+                const threshold = items_selector === '*' ? 10 : 3;
                 
                 const npiScrollObserver = new MutationObserver((records) => {
-                    mutateElementsCount += records.length;
+                    for (const record of records) {
+                        for (const node of record.addedNodes) {
+                            if (node.nodeType === Node.ELEMENT_NODE && node.matches(items_selector)) {
+                                mutateElementsCount++;
+                            }
+                        }
+                    }
                 });
                 
                 npiScrollObserver.observe(
@@ -272,6 +290,7 @@ class PageAnalyzer(BrowserTool):
                 });
             }
             """,
+            items_selector or "*",
         )
 
     @function
