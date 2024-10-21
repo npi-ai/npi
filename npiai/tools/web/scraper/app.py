@@ -1,4 +1,5 @@
 import csv
+import json
 import re
 import os
 from typing import List, Dict, AsyncGenerator, Literal
@@ -27,6 +28,7 @@ ScrapingType = Literal["single", "list-like"]
 
 class Column(TypedDict):
     name: Annotated[str, "Name of the column"]
+    type: Annotated[Literal["text", "link", "image"], "Type of the column"]
     description: Annotated[str | None, "Brief description of the column"]
 
 
@@ -425,13 +427,6 @@ class Scraper(BrowserTool):
             The summarized items as a list of dictionaries.
         """
 
-        column_defs = ""
-
-        for column in output_columns:
-            column_defs += (
-                f"{column['name']}: {column['description'] or 'No description'}\n"
-            )
-
         prompt = (
             MULTI_COLUMN_SCRAPING_PROMPT
             if scraping_type == "list-like"
@@ -441,7 +436,9 @@ class Scraper(BrowserTool):
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
-                content=prompt.format(column_defs=column_defs),
+                content=prompt.format(
+                    column_defs=json.dumps(output_columns, ensure_ascii=False)
+                ),
             ),
             ChatCompletionUserMessageParam(
                 role="user",
