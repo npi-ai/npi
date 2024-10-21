@@ -229,7 +229,13 @@ class Scraper(BrowserTool):
                     role="system",
                     content=dedent(
                         """
-                        Imagine you are summarizing the content of a webpage into a table. Find the common nature of the provided items and suggest the columns for the output table. If the item includes a link to detail information, you can include a column for the link.
+                        Imagine you are summarizing the content of a webpage into a table. Each item is represented as a markdown section and is surrounded by a <section> tag. Follow the steps below to infer the columns of the output table:
+                        
+                        1. **Identify Common Themes**: Begin by examining the provided markdown sections to discern common themes or shared attributes across the items.
+                        
+                        2. **Determine Table Columns**: Based on the common themes identified, propose relevant columns. If each item contains a link to detailed information, consider including a 'URL' column.
+                           
+                        3. **Single Item Scenario**: If there's only one item, focus on developing columns that encapsulate the essential details of the item. This might involve deeper analysis to identify unique attributes.
                         """
                     ),
                 ),
