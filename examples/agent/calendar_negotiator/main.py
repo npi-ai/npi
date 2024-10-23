@@ -105,8 +105,6 @@ class Negotiator(FunctionTool):
 
 
 async def run():
-    llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
-
     # You could get Google Secret JSON file on https://console.cloud.google.com/apis/credentials by steps:
     #
     # 1. Open: https://console.cloud.google.com/apis/credentials
@@ -122,6 +120,7 @@ async def run():
     nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
     async with agent.wrap(nego) as negotiator:
         ctx = Context()
+        ctx.use_llm(OpenAI(model="gpt-4o", api_key=os.environ["OPENAI_API_KEY"]))
         ctx.use_hitl(ConsoleHandler())
 
         print("Negotiator: What's your task for me?")
