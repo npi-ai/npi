@@ -6,26 +6,18 @@
 
 NPi is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to take action in virtual world!
 
-[🛠️Try NPi Online](https://try.npi.ai): Try NPi on online Playground
+[🛠️Try NPi Online](https://www.npi.ai/playground): Try NPi on online Playground (🚧Under Construction).
 
-[👀 NPi Example](https://www.npi.ai/docs/examples?utm_source=github&utm_campaign=readme): **Highly recommended to check this first** - See what you can build with NPi.
+[👀 NPi Example](https://docs.npi.ai/examples): **Highly recommended to check this first** - See what you can build with NPi.
 
-[🔥 Introducing NPi](https://www.npi.ai/blog/introducing-npi?utm_source=github&utm_campaign=readme): Why we build NPi?
+[🔥 Introducing NPi](https://docs.npi.ai/blog/introducing-npi): Why we build NPi?
 
-[📚 NPi Documentation](https://www.npi.ai/docs?utm_source=github&utm_campaign=readme): How to use NPi?
+[📚 NPi Documentation](https://docs.npi.ai/docs): How to use NPi?
 
 [📢 Join our community on Discord](https://discord.gg/wdskUcKc): Let's build NPi together 👻 !
 
 
 NPi (**N**atural-language **P**rogramming **I**nterface), pronounced as **"N π"**, is an open-source platform providing **_Tool-use_** APIs to empower AI agents with the ability to operate and interact with a diverse array of software tools and applications.
-
-<nav className="text-center my-4">
-  [Getting Started](/docs)
-  |
-  [Examples](/examples)
-  |
-  [NPi Cloud(coming soon)](#)
-</nav>
 
 ## Installation
 
@@ -47,11 +39,8 @@ from npiai import FunctionTool, function
 
 
 class MyTool(FunctionTool):
-    def __init__(self):
-        super().__init__(
-            name='Fibonacci',
-            description='My first NPi tool',
-        )
+    name = 'Fibonacci'
+    description = 'My first NPi tool'
 
     @function
     def fibonacci(self, n: int) -> int:
@@ -144,8 +133,8 @@ That's it! You've successfully created and run your first NPi tool. 🎉
 
 ## Next Steps
 
-- [Read the Documentation](https://www.npi.ai/docs)
-- [Explore More Examples](https://www.npi.ai/examples)
+- [Read the Documentation](https://docs.npi.ai/docs)
+- [Explore More Examples](https://docs.npi.ai/examples)
 - [NPi Cloud(coming soon)](#)
 
 ## License
