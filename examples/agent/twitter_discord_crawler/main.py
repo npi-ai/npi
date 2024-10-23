@@ -42,7 +42,7 @@ class TwitterDiscordCrawler(FunctionTool):
 async def run():
     llm = OpenAI(model="gpt-4-turbo-preview", api_key=os.environ["OPENAI_API_KEY"])
 
-    async with agent.wrap(TwitterDiscordCrawler(), llm=llm) as tool:
+    async with agent.wrap(TwitterDiscordCrawler()) as tool:
         ctx = Context()
         ctx.use_hitl(ConsoleHandler())
         print("Twitter Crawler: What's your task for me?")

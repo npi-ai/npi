@@ -120,7 +120,7 @@ async def run():
     # You may need to enable Google Calendar API and Gmail API in your Google Cloud Console.
 
     nego = Negotiator(secret_file=f"{Path.cwd()}/secret.example.json")
-    async with agent.wrap(nego, llm=llm) as negotiator:
+    async with agent.wrap(nego) as negotiator:
         ctx = Context()
         ctx.use_hitl(ConsoleHandler())
 
