@@ -99,4 +99,5 @@ class PlaywrightContext:
         """
         Dispose the chrome tools
         """
+        await self.browser.close()
         await self.playwright.stop()
