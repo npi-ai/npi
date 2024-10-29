@@ -29,7 +29,9 @@ ScrapingType = Literal["single", "list-like"]
 class Column(TypedDict):
     name: Annotated[str, "Name of the column"]
     type: Annotated[Literal["text", "link", "image"], "Type of the column"]
-    description: Annotated[str | None, "Brief description of the column"]
+    prompt: Annotated[
+        str | None, "A step-by-step prompt on how to extract the column data"
+    ]
 
 
 class Scraper(BrowserTool):
@@ -93,6 +95,9 @@ class Scraper(BrowserTool):
         """
         if limit == 0:
             return
+
+        if scraping_type == "single":
+            limit = 1
 
         await self.load_page(url)
 
