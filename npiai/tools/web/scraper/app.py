@@ -458,6 +458,9 @@ class Scraper(BrowserTool):
             response = await ctx.llm.completion(
                 messages=messages,
                 max_tokens=4096,
+                # use fixed temperature and seed to ensure deterministic results
+                temperature=0.0,
+                seed=42,
             )
 
             messages.append(response.choices[0].message)
