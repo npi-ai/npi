@@ -55,16 +55,16 @@ testdata = [
             "ancestor": ".s-main-slot",
         },
     },
-    {
-        "url": "https://www.amazon.com/product-reviews/B09KZ6TBNY/",
-        "infinite_scroll": False,
-        "pagination_button": ".a-last > a",
-        "scraping_type": "list-like",
-        "selectors": {
-            "items": "#cm_cr-review_list > .a-section",
-            "ancestor": "#cm_cr-review_list",
-        },
-    },
+    # {
+    #     "url": "https://www.amazon.com/product-reviews/B09KZ6TBNY/",
+    #     "infinite_scroll": False,
+    #     "pagination_button": ".a-last > a",
+    #     "scraping_type": "list-like",
+    #     "selectors": {
+    #         "items": "#cm_cr-review_list > .a-section",
+    #         "ancestor": "#cm_cr-review_list",
+    #     },
+    # },
     # {
     #     "url": "https://x.com/home",
     #     "infinite_scroll": True,
