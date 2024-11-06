@@ -19,7 +19,7 @@ configs = {
             {
                 "name": "Time Saved",
                 "type": "text",
-                "description": "The time saved by using the playbook",
+                "description": "The time saved by using the playbook in format like '1 min'",
             },
             {
                 "name": "URL",
