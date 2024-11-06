@@ -2,6 +2,7 @@ import csv
 import json
 import re
 import os
+from pathlib import Path
 from typing import List, Dict, AsyncGenerator, Literal
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
@@ -161,7 +162,7 @@ class Scraper(BrowserTool):
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
-        output_file: str | None = None,
+        output_file: Path | str | None = None,
         limit: int = -1,
     ) -> str:
         """
