@@ -33,7 +33,7 @@ async def archive_retool():
 
         await scraper.playwright.page.route_from_har(
             har=har_file,
-            url="*/**",
+            url="*/**/templates.json",
             update=True,
         )
 
@@ -63,9 +63,11 @@ async def archive_ifttt():
 
 
 async def main():
-    await archive_bardeen()
-    await archive_retool()
-    await archive_ifttt()
+    await asyncio.gather(
+        archive_bardeen(),
+        archive_retool(),
+        archive_ifttt(),
+    )
 
 
 if __name__ == "__main__":
