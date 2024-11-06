@@ -119,6 +119,7 @@ class Scraper(BrowserTool):
             )
 
             if not md:
+                await ctx.send_debug_message(f"[{self.name}] No more items found")
                 break
 
             items = await self._llm_summarize(
@@ -130,20 +131,20 @@ class Scraper(BrowserTool):
 
             await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
 
-            if not items:
-                break
+            if items:
+                items_slice = items[:remaining] if limit != -1 else items
+                count += len(items_slice)
 
-            items_slice = items[:remaining] if limit != -1 else items
-            count += len(items_slice)
+                yield items_slice
 
-            yield items_slice
+                await ctx.send_debug_message(
+                    f"[{self.name}] Summarized {count} items in total"
+                )
 
-            await ctx.send_debug_message(
-                f"[{self.name}] Summarized {count} items in total"
-            )
-
-            if limit != -1 and count >= limit:
-                break
+                if limit != -1 and count >= limit:
+                    break
+            else:
+                await ctx.send_debug_message(f"[{self.name}] No items summarized")
 
             await self._load_more(
                 ctx,
