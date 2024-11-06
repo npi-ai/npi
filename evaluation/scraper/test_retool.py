@@ -19,13 +19,13 @@ async def test_retool_scraper():
 
         print(f"output csv: {output_csv_file}")
 
-        # FIXME: retool page will keeps loading when mocking with har file
+        # FIXME: retool page will keeps loading when mocking all routes with har file
         # await scraper.playwright.context.set_offline(True)
-        # await scraper.playwright.page.route_from_har(
-        #     har=har_file,
-        #     url="*/**",
-        #     update=False,
-        # )
+        await scraper.playwright.page.route_from_har(
+            har=har_file,
+            url="*/**/templates.json",
+            update=False,
+        )
 
         await scraper.summarize(
             ctx=DebugContext(),

@@ -5,13 +5,13 @@ Tweet your Instagrams as native photos on Twitter,"Instagram, Twitter",603.8k,ht
 Automatically create a Discover Weekly archive,Spotify,25.3k,https://ifttt.com/applets/NFRkZeJu-automatically-create-a-discover-weekly-archive
 If my character is killed in Rust send me a notification,"Rust, Notifications",5.8k,https://ifttt.com/applets/ntpzWP2L-if-my-character-is-killed-in-rust-send-me-a-notification
 Turn on/off your lights with one tap on your phone,"Philips Hue, Button widget",109.2k,https://ifttt.com/applets/wYf8ceZQ-turn-on-off-your-lights-with-one-tap-on-your-phone
-SMS2Email: Forward your text messages to your email byIFTTT,"Android SMS, Email",5.7k,https://ifttt.com/applets/QM6Ua5BE-sms2email-forward-your-text-messages-to-your-email
+SMS2Email: Forward your text messages to your email,"Android SMS, Email",5.7k,https://ifttt.com/applets/QM6Ua5BE-sms2email-forward-your-text-messages-to-your-email
 Track your work hours in Google Calendar,"Google Calendar, Location",155.7k,https://ifttt.com/applets/sFk2WC4r-track-your-work-hours-in-google-calendar
-Sunset Notification bymaxemoose,"Weather Underground, Notifications",18.0k,https://ifttt.com/applets/MRMSvUrp-sunset-notification
-Automatically unmute your Android when you get back home byIFTTT,"Android Device, Location",172.8k,https://ifttt.com/applets/FapTeHd5-automatically-unmute-your-android-when-you-get-back-home
+Sunset Notification,"Weather Underground, Notifications",18.0k,https://ifttt.com/applets/MRMSvUrp-sunset-notification
+Automatically unmute your Android when you get back home,"Android Device, Location",172.8k,https://ifttt.com/applets/FapTeHd5-automatically-unmute-your-android-when-you-get-back-home
 Set your Android phone wallpaper with your latest Instagram photo,"Instagram, Android Device",24.1k,https://ifttt.com/applets/qczb8pJt-set-your-android-phone-wallpaper-with-your-latest-instagram-photo
 Save new photos you're tagged in on Facebook to Dropbox,"Dropbox, Facebook",156.4k,https://ifttt.com/applets/rveqra5B-save-new-photos-you-re-tagged-in-on-facebook-to-dropbox
-"If a webhook is triggered, get a mobile notification","Webhooks, Notifications",2,https://ifttt.com/applets/ZiLGhwtZ-if-a-webhook-is-triggered-get-a-mobile-notification
+"If a webhook is triggered, get a mobile notification","Webhooks, Notifications",3,https://ifttt.com/applets/ZiLGhwtZ-if-a-webhook-is-triggered-get-a-mobile-notification
 "If there is a birthday on my calendar today, send me a reminder","Pushbullet, Google Calendar",7.7k,https://ifttt.com/applets/h3Ty2qZj-if-there-is-a-birthday-on-my-calendar-today-send-me-a-reminder
 Post your Instagram videos to a Facebook Page,"Instagram, Facebook Pages",16.1k,https://ifttt.com/applets/aMmpTtFR-post-your-instagram-videos-to-a-facebook-page
 Receive a push notification when a company stock rises above a specified price,"Finance, Notifications",3.1k,https://ifttt.com/applets/NydZreXh-receive-a-push-notification-when-a-company-stock-rises-above-a-specified-price
@@ -22,7 +22,7 @@ Receive a weekly email summary of your Fitbit activity,"Fitbit, Email Digest",5.
 Create Google My Business posts from new Instagram photo posts,"Instagram, Google My Business",90,https://ifttt.com/applets/SVzBimDJ-create-google-my-business-posts-from-new-instagram-photo-posts
 Congratulate my birthday!,"Date & Time, Notifications",9.7k,https://ifttt.com/applets/Mt5VKkfD-congratulate-my-birthday
 Press a button to track work hours in Google Drive,"Google Sheets, Button widget",123.2k,https://ifttt.com/applets/NAMgXbLj-press-a-button-to-track-work-hours-in-google-drive
-Send a web request when you update a spreadsheet,"Webhooks, Google Sheets",,https://ifttt.com/applets/jYqxjmFH-send-a-web-request-when-you-update-a-spreadsheet
+Send a web request when you update a spreadsheet,"Webhooks, Google Sheets",0,https://ifttt.com/applets/jYqxjmFH-send-a-web-request-when-you-update-a-spreadsheet
 Get your Fitbit sleep logs as a weekly email digest,"Fitbit, Email Digest",3.3k,https://ifttt.com/applets/kPXmqYxR-get-your-fitbit-sleep-logs-as-a-weekly-email-digest
 Get notified of stock price decreases,"Finance, Notifications",4.6k,https://ifttt.com/applets/yNjKhWTS-get-notified-of-stock-price-decreases
 "If I like a Tumblr post, copy the image into my Google Drive folder. With blog name & url in filenam","Tumblr (legacy), Google Drive",4.0k,https://ifttt.com/applets/YCKmp4A3-if-i-like-a-tumblr-post-copy-the-image-into-my-google-drive-folder-with-blog-name-url-in-filenam
@@ -40,9 +40,9 @@ Get a summary email of tasks you have completed this week,"Todoist, Email Digest
 Sync Evernote notebook to Google Drive,"Evernote, Google Docs",1.2k,https://ifttt.com/applets/A6TvmyJK-sync-evernote-notebook-to-google-drive
 Automatically tweet your new blog posts,"WordPress, Twitter",25.6k,https://ifttt.com/applets/wAh7wuTD-automatically-tweet-your-new-blog-posts
 Automatically create a new Google Calendar event when your business is tagged in a Facebook Photo,"Facebook, Google Calendar",8,https://ifttt.com/applets/FBTeUV6M-automatically-create-a-new-google-calendar-event-when-your-business-is-tagged-in-a-facebook-photo
-Webhooks to Twitter integration,"Webhooks, Twitter",,https://ifttt.com/applets/KeVCGpXU-webhooks-to-twitter-integration
+Webhooks to Twitter integration,"Webhooks, Twitter",0,https://ifttt.com/applets/KeVCGpXU-webhooks-to-twitter-integration
 Save all your contacts,"iOS Contacts, Google Docs",3.2k,https://ifttt.com/applets/MsSWGKN8-save-all-your-contacts
-Shopify: If a new product is added then post product to Twitter and Facebook,"RSS Feed, Twitter, Shopify",,https://ifttt.com/applets/nSTaUzV4-shopify-if-a-new-product-is-added-then-post-product-to-twitter-and-facebook
+Shopify: If a new product is added then post product to Twitter and Facebook,"RSS Feed, Twitter, Shopify",0,https://ifttt.com/applets/nSTaUzV4-shopify-if-a-new-product-is-added-then-post-product-to-twitter-and-facebook
 Mute your Android phone at bedtime,"Android Device, Date & Time",57.5k,https://ifttt.com/applets/KLJbpBxX-mute-your-android-phone-at-bedtime
 Log how much time you spend at specific locations like the office or home in a spreadsheet,"Google Sheets, Location",155.6k,https://ifttt.com/applets/XnveYFDL-log-how-much-time-you-spend-at-specific-locations-like-the-office-or-home-in-a-spreadsheet
 RSS to OneNote Page From Link,"OneNote, RSS Feed",11.6k,https://ifttt.com/applets/bktqp47r-rss-to-onenote-page-from-link
@@ -65,7 +65,7 @@ Park mower if weather forecast predicts frost or heavy rain,"Husqvarna Automower
 Image of the day from NASA → iOS Reading List,"Space, iOS Reading List",21.8k,https://ifttt.com/applets/ADTRpPSr-image-of-the-day-from-nasa-ios-reading-list
 Get an email when a particular stock drops below a certain price,"Finance, Email",1.4k,https://ifttt.com/applets/Nkysx56H-get-an-email-when-a-particular-stock-drops-below-a-certain-price
 Make a web request when I press a button,"Webhooks, Button widget",1,https://ifttt.com/applets/KWqQedih-make-a-web-request-when-i-press-a-button
-Create Google Calendar events for new Facebook Lead Ad leads,"Google Calendar, Facebook Lead Ads",N/A,https://ifttt.com/applets/xQ3Kn5wc-create-google-calendar-events-for-new-facebook-lead-ad-leads
+Create Google Calendar events for new Facebook Lead Ad leads,"Google Calendar, Facebook Lead Ads",0,https://ifttt.com/applets/xQ3Kn5wc-create-google-calendar-events-for-new-facebook-lead-ad-leads
 A daily email with new Recipes for you to try,"IFTTT, Email",39.3k,https://ifttt.com/applets/Ad75LtKR-a-daily-email-with-new-recipes-for-you-to-try
 How strong is your currency in another country? Log the exchange rate every day,"Finance, Google Sheets",4.4k,https://ifttt.com/applets/xyH5p6Ag-how-strong-is-your-currency-in-another-country-log-the-exchange-rate-every-day
 Tweet Happy New Year!,"Twitter, Date & Time",8.8k,https://ifttt.com/applets/ZGNBKf9Y-tweet-happy-new-year

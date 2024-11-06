@@ -9,7 +9,7 @@ configs = {
             {
                 "name": "Apps Involved",
                 "type": "text",
-                "description": "The apps involved in the playbook",
+                "description": "The apps involved in the playbook, separated by commas",
             },
             {
                 "name": "Description",
@@ -19,7 +19,7 @@ configs = {
             {
                 "name": "Time Saved",
                 "type": "text",
-                "description": "The time saved by using the playbook in format like '1 min'",
+                "description": "The time saved by using the playbook in short format. Instead of '3 minutes' or '3 mins', use '3 min'.",
             },
             {
                 "name": "URL",
@@ -67,17 +67,17 @@ configs = {
             {
                 "name": "Title/Description",
                 "type": "text",
-                "description": "Title or description of the ifttt applet",
+                "description": "Title or description of the ifttt applet. Skip any item that does not link to an applet. Remove 'by xxx' part as it is not needed.",
             },
             {
                 "name": "Apps Involved",
                 "type": "text",
-                "description": "Apps involved in the ifttt applet, usually shown as icons",
+                "description": "Apps involved in the ifttt applet, usually shown as icons and appear before the title/description",
             },
             {
                 "name": "User Count",
                 "type": "text",
-                "description": "Number of users using the ifttt applet",
+                "description": "Number of users using the ifttt applet. Fill in '0' if not available.",
             },
             {
                 "name": "URL",
