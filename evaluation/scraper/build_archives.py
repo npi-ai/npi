@@ -62,11 +62,30 @@ async def archive_ifttt():
         )
 
 
+async def archive_zapier():
+    async with Scraper(headless=False, batch_size=10) as scraper:
+        har_file = ARCHIVE_DIR / "zapier/record.har"
+        csv_file = ARCHIVE_DIR / "zapier.csv"
+
+        await scraper.playwright.page.route_from_har(
+            har=har_file,
+            url="*/**",
+            update=True,
+        )
+
+        await scraper.summarize(
+            ctx=DebugContext(),
+            output_file=csv_file,
+            **configs["zapier"],
+        )
+
+
 async def main():
     await asyncio.gather(
         archive_bardeen(),
         archive_retool(),
         archive_ifttt(),
+        archive_zapier(),
     )
 
 
