@@ -86,4 +86,34 @@ configs = {
             },
         ],
     },
+    "zapier": {
+        "url": "https://zapier.com/templates",
+        "scraping_type": "list-like",
+        # [All Templates] section
+        "ancestor_selector": ".PublicTemplateGrid_wrapper__F3U2T:nth-child(4) > .PublicTemplateGrid_templatesWrapper__8K3kH",
+        "items_selector": ".PublicTemplateGrid_wrapper__F3U2T:nth-child(4) > .PublicTemplateGrid_templatesWrapper__8K3kH > .TemplateCard_wrapper__GzoyG",
+        "limit": 100,
+        "output_columns": [
+            {
+                "name": "Template Name",
+                "type": "text",
+                "description": "The name of the template which indicates the main function or purpose of the item.",
+            },
+            {
+                "name": "Thumbnail",
+                "type": "image",
+                "description": "The URL of the thumbnail image that visually represents each template.",
+            },
+            {
+                "name": "Description",
+                "type": "text",
+                "description": "A brief description of what the template does or the main function it serves.",
+            },
+            {
+                "name": "URL",
+                "type": "link",
+                "description": "The URL linking to the detailed page or further information about the template.",
+            },
+        ],
+    },
 }
