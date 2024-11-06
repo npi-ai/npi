@@ -18,7 +18,7 @@ LinkedIn,"Search selected text on LinkedIn people search, when I right-click",3 
 "Coda, Scraper",Save jobs from the Monster.com search page to Coda,10 min,https://www.bardeen.ai/playbooks/save-jobs-from-the-monster-com-search-page-to-coda
 "Bardeen Enrichment, Google Sheets",Enrich email contacts and save to Google Sheets,10 min,https://www.bardeen.ai/playbooks/enrich-email-contacts-and-save-to-google-sheets
 "Google Mail, Scraper",Send email from ChatGPT response.,2 min,https://www.bardeen.ai/playbooks/send-email-from-chatgpt-response
-Bardeen,Website-Menu text on Ecosia Website-Menu: Ecosia Search for Selected text,3 mins,https://www.bardeen.ai/playbooks/website-menu-ecosia-search-for-selected-text
+Bardeen,Website-Menu: Ecosia Search for Selected text,3 mins,https://www.bardeen.ai/playbooks/website-menu-ecosia-search-for-selected-text
 "Airtable, Glassdoor",Save the currently opened Glassdoor Job post to Airtable,4 min,https://www.bardeen.ai/playbooks/save-the-currently-opened-glassdoor-job-post-to-airtable
 "Google Calendar, Google Docs",Create and open a new Google Doc for a given event and add the event details,2 min,https://www.bardeen.ai/playbooks/create-and-open-a-new-google-doc-for-a-given-event-and-add-the-event-details
 "Coda, LinkedIn",Copy LinkedIn profile data to Coda,5 min,https://www.bardeen.ai/playbooks/linkedin-coda
@@ -69,7 +69,7 @@ SMS,Send links to all opened browser tabs as an SMS,5 min,https://www.bardeen.ai
 "OpenAI, YouTube",Generate Youtube video title ideas from a Youtube channel,15 min,https://www.bardeen.ai/playbooks/generate-youtube-video-title-ideas-from-a-youtube-channel
 "Apollo.io, Github, Scraper, SmartSuite",Find and save a GitHub profile's contact info using Apollo.io into SmartSuite,10 min,https://www.bardeen.ai/playbooks/find-and-save-a-github-profile-s-contact-info-using-apollo-io-into-smartsuite
 "Notion, Upwork",Save Upwork profile to Notion,3 min,https://www.bardeen.ai/playbooks/upwork-profile-to-notion
-"Google Calendar, Google Mail",Send email reminder to all event participants,3 min,https://www.bardeen.ai/playbooks/send-reminder-email-for-event
+"Google Calendar, Google Mail",Send an email reminder to all participants of a given event,3 min,https://www.bardeen.ai/playbooks/send-reminder-email-for-event
 Redfin,Get a search result list from the currently opened Redfin search page,2 min,https://www.bardeen.ai/playbooks/get-a-search-result-list-from-the-currently-opened-redfin-search-page
 LinkedIn,Get LinkedIn comments from the currently opened post,2 min,https://www.bardeen.ai/playbooks/get-linkedin-comments-from-the-currently-opened-post
 "ClickUp, Google Sheets",Create a ClickUp task when a Google Sheets spreadsheet is modified,2 min,https://www.bardeen.ai/playbooks/create-a-clickup-task-when-a-google-sheets-spreadsheet-is-modified
@@ -113,7 +113,7 @@ Google Search,Open all links in text as new browser tabs,3 min,https://www.barde
 "ClickUp, HubSpot",Copy all HubSpot tickets to ClickUp,10 min,https://www.bardeen.ai/playbooks/copy-all-hubspot-tickets-to-clickup
 "Airtable, OpenAI, Twitter",Create a tweet with OpenAI and save it to Airtable,10 min,https://www.bardeen.ai/playbooks/create-a-tweet-with-openai-and-save-it-to-airtable
 "Google Sheets, LinkedIn","Copy a LinkedIn job post to Google Sheets, when I right-click",4 min,https://www.bardeen.ai/playbooks/save-linkedin-jobs-to-google-sheets
-Notion,Create recurring Notion tasks,2 min,https://www.bardeen.ai/playbooks/recurring-tasks-notion
+Notion,Create recurring Notion tasks,2 minutes per occurrence,https://www.bardeen.ai/playbooks/recurring-tasks-notion
 "Airtable, DeepL, LinkedIn",Get a LinkedIn post's translated summary and save it to Airtable,15 min,https://www.bardeen.ai/playbooks/get-a-linkedin-post-s-translated-summary-and-save-it-to-airtable
 "Github, Google Sheets",Copy GitHub repo stargazers to a Google Sheet,30 min,https://www.bardeen.ai/playbooks/copy-github-repo-stargazers-to-a-google-sheet
 "Coda, Scraper",Save Google Travel hotel search page results to Coda,10 min,https://www.bardeen.ai/playbooks/save-google-travel-hotel-search-page-results-to-coda
@@ -151,9 +151,9 @@ Google Calendar,Create a Google Doc for an event,1 min,https://www.bardeen.ai/pl
 "Dropbox, OpenAI",Extract and Summarize text in a PDF file in Dropbox using OpenAI,10 min,https://www.bardeen.ai/playbooks/extract-and-summarize-text-in-a-pdf-file-in-dropbox-using-openai
 "Airtable, Scraper",Save jobs from the Monster.com search page to Airtable,10 min,https://www.bardeen.ai/playbooks/save-jobs-from-the-monster-com-search-page-to-airtable
 "Airtable, Bardeen Enrichment, LinkedIn",Create sales outreach emails using LinkedIn profile links in Airtable,35 min,https://www.bardeen.ai/playbooks/create-sales-outreach-emails-using-linkedin-profile-links-in-airtable
-Indeed,Get Indeed jobs from search results,3 min,https://www.bardeen.ai/playbooks/get-indeed-jobs-page-results
+Indeed,Get Indeed Jobs page results,3 min,https://www.bardeen.ai/playbooks/get-indeed-jobs-page-results
 "Coda, Zillow",Qualify properties from Zillow and save to Coda,25 min,https://www.bardeen.ai/playbooks/qualify-properties-from-zillow-and-save-to-coda
-"Google Calendar, Notion",Copy Calendar events to Notion,10 min,https://www.bardeen.ai/playbooks/save-all-meetings-within-a-time-period-to-notion
+"Google Calendar, Notion",Copy Google Calendar meetings to Notion,10 min,https://www.bardeen.ai/playbooks/save-all-meetings-within-a-time-period-to-notion
 Eventbrite,Get event list from the currently opened Eventbrite search page,2 min,https://www.bardeen.ai/playbooks/get-event-list-from-the-currently-opened-eventbrite-search-page
 "Notion, OpenAI, Reddit",Get a summary of a Reddit post using openAI and save to Notion,20 min,https://www.bardeen.ai/playbooks/get-a-summary-of-a-reddit-post-using-openai-and-save-to-notion
 "ClickUp, Slack",Create a ClickUp task and share in Slack,3 min,https://www.bardeen.ai/playbooks/clickup-task-and-share-in-slack
@@ -195,7 +195,7 @@ Capterra,Get product data from the currently opened Capterra product page,2 min,
 Google Mail,Send a daily email,2 min,https://www.bardeen.ai/playbooks/send-a-daily-email
 Glassdoor,Get a job post's details from the currently opened Glassdoor job post page,2 min,https://www.bardeen.ai/playbooks/get-a-job-post-details-from-the-currently-opened-glassdoor-job-post-page
 "HubSpot, OpenAI",Generate a response to a HubSpot ticket using OpenAI.,7 min,https://www.bardeen.ai/playbooks/generate-a-response-to-a-hubspot-ticket-using-openai
-"Google Sheets, LinkedIn",Get Linkedin post data by given URL and save to Google Sheet,1 min,https://www.bardeen.ai/playbooks/get-linkedin-post-data-by-given-url-and-save-to-google-sheet
+"Google Sheets, LinkedIn",Get LinkedIn post data by given URL and save to Google Sheet,1 min,https://www.bardeen.ai/playbooks/get-linkedin-post-data-by-given-url-and-save-to-google-sheet
 "Google Mail, Slack",Classify and send important emails in Slack,5 min,https://www.bardeen.ai/playbooks/classify-and-send-important-emails-in-slack
 "Airtable, HubSpot","Add new row to Airtable, when HubSpot deal is created",2 min,https://www.bardeen.ai/playbooks/add-new-row-to-airtable-when-hubspot-deal-is-created
 "LinkedIn, Notion","Copy a LinkedIn job post to Notion, when I right-click",4 min,https://www.bardeen.ai/playbooks/right-click-save-linkedin-job-to-notion
