@@ -55,7 +55,7 @@ The columns are defined in a json object with the following fields:
 
 ## Instructions
 
-1. Extract data from the webpage based on the given column prompts.
+1. Extract data from the webpage based on the given column prompts. Try keep the data as is, without any additional processing if not specified.
 2. Organize this data into a CSV format table with the following format:
    - The first line contains the column names.
    - The subsequent lines should contain the scraped data.
@@ -86,7 +86,7 @@ The columns are defined in a json object with the following fields:
 
 ## Instructions
 
-1. Extract data from the webpage based on the given column prompts.
+1. Extract data from the webpage based on the given column prompts. Try keep the data as is, without any additional processing if not specified.
 2. Organize this data into a CSV format table with one row, with the following format:
    - The first line contains the column names.
    - The second line contains the corresponding extracted data.
