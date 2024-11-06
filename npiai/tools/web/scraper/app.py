@@ -499,6 +499,20 @@ class Scraper(BrowserTool):
         items_selector: str | None,
         pagination_button_selector: str | None = None,
     ):
+        unvisited_items_selector = (items_selector or "*") + ":not([data-npi-visited])"
+
+        # check if there are unvisited items
+        has_unvisited_items = await self.playwright.page.evaluate(
+            f"selector => !!document.querySelector(selector)",
+            unvisited_items_selector,
+        )
+
+        if has_unvisited_items:
+            await ctx.send_debug_message(
+                f"[{self.name}] Found unvisited items, skipping loading more items"
+            )
+            return
+
         # attach mutation observer to the ancestor element
         await self.playwright.page.evaluate(
             """
@@ -551,7 +565,7 @@ class Scraper(BrowserTool):
             await ctx.send_debug_message(f"[{self.name}] Scrolled to load more items")
             await self.playwright.page.wait_for_timeout(3000)
             more_content_loaded = await self.playwright.page.evaluate(
-                "() => !!window.addedNodes?.length"
+                "() => !!window.addedNodes?.length",
             )
 
         if not more_content_loaded and pagination_button_selector:
