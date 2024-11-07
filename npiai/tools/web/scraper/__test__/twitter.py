@@ -5,12 +5,12 @@ from npiai import Context
 from npiai.tools.web.page_analyzer import PageAnalyzer
 from npiai.tools.web.scraper import Scraper
 from npiai.tools.web.twitter import Twitter
-from utils import autos_scrape
+from utils import auto_scrape
 
 
 async def main():
     async with Twitter(headless=False) as twitter:
-        await autos_scrape(
+        await auto_scrape(
             ctx=Context(),
             analyzer=PageAnalyzer(playwright=twitter.playwright),
             scraper=Scraper(batch_size=10, playwright=twitter.playwright),
