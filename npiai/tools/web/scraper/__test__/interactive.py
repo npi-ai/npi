@@ -4,7 +4,7 @@ import asyncio
 from npiai import Context
 from npiai.tools.web.page_analyzer import PageAnalyzer
 from npiai.tools.web.scraper import Scraper
-from utils import autos_scrape
+from utils import auto_scrape
 
 
 async def main():
@@ -13,7 +13,7 @@ async def main():
     async with PageAnalyzer(headless=False) as analyzer:
         scraper = Scraper(batch_size=10, playwright=analyzer.playwright)
 
-        await autos_scrape(
+        await auto_scrape(
             ctx=Context(),
             analyzer=analyzer,
             scraper=scraper,

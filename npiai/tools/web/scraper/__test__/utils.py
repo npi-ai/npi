@@ -8,7 +8,7 @@ from npiai.tools.web.page_analyzer import PageAnalyzer
 from npiai import Context
 
 
-async def autos_scrape(
+async def auto_scrape(
     ctx: Context,
     analyzer: PageAnalyzer,
     scraper: Scraper,
