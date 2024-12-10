@@ -47,8 +47,8 @@ class Task:
 
 class Context:
     id: str
-    vector_db: VectorDBMemory
-    kv: KVMemory
+    _vector_db: VectorDBMemory | None
+    _kv: KVMemory | None
 
     _q: asyncio.Queue[RuntimeMessage]
     _is_finished: bool
@@ -79,12 +79,25 @@ class Context:
 
         return self._llm
 
+    # lazy init context memory
+    @property
+    def vector_db(self) -> VectorDBMemory:
+        if self._vector_db is None:
+            self._vector_db = VectorDBMemory(context=self)
+
+        return self._vector_db
+
+    @property
+    def kv(self) -> KVMemory:
+        if self._kv is None:
+            self._kv = KVMemory(context=self)
+
+        return self._kv
+
     def __init__(
         self,
     ) -> None:
         self.id = str(uuid.uuid4())
-        self.vector_db = VectorDBMemory(context=self)
-        self.kv = KVMemory(context=self)
 
         self._q = asyncio.Queue()
         self._is_finished = False
