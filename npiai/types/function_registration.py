@@ -38,7 +38,7 @@ class FunctionRegistration:
             ),
         }
 
-    def get_tool_param(self) -> ChatCompletionToolParam:
+    def get_tool_param(self, strict: bool = True) -> ChatCompletionToolParam:
         tool: ChatCompletionToolParam = {
             "type": "function",
             "function": {
@@ -47,7 +47,7 @@ class FunctionRegistration:
             },
         }
 
-        if self.schema is not None:
+        if self.schema is not None and strict:
             tool["function"]["strict"] = True
             tool["function"]["parameters"] = self.schema
 
