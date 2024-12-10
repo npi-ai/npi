@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import openai
 
 
-def sanitize_schema(model: Type[BaseModel]) -> Dict[str, Any]:
+def sanitize_schema(model: Type[BaseModel], strict: bool = True) -> Dict[str, Any]:
     schema = openai.pydantic_function_tool(model)
 
     # remove unnecessary title
@@ -14,8 +14,11 @@ def sanitize_schema(model: Type[BaseModel]) -> Dict[str, Any]:
 
     for prop in properties.values():
         prop.pop("title", None)
-        # remove default values since it's not supported in structured output
-        prop.pop("default", None)
+
+    if strict:
+        for prop in properties.values():
+            # remove default values since it's not supported in structured output
+            prop.pop("default", None)
 
     # remove empty properties
     if len(properties) == 0:
