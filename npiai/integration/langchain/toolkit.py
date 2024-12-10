@@ -8,12 +8,15 @@ from npiai.core import BaseTool as NPiBaseTool
 from npiai.context import Context
 
 
-def unwrap_context(func: Callable, ctx_param_name: str | None) -> Callable:
+def bind_context(
+    func: Callable,
+    ctx_param_name: str | None,
+    ctx: Context,
+) -> Callable:
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         if ctx_param_name:
-            # create an empty context for tools
-            kwargs[ctx_param_name] = Context()
+            kwargs[ctx_param_name] = ctx
         return await func(*args, **kwargs)
 
     return wrapper
@@ -22,13 +25,13 @@ def unwrap_context(func: Callable, ctx_param_name: str | None) -> Callable:
 class NPiLangChainToolkit(BaseToolkit):
     _tools: List[StructuredTool] = PrivateAttr()
 
-    def __init__(self, npi_tool: NPiBaseTool):
+    def __init__(self, ctx: Context, npi_tool: NPiBaseTool):
         BaseToolkit.__init__(self)
         self._tools = []
 
         for fn_reg in npi_tool.unpack_functions():
-            # remove ctx param
-            fn = unwrap_context(fn_reg.fn, fn_reg.ctx_param_name)
+            # bind ctx param
+            fn = bind_context(fn_reg.fn, fn_reg.ctx_param_name, ctx)
             # recreate pydantic-v1 compatible model
             params = {}
 
