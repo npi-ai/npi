@@ -98,7 +98,8 @@ class Context:
         self,
     ) -> None:
         self.id = str(uuid.uuid4())
-
+        self._vector_db = None
+        self._kv = None
         self._q = asyncio.Queue()
         self._is_finished = False
         self._result = ""
