@@ -7,7 +7,7 @@ import discord
 
 from npiai import FunctionTool, function, FromVectorDB
 from npiai.context import Context
-from npiai.utils import logger, is_cloud_env
+from npiai.utils import is_cloud_env
 from npiai.error.auth import UnauthorizedError
 from npiai.constant import app
 
@@ -126,6 +126,7 @@ class Discord(FunctionTool):
     @function
     async def fetch_history(
         self,
+        ctx: Context,
         channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
         max_results: int = 1,
     ):
@@ -133,6 +134,7 @@ class Discord(FunctionTool):
         Fetch history messages from the discord channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to send the message to.
             max_results: The maximum number of messages to fetch.
         """
@@ -142,7 +144,7 @@ class Discord(FunctionTool):
         async for msg in channel.history(limit=max_results):
             messages.append(self.parse_message(msg))
 
-        logger.debug(
+        await ctx.send_debug_message(
             f"[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}"
         )
 
@@ -151,6 +153,7 @@ class Discord(FunctionTool):
     @function
     async def send_message(
         self,
+        ctx: Context,
         channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
         content: str,
     ):
@@ -158,19 +161,23 @@ class Discord(FunctionTool):
         Send a message to the discord channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to send the message to.
             content: The message to send.
         """
         channel = await self._client.fetch_channel(channel_id)
         msg = await channel.send(content)
 
-        logger.debug(f"[{self.name}]: Sent message: (id: {msg.id}) {msg.content}")
+        await ctx.send_error_message(
+            f"[{self.name}]: Sent message: (id: {msg.id}) {msg.content}"
+        )
 
         return f"Message sent. ID: {msg.id}"
 
     @function
     async def reply(
         self,
+        ctx: Context,
         channel_id: Annotated[int, FromVectorDB(query="id of channel {channel}")],
         message_id: Annotated[int, FromVectorDB(query="id of message {message}")],
         content: str,
@@ -179,6 +186,7 @@ class Discord(FunctionTool):
         Reply to a message in the discord channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to send the message to.
             message_id: The ID of the message to reply.
             content: The message to reply.
@@ -187,7 +195,7 @@ class Discord(FunctionTool):
         msg = await channel.fetch_message(message_id)
         reply = await msg.reply(content)
 
-        logger.debug(
+        await ctx.send_debug_message(
             f"[{self.name}]: Created reply for message ID {msg.id}. Reply: (id: {reply.id}) {reply.content}"
         )
 

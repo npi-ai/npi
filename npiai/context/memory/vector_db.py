@@ -5,7 +5,7 @@ from typing import Dict, TYPE_CHECKING, TypeVar, Type, Any
 from mem0 import Memory
 from pydantic import create_model, Field
 
-from npiai.utils import sanitize_schema, logger
+from npiai.utils import sanitize_schema
 from .base import BaseMemory
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class VectorDBMemory(BaseMemory):
         )
         # clear cache
         self._query_cache = {}
-        logger.debug(f"Saved memory: {m}")
+        await self._ctx.send_debug_message(f"Saved memory: {m}")
 
     async def retrieve(
         self,
@@ -109,10 +109,12 @@ class VectorDBMemory(BaseMemory):
             return await self.retrieve(query, return_type, constraints, _is_retry=True)
 
         memories = self._memory.search(query, run_id=self._ctx.id, limit=10)
-        logger.debug(f"Retrieved memories: {json.dumps(memories)}")
+        await self._ctx.send_debug_message(
+            f"Retrieved memories: {json.dumps(memories)}"
+        )
 
         if len(memories) == 0:
-            logger.info(f"No memories found for query: {query}")
+            await self._ctx.send_debug_message(f"No memories found for query: {query}")
             return await retry()
 
         mem_str = "- " + "\n- ".join(
@@ -180,17 +182,17 @@ class VectorDBMemory(BaseMemory):
         tool_calls = response["tool_calls"]
 
         if not tool_calls or tool_calls[0]["name"] != "callback":
-            logger.info(
+            await self._ctx.send_debug_message(
                 f"No LLM callback found for query: {query}. Response: {json.dumps(response)}"
             )
             return await retry()
 
-        logger.debug(f"LLM callback: {json.dumps(tool_calls)}")
+        await self._ctx.send_debug_message(f"LLM callback: {json.dumps(tool_calls)}")
 
         data = tool_calls[0]["arguments"].get("data", None)
 
         if data is None:
-            logger.info(f"No data found for query: {query}")
+            await self._ctx.send_debug_message(f"No data found for query: {query}")
             return await retry()
 
         self._query_cache[query] = data

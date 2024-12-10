@@ -1,9 +1,9 @@
 import base64
 
-from playwright.async_api import ElementHandle, Error, TimeoutError
+from playwright.async_api import ElementHandle, TimeoutError
 
 from npiai.core.browser import PlaywrightContext
-from npiai.utils import logger, html_to_markdown
+from npiai.utils import html_to_markdown
 
 from ._function import FunctionTool, function
 
@@ -74,15 +74,12 @@ class BrowserTool(FunctionTool):
         ):
             return None
 
-        try:
-            screenshot = await self.playwright.page.screenshot(
-                caret="initial",
-                full_page=full_page,
-            )
-            return "data:image/png;base64," + base64.b64encode(screenshot).decode()
-        except Error as e:
-            logger.error(e)
-            return None
+        screenshot = await self.playwright.page.screenshot(
+            caret="initial",
+            full_page=full_page,
+        )
+
+        return "data:image/png;base64," + base64.b64encode(screenshot).decode()
 
     async def get_page_url(self):
         """Get the URL of the current page"""

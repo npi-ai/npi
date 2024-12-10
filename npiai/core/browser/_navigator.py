@@ -9,7 +9,6 @@ from playwright.async_api import Error
 
 from typing_extensions import NotRequired, TypedDict
 
-from npiai.utils import logger
 from npiai.context import Context, Task
 from npiai.core.browser import PlaywrightContext
 from npiai.core.tool._browser import BrowserTool
@@ -247,7 +246,7 @@ class NavigatorAgent(BrowserAgentTool):
                 break
 
             result, elem_json = await self._run_action(response["action"], ctx)
-            logger.info(result)
+            await ctx.send_debug_message(result)
 
             if not result:
                 # requires further intervention if the action is not executable
@@ -276,7 +275,7 @@ class NavigatorAgent(BrowserAgentTool):
         if not response_message.content:
             raise Exception(f"{self.name}: No response message")
 
-        logger.debug(response_message.content + "\n")
+        await ctx.send_debug_message(response_message.content + "\n")
 
         return response_message.content
 
@@ -305,7 +304,7 @@ class NavigatorAgent(BrowserAgentTool):
 
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
-        logger.info(call_msg)
+        await ctx.send_debug_message(call_msg)
         await ctx.send_debug_message(call_msg)
 
         match action["type"]:

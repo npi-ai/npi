@@ -7,7 +7,7 @@ from slack_sdk.web.async_client import AsyncWebClient, AsyncSlackResponse
 
 from npiai import FunctionTool, function, FromVectorDB
 from npiai.context import Context
-from npiai.utils import logger, is_cloud_env
+from npiai.utils import is_cloud_env
 from npiai.error.auth import UnauthorizedError
 from npiai.constant import app
 
@@ -130,6 +130,7 @@ class Slack(FunctionTool):
     @function
     async def send_message(
         self,
+        ctx: Context,
         channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
         message: Annotated[str, FromVectorDB(query="id of message {message}")],
     ):
@@ -137,6 +138,7 @@ class Slack(FunctionTool):
         Send a message to the Slack channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to send the message to.
             message: The message to send.
         """
@@ -147,13 +149,16 @@ class Slack(FunctionTool):
 
         msg = res["message"]
 
-        logger.debug(f'[{self.name}]: Sent message: (id: {msg["ts"]}) {msg["text"]}')
+        await ctx.send_debug_message(
+            f'[{self.name}]: Sent message: (id: {msg["ts"]}) {msg["text"]}'
+        )
 
         return f'Message sent. Thread ID: {msg["ts"]}'
 
     @function
     async def fetch_history(
         self,
+        ctx: Context,
         channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
         max_messages: int = 1,
     ):
@@ -161,6 +166,7 @@ class Slack(FunctionTool):
         Fetch history messages from the Slack channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to fetch the history from.
             max_messages: The maximum number of messages to fetch.
         """
@@ -169,7 +175,7 @@ class Slack(FunctionTool):
         )
         messages = self._get_messages_from_response(res)
 
-        logger.debug(
+        await ctx.send_debug_message(
             f"[{self.name}]: Fetched {len(messages)} messages: {json.dumps(messages, indent=2, ensure_ascii=False)}"
         )
 
@@ -178,6 +184,7 @@ class Slack(FunctionTool):
     @function
     async def reply(
         self,
+        ctx: Context,
         channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
         thread_id: Annotated[str, FromVectorDB(query="id of thread {thread}")],
         message: str,
@@ -186,6 +193,7 @@ class Slack(FunctionTool):
         Reply to a context in the Slack channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to reply to.
             thread_id: The ID of the context to reply to.
             message: The message to reply.
@@ -198,7 +206,7 @@ class Slack(FunctionTool):
 
         msg = res["message"]
 
-        logger.debug(
+        await ctx.send_debug_message(
             f'[{self.name}]: Created reply for context ID {thread_id}. Reply: (id: {msg["ts"]}) {msg["text"]}'
         )
 
@@ -207,6 +215,7 @@ class Slack(FunctionTool):
     @function
     async def wait_for_reply(
         self,
+        ctx: Context,
         channel_id: Annotated[str, FromVectorDB(query="id of channel {channel}")],
         thread_id: Annotated[str, FromVectorDB(query="id of thread {thread}")],
     ):
@@ -214,6 +223,7 @@ class Slack(FunctionTool):
         Wait for a reply to the given context in the Slack channel with the given channel ID.
 
         Args:
+            ctx: NPi context.
             channel_id: The ID of the channel to wait for.
             thread_id: The ID of the context to wait for.
         """
@@ -229,7 +239,7 @@ class Slack(FunctionTool):
             if len(thread_res["messages"]) > 1:
                 messages = self._get_messages_from_response(thread_res)[1:]
 
-                logger.debug(
+                await ctx.send_debug_message(
                     f"[{self.name}]: Found {len(messages)} context replies: {json.dumps(messages, indent=2, ensure_ascii=False)}"
                 )
 
@@ -250,7 +260,7 @@ class Slack(FunctionTool):
                 ):
                     messages = [self._parse_raw_message(msg)]
 
-                    logger.debug(
+                    await ctx.send_debug_message(
                         f"[{self.name}]: Received a new message: {json.dumps(messages, indent=2, ensure_ascii=False)}"
                     )
 
