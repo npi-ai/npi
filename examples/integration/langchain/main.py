@@ -4,13 +4,15 @@ from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI
 
+from npiai.context import Context
 from npiai.tools.web import Chromium
 from npiai.integration import langchain
 
 
 async def main():
     async with Chromium(headless=False) as chromium:
-        toolkit = langchain.create_tool(chromium)
+        ctx = Context()
+        toolkit = langchain.create_tool(ctx, chromium)
         tools = toolkit.get_tools()
         print(tools)
 
