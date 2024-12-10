@@ -1,6 +1,5 @@
 from typing import Dict
 
-from npiai.utils import logger
 from .base import BaseMemory
 
 
@@ -59,7 +58,7 @@ class KVMemory(BaseMemory):
         value = self._storage.get(key, None)
 
         if not value and ask_human:
-            logger.info(f"No property found for key: {key}")
+            await self._ctx.send_debug_message(f"No property found for key: {key}")
             return await retry()
 
         return value

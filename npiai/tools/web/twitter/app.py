@@ -12,7 +12,7 @@ from slugify import slugify
 from npiai import function, BrowserTool
 from npiai.context import Context
 from npiai.core.browser import NavigatorAgent
-from npiai.utils import logger, is_cloud_env
+from npiai.utils import is_cloud_env
 from npiai.error.auth import UnauthorizedError
 from npiai.constant import app
 
@@ -160,11 +160,13 @@ class Twitter(BrowserTool):
             try:
                 # validate cookies
                 await self.playwright.page.wait_for_url(__ROUTES__["home"])
-                logger.debug("Twitter cookies restored.")
+                await ctx.send_debug_message("Twitter cookies restored.")
                 return
             except TimeoutError:
                 # cookies expired, continue login process
-                logger.debug("Twitter cookies expired. Continue login process.")
+                await ctx.send_debug_message(
+                    "Twitter cookies expired. Continue login process."
+                )
 
         await self.playwright.page.goto(__ROUTES__["login"])
         await self.playwright.page.get_by_test_id("loginButton").click()
@@ -302,12 +304,13 @@ class Twitter(BrowserTool):
         return json.dumps(result, ensure_ascii=False)
 
     @function
-    async def get_tweets(self, max_results: int = -1) -> str:
+    async def get_tweets(self, ctx: Context, max_results: int = -1) -> str:
         """
         Retrieve tweets on the current page.
         You should ensure you are on the correct page (home, user profile, etc.) before calling this tool.
 
         Args:
+            ctx: NPi context.
             max_results: Maximum number of tweets to return. Pass -1 for no limit.
         """
         try:
@@ -317,7 +320,7 @@ class Twitter(BrowserTool):
             )
             await tweets.first.wait_for(state="attached", timeout=180_000)
 
-            logger.debug(f"{await tweets.count()} tweets found.")
+            await ctx.send_debug_message(f"{await tweets.count()} tweets found.")
         except TimeoutError:
             return "No tweets found."
 
@@ -327,7 +330,9 @@ class Twitter(BrowserTool):
             try:
                 # skip ads
                 if await tweet.get_by_text("Ad", exact=True).count() > 0:
-                    logger.debug(f"Skipping ad: {await tweet.text_content()}")
+                    await ctx.send_debug_message(
+                        f"Skipping ad: {await tweet.text_content()}"
+                    )
                     continue
                 # skip spaces
                 if (
@@ -336,7 +341,9 @@ class Twitter(BrowserTool):
                     ).count()
                     > 0
                 ):
-                    logger.debug(f"Skipping space: {await tweet.text_content()}")
+                    await ctx.send_debug_message(
+                        f"Skipping space: {await tweet.text_content()}"
+                    )
                     continue
                 # author = await tweet.get_by_test_id('User-Name').first.text_content()
                 # content = author + ': ' + await tweet.get_by_test_id('tweetText').first.text_content()
@@ -375,7 +382,7 @@ class Twitter(BrowserTool):
                     }
                 )
             except TimeoutError as e:
-                logger.error(e)
+                await ctx.send_error_message(str(e))
             finally:
                 if -1 < max_results <= len(results):
                     break
@@ -385,7 +392,7 @@ class Twitter(BrowserTool):
             'elems => elems.forEach(el => el.setAttribute("data-visited", "true"))'
         )
 
-        logger.debug(
+        await ctx.send_debug_message(
             f"{len(results)} tweets retrieved: {json.dumps(results, indent=2, ensure_ascii=False)}"
         )
 

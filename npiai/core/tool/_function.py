@@ -16,10 +16,7 @@ from openai.types.chat import ChatCompletionToolParam
 from npiai.context import Context
 from npiai.core.base import BaseTool, BaseFunctionTool
 from npiai.types import FunctionRegistration, ToolFunction, Shot, ToolMeta
-from npiai.utils import (
-    logger,
-    parse_npi_function,
-)
+from npiai.utils import parse_npi_function
 
 __NPI_TOOL_ATTR__ = "__NPI_TOOL_ATTR__"
 
@@ -154,11 +151,12 @@ class FunctionTool(BaseFunctionTool, ABC):
             try:
                 res = await self.exec(session, fn_name, args)
             except Exception as e:
-                logger.error(e)
                 res = f"Exception while executing {fn_name}: {e}"
                 await session.send_error_message(res)
 
-            logger.debug(f"[{self.name}]: function `{fn_name}` returned: {res}")
+            await session.send_debug_message(
+                f"[{self.name}]: function `{fn_name}` returned: {res}"
+            )
 
             results.append(
                 ChatCompletionToolMessageParam(
