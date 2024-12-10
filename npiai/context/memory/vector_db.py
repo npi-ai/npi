@@ -21,7 +21,17 @@ class VectorDBMemory(BaseMemory):
     def __init__(self, context: "Context"):
         super().__init__(context)
         # TODO: init memory from config file
-        self._memory = Memory()
+        self._memory = Memory.from_config(
+            {
+                "llm": {
+                    "provider": "litellm",
+                    "config": {
+                        "model": context.llm.model,
+                        "api_key": context.llm.api_key,
+                    },
+                }
+            }
+        )
         self._query_cache = {}
 
     async def _ask_human(self, query: str):
