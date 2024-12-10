@@ -9,7 +9,6 @@ from openai.types.chat import ChatCompletionToolParam
 from npiai.context import Context
 from npiai.types import FunctionRegistration
 from npiai.constant import CTX_QUERY_POSTFIX
-from npiai.utils import logger
 
 
 class BaseTool(ABC):
@@ -108,7 +107,6 @@ class BaseTool(ABC):
         )
         call_msg += f"({arg_list})"
 
-        logger.info(call_msg)
         await ctx.send_debug_message(call_msg)
 
         res = await fn.fn(**non_optional_args)
