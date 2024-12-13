@@ -2,8 +2,9 @@ import csv
 import json
 import re
 import os
+import asyncio
 from pathlib import Path
-from typing import List, Dict, AsyncGenerator, Literal
+from typing import List, Dict, AsyncGenerator, Literal, Any
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 from playwright.async_api import TimeoutError
@@ -34,6 +35,11 @@ class Column(TypedDict):
     prompt: Annotated[
         str | None, "A step-by-step prompt on how to extract the column data"
     ]
+
+
+class SummaryChunk(TypedDict):
+    batch_id: int
+    items: List[Dict[str, str]]
 
 
 class Scraper(BrowserTool):
@@ -78,7 +84,8 @@ class Scraper(BrowserTool):
         items_selector: str | None = None,
         pagination_button_selector: str | None = None,
         limit: int = -1,
-    ) -> AsyncGenerator[List[Dict[str, str]], None]:
+        concurrency: int = 1,
+    ) -> AsyncGenerator[SummaryChunk, None]:
         """
         Summarize the content of a webpage into a csv table represented as a stream of item objects.
 
@@ -91,6 +98,7 @@ class Scraper(BrowserTool):
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
+            concurrency: The number of concurrent tasks to run. Default is 1.
 
         Returns:
             A stream of items. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
@@ -106,21 +114,44 @@ class Scraper(BrowserTool):
         if not ancestor_selector:
             ancestor_selector = "body"
 
+        # total items summarized
         count = 0
+        # remaining items to summarize, excluding the items being summarized
+        remaining = limit
+        # number of running tasks
+        running_task_count = 0
+        # batch index
+        batch_index = 0
 
-        while True:
-            remaining = min(self._batch_size, limit - count) if limit != -1 else -1
+        results_queue: asyncio.Queue[SummaryChunk] = asyncio.Queue()
+
+        async def run_batch():
+            nonlocal count, remaining, running_task_count, batch_index
+
+            if limit != -1 and remaining <= 0:
+                return
+
+            current_index = batch_index
+            batch_index += 1
+            running_task_count += 1
+
+            # calculate the number of items to summarize in the current batch
+            requested_count = min(self._batch_size, remaining) if limit != -1 else -1
+            # reduce the remaining count by the number of items in the current batch
+            # so that the other tasks will not exceed the limit
+            remaining -= requested_count
 
             md = await self._get_md(
                 ctx=ctx,
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
-                limit=remaining,
+                limit=requested_count,
             )
 
             if not md:
                 await ctx.send_debug_message(f"[{self.name}] No more items found")
-                break
+                running_task_count -= 1
+                return
 
             items = await self._llm_summarize(
                 ctx=ctx,
@@ -131,27 +162,55 @@ class Scraper(BrowserTool):
 
             await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
 
-            if items:
-                items_slice = items[:remaining] if limit != -1 else items
-                count += len(items_slice)
+            if not items:
+                await ctx.send_debug_message(f"[{self.name}] No items summarized")
+                running_task_count -= 1
+                return
 
-                yield items_slice
+            items_slice = items[:requested_count] if limit != -1 else items
+            summarized_count = len(items_slice)
+            count += summarized_count
+            # correct the remaining count in case summary returned fewer items than requested
+            if summarized_count < requested_count:
+                remaining += requested_count - summarized_count
 
-                await ctx.send_debug_message(
-                    f"[{self.name}] Summarized {count} items in total"
+            await results_queue.put(
+                {
+                    "batch_id": current_index,
+                    "items": items_slice,
+                }
+            )
+
+            await ctx.send_debug_message(
+                f"[{self.name}] Summarized {count} items in total"
+            )
+
+            running_task_count -= 1
+
+            if limit == -1 or remaining > 0:
+                await self._load_more(
+                    ctx,
+                    ancestor_selector,
+                    items_selector,
+                    pagination_button_selector,
                 )
 
-                if limit != -1 and count >= limit:
-                    break
-            else:
-                await ctx.send_debug_message(f"[{self.name}] No items summarized")
+                await run_batch()
 
-            await self._load_more(
-                ctx,
-                ancestor_selector,
-                items_selector,
-                pagination_button_selector,
-            )
+        # schedule tasks
+        tasks = [asyncio.create_task(run_batch()) for _ in range(concurrency)]
+
+        # wait for the first task to start
+        while running_task_count == 0:
+            await asyncio.sleep(0.1)
+
+        # collect results
+        while running_task_count > 0:
+            chunk = await results_queue.get()
+            yield chunk
+
+        # wait for all tasks to finish
+        await asyncio.gather(*tasks)
 
     @function
     async def summarize(
@@ -165,6 +224,7 @@ class Scraper(BrowserTool):
         pagination_button_selector: str | None = None,
         output_file: Path | str | None = None,
         limit: int = -1,
+        concurrency: int = 1,
     ) -> str:
         """
         Summarize the content of a webpage into a csv table.
@@ -179,10 +239,11 @@ class Scraper(BrowserTool):
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
             output_file: The file path to save the output. If None, the output is saved to 'scraper_output.json'.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
+            concurrency: The number of concurrent tasks to run. Default is 1.
         """
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-        with open(output_file, "w", newline="") as f:
+        with open(output_file, "w", newline="") as f:  # type: Any
             column_names = [column["name"] for column in output_columns]
             writer = csv.DictWriter(f, fieldnames=column_names)
             writer.writeheader()
@@ -199,11 +260,12 @@ class Scraper(BrowserTool):
                 items_selector=items_selector,
                 pagination_button_selector=pagination_button_selector,
                 limit=limit,
+                concurrency=concurrency,
             )
 
-            async for items in stream:
-                writer.writerows(items)
-                count += len(items)
+            async for chunk in stream:
+                writer.writerows(chunk["items"])
+                count += len(chunk["items"])
                 f.flush()
 
         return f"Saved {count} items to {output_file}"
