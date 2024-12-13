@@ -4,6 +4,8 @@ import json
 from npiai.tools.web.scraper import Scraper
 from npiai.utils.test_utils import DebugContext
 
+# from npiai.context import Context
+
 
 async def main():
     async with Scraper(headless=False, batch_size=10) as scraper:
@@ -14,6 +16,7 @@ async def main():
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item-link",
             limit=42,
+            concurrency=10,
             output_columns=[
                 {
                     "name": "Apps Involved",
@@ -34,8 +37,8 @@ async def main():
             ],
         )
 
-        async for items in stream:
-            print("Chunk:", json.dumps(items, indent=2))
+        async for chunk in stream:
+            print("Chunk:", json.dumps(chunk, indent=2))
 
 
 if __name__ == "__main__":
