@@ -118,22 +118,19 @@ class Scraper(BrowserTool):
         count = 0
         # remaining items to summarize, excluding the items being summarized
         remaining = limit
-        # number of running tasks
-        running_task_count = 0
         # batch index
         batch_index = 0
 
         results_queue: asyncio.Queue[SummaryChunk] = asyncio.Queue()
 
         async def run_batch():
-            nonlocal count, remaining, running_task_count, batch_index
+            nonlocal count, remaining, batch_index
 
             if limit != -1 and remaining <= 0:
                 return
 
             current_index = batch_index
             batch_index += 1
-            running_task_count += 1
 
             # calculate the number of items to summarize in the current batch
             requested_count = min(self._batch_size, remaining) if limit != -1 else -1
@@ -150,7 +147,6 @@ class Scraper(BrowserTool):
 
             if not md:
                 await ctx.send_debug_message(f"[{self.name}] No more items found")
-                running_task_count -= 1
                 return
 
             items = await self._llm_summarize(
@@ -164,7 +160,6 @@ class Scraper(BrowserTool):
 
             if not items:
                 await ctx.send_debug_message(f"[{self.name}] No items summarized")
-                running_task_count -= 1
                 return
 
             items_slice = items[:requested_count] if limit != -1 else items
@@ -185,8 +180,6 @@ class Scraper(BrowserTool):
                 f"[{self.name}] Summarized {count} items in total"
             )
 
-            running_task_count -= 1
-
             if limit == -1 or remaining > 0:
                 await self._load_more(
                     ctx,
@@ -197,20 +190,34 @@ class Scraper(BrowserTool):
 
                 await run_batch()
 
+        # number of running tasks
+        running_task_count = 0
+
+        async def task_runner():
+            nonlocal running_task_count
+            running_task_count += 1
+            await run_batch()
+            running_task_count -= 1
+
         # schedule tasks
-        tasks = [asyncio.create_task(run_batch()) for _ in range(concurrency)]
+        tasks = [asyncio.create_task(task_runner()) for _ in range(concurrency)]
 
         # wait for the first task to start
         while running_task_count == 0:
             await asyncio.sleep(0.1)
 
         # collect results
-        while running_task_count > 0:
+        while running_task_count > 0 or not results_queue.empty():
             chunk = await results_queue.get()
             yield chunk
 
         # wait for all tasks to finish
         await asyncio.gather(*tasks)
+
+        # consume the remaining items if any
+        while not results_queue.empty():
+            chunk = await results_queue.get()
+            yield chunk
 
     @function
     async def summarize(
