@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 
 from npiai.tools.web.scraper import Scraper
 from npiai.utils.test_utils import DebugContext
@@ -8,7 +9,7 @@ from npiai.utils.test_utils import DebugContext
 
 
 async def main():
-    async with Scraper(headless=False, batch_size=10) as scraper:
+    async with Scraper(headless=False, batch_size=5) as scraper:
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
             url="https://www.bardeen.ai/playbooks",
@@ -37,8 +38,15 @@ async def main():
             ],
         )
 
+        start = time.monotonic()
+        count = 0
+
         async for chunk in stream:
+            count += len(chunk["items"])
             print("Chunk:", json.dumps(chunk, indent=2))
+
+        end = time.monotonic()
+        print(f"Summarized {count} items in {end - start:.2f} seconds")
 
 
 if __name__ == "__main__":
