@@ -1,5 +1,6 @@
 import json
 from textwrap import indent
+import time
 
 from npiai.tools.web.scraper import Scraper
 from npiai.tools.web.page_analyzer import PageAnalyzer
@@ -73,8 +74,16 @@ async def auto_scrape(
         items_selector=items_selector,
         pagination_button_selector=pagination_button_selector,
         output_columns=columns,
-        limit=1 if scraping_type == "single" else 10,
+        limit=1 if scraping_type == "single" else 100,
+        concurrency=10,
     )
+
+    start = time.monotonic()
+    count = 0
 
     async for items in stream:
         print("Chunk:", json.dumps(items, indent=2, ensure_ascii=False))
+        count += len(items["items"])
+
+    end = time.monotonic()
+    print(f"Summarized {count} items in {end - start:.2f} seconds")
