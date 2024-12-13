@@ -16,7 +16,7 @@ async def main():
             scraping_type="list-like",
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item-link",
-            limit=42,
+            limit=100,
             concurrency=10,
             output_columns=[
                 {

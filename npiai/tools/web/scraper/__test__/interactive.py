@@ -11,7 +11,7 @@ async def main():
     url = input("Enter the URL: ")
 
     async with PageAnalyzer(headless=False) as analyzer:
-        scraper = Scraper(batch_size=10, playwright=analyzer.playwright)
+        scraper = Scraper(batch_size=5, playwright=analyzer.playwright)
 
         await auto_scrape(
             ctx=Context(),
