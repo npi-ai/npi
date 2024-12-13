@@ -5,7 +5,6 @@ from typing import Dict, TYPE_CHECKING, TypeVar, Type, Any
 from mem0 import Memory
 from pydantic import create_model, Field
 
-from npiai.utils import sanitize_schema
 from .base import BaseMemory
 
 if TYPE_CHECKING:
@@ -95,6 +94,9 @@ class VectorDBMemory(BaseMemory):
             constraints: Search constraints
             _is_retry: Retry flag
         """
+        # FIXME: this import is causing circular import
+        from npiai.utils import sanitize_schema
+
         cached_result = self._query_cache.get(query, None)
 
         if cached_result:
