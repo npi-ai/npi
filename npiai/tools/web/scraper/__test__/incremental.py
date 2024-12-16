@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import List
+from typing import Set
 
 from npiai.tools.web.scraper import Scraper
 from npiai.utils.test_utils import DebugContext
@@ -9,7 +9,7 @@ from npiai.utils.test_utils import DebugContext
 # from npiai.context import Context
 
 
-async def summarize(skip_item_hashes: List[str] | None = None):
+async def summarize(skip_item_hashes: Set[str] | None = None):
     async with Scraper(headless=False, batch_size=5) as scraper:
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
@@ -41,14 +41,14 @@ async def summarize(skip_item_hashes: List[str] | None = None):
 
         start = time.monotonic()
         count = 0
-        hashes = []
+        hashes = set()
 
         async for chunk in stream:
             count += len(chunk["items"])
             print("Chunk:", json.dumps(chunk, indent=2))
 
             for item in chunk["items"]:
-                hashes.append(item["hash"])
+                hashes.add(item["hash"])
 
         end = time.monotonic()
         print(f"Summarized {count} items in {end - start:.2f} seconds")

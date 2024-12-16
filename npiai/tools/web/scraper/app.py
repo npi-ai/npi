@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Dict, AsyncGenerator, Literal, Any
+from typing import List, Dict, AsyncGenerator, Literal, Any, Iterable, Set
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
 from playwright.async_api import TimeoutError
@@ -106,7 +106,7 @@ class Scraper(BrowserTool):
         pagination_button_selector: str | None = None,
         limit: int = -1,
         concurrency: int = 1,
-        skip_item_hashes: List[str] | None = None,
+        skip_item_hashes: Iterable[str] | None = None,
     ) -> AsyncGenerator[SummaryChunk, None]:
         """
         Summarize the content of a webpage into a csv table represented as a stream of item objects.
@@ -146,6 +146,8 @@ class Scraper(BrowserTool):
 
         results_queue: asyncio.Queue[SummaryChunk] = asyncio.Queue()
 
+        skip_item_hashes_set = set(skip_item_hashes) if skip_item_hashes else None
+
         async def run_batch():
             nonlocal count, remaining, batch_index
 
@@ -165,7 +167,7 @@ class Scraper(BrowserTool):
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
                 limit=requested_count,
-                skip_item_hashes=skip_item_hashes,
+                skip_item_hashes=skip_item_hashes_set,
             )
 
             if not parsed_result:
@@ -385,7 +387,7 @@ class Scraper(BrowserTool):
         ancestor_selector: str,
         items_selector: str | None,
         limit: int = -1,
-        skip_item_hashes: List[str] | None = None,
+        skip_item_hashes: Set[str] | None = None,
     ) -> ParsedResult | None | None:
         # convert relative links to absolute links
         await self._process_relative_links()
@@ -407,7 +409,7 @@ class Scraper(BrowserTool):
         Args:
             items_selector: The selector of the items to summarize.
             limit: The maximum number of items to summarize.
-            skip_item_hashes: A list of hashes of items to skip.
+            skip_item_hashes: A set of hashes of items to skip.
 
         Returns:
             The markdown content of the items to summarize.
@@ -466,14 +468,14 @@ class Scraper(BrowserTool):
     async def _parse_ancestor(
         self,
         ancestor_selector: str,
-        skip_item_hashes: List[str] | None = None,
+        skip_item_hashes: Set[str] | None = None,
     ) -> ParsedResult | None | None:
         """
         Get the markdown content of the ancestor element
 
         Args:
             ancestor_selector: The selector of the ancestor element.
-            skip_item_hashes: A list of hashes of items to skip.
+            skip_item_hashes: A set of hashes of items to skip.
 
         Returns:
             The markdown content of the ancestor element.
