@@ -435,8 +435,9 @@ class Scraper(BrowserTool):
         count = 0
         marking_tasks = []
 
-        for item_locator in await locator.all():
-            html = await item_locator.evaluate("elem => elem.outerHTML")
+        # use element handles here to snapshot the items
+        for elem in await locator.element_handles():
+            html = await elem.evaluate("elem => elem.outerHTML")
             markdown, md5 = self._html_to_md_and_hash(html)
 
             if skip_item_hashes and md5 in skip_item_hashes:
@@ -445,7 +446,7 @@ class Scraper(BrowserTool):
             # mark the item as visited
             marking_tasks.append(
                 asyncio.create_task(
-                    item_locator.evaluate(
+                    elem.evaluate(
                         "elem => elem.setAttribute('data-npi-visited', 'true')"
                     )
                 )
