@@ -15,7 +15,7 @@ async def main():
             url="https://www.bardeen.ai/playbooks",
             scraping_type="list-like",
             ancestor_selector=".playbook_list",
-            items_selector=".playbook_list .playbook_item-link",
+            items_selector=".playbook_list .playbook_item",
             limit=100,
             concurrency=10,
             output_columns=[
