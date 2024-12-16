@@ -3,7 +3,9 @@ import json
 import re
 import os
 import asyncio
+import hashlib
 from pathlib import Path
+from dataclasses import dataclass
 from typing import List, Dict, AsyncGenerator, Literal, Any
 from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
@@ -37,9 +39,28 @@ class Column(TypedDict):
     ]
 
 
+class SummaryItem(TypedDict):
+    hash: str
+    values: Dict[str, str]
+
+
 class SummaryChunk(TypedDict):
     batch_id: int
-    items: List[Dict[str, str]]
+    items: List[SummaryItem]
+
+
+@dataclass
+class ParsedResult:
+    markdown: str
+    hashes: List[str]
+
+
+__ID_COLUMN__ = Column(
+    name="id",
+    type="text",
+    description="Unique identifier for each item",
+    prompt="Fill in the unique identifier for the corresponding <section> that represents the item",
+)
 
 
 class Scraper(BrowserTool):
@@ -85,6 +106,7 @@ class Scraper(BrowserTool):
         pagination_button_selector: str | None = None,
         limit: int = -1,
         concurrency: int = 1,
+        skip_item_hashes: List[str] | None = None,
     ) -> AsyncGenerator[SummaryChunk, None]:
         """
         Summarize the content of a webpage into a csv table represented as a stream of item objects.
@@ -99,6 +121,7 @@ class Scraper(BrowserTool):
             pagination_button_selector: The selector of the pagination button (e.g., the "Next Page" button) to load more items. Used when the items are paginated. By default, the tool will scroll to load more items.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
             concurrency: The number of concurrent tasks to run. Default is 1.
+            skip_item_hashes: A list of hashes of items to skip. If provided, the items with these hashes will be skipped.
 
         Returns:
             A stream of items. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
@@ -138,20 +161,24 @@ class Scraper(BrowserTool):
             # so that the other tasks will not exceed the limit
             remaining -= requested_count
 
-            md = await self._get_md(
-                ctx=ctx,
+            parsed_result = await self._parse(
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
                 limit=requested_count,
+                skip_item_hashes=skip_item_hashes,
             )
 
-            if not md:
+            if not parsed_result:
                 await ctx.send_debug_message(f"[{self.name}] No more items found")
                 return
 
+            await ctx.send_debug_message(
+                f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
+            )
+
             items = await self._llm_summarize(
                 ctx=ctx,
-                md=md,
+                parsed_result=parsed_result,
                 output_columns=output_columns,
                 scraping_type=scraping_type,
             )
@@ -232,6 +259,7 @@ class Scraper(BrowserTool):
         output_file: Path | str | None = None,
         limit: int = -1,
         concurrency: int = 1,
+        skip_item_hashes: List[str] | None = None,
     ) -> str:
         """
         Summarize the content of a webpage into a csv table.
@@ -247,6 +275,7 @@ class Scraper(BrowserTool):
             output_file: The file path to save the output. If None, the output is saved to 'scraper_output.json'.
             limit: The maximum number of items to summarize. If -1, all items are summarized.
             concurrency: The number of concurrent tasks to run. Default is 1.
+            skip_item_hashes: A list of hashes of items to skip. If provided, the items with these hashes will be skipped.
         """
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
@@ -268,11 +297,13 @@ class Scraper(BrowserTool):
                 pagination_button_selector=pagination_button_selector,
                 limit=limit,
                 concurrency=concurrency,
+                skip_item_hashes=skip_item_hashes,
             )
 
             async for chunk in stream:
-                writer.writerows(chunk["items"])
-                count += len(chunk["items"])
+                rows = [item["values"] for item in chunk["items"]]
+                writer.writerows(rows)
+                count += len(rows)
                 f.flush()
 
         return f"Saved {count} items to {output_file}"
@@ -302,15 +333,18 @@ class Scraper(BrowserTool):
         if not ancestor_selector:
             ancestor_selector = "body"
 
-        md = await self._get_md(
-            ctx=ctx,
+        parsed_result = await self._parse(
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
             limit=10,
         )
 
-        if not md:
+        if not parsed_result:
             return None
+
+        await ctx.send_debug_message(
+            f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
+        )
 
         def callback(columns: List[Column]):
             """
@@ -337,7 +371,7 @@ class Scraper(BrowserTool):
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
-                    content=md,
+                    content=parsed_result.markdown,
                 ),
             ],
         )
@@ -346,34 +380,34 @@ class Scraper(BrowserTool):
 
         return callback(**res.model_dump())
 
-    async def _get_md(
+    async def _parse(
         self,
-        ctx: Context,
         ancestor_selector: str,
         items_selector: str | None,
         limit: int = -1,
-    ) -> str | None:
+        skip_item_hashes: List[str] | None = None,
+    ) -> ParsedResult | None | None:
         # convert relative links to absolute links
         await self._process_relative_links()
 
         if items_selector is None:
-            return await self._get_ancestor_md(ctx, ancestor_selector)
+            return await self._parse_ancestor(ancestor_selector, skip_item_hashes)
         else:
-            return await self._get_items_md(ctx, items_selector, limit)
+            return await self._parse_items(items_selector, limit, skip_item_hashes)
 
-    async def _get_items_md(
+    async def _parse_items(
         self,
-        ctx: Context,
         items_selector: str,
         limit: int = -1,
-    ) -> str | None:
+        skip_item_hashes: List[str] | None = None,
+    ) -> ParsedResult | None | None:
         """
         Get the markdown content of the items to summarize
 
         Args:
-            ctx: NPi context.
             items_selector: The selector of the items to summarize.
             limit: The maximum number of items to summarize.
+            skip_item_hashes: A list of hashes of items to skip.
 
         Returns:
             The markdown content of the items to summarize.
@@ -381,60 +415,65 @@ class Scraper(BrowserTool):
         if limit == 0:
             return None
 
-        unvisited_selector = items_selector + ":not([data-npi-visited])"
+        locator = self.playwright.page.locator(
+            items_selector + ":not([data-npi-visited])"
+        )
 
         # wait for the first unvisited item to be attached to the DOM
         try:
-            await self.playwright.page.locator(unvisited_selector).first.wait_for(
+            await locator.first.wait_for(
                 state="attached",
                 timeout=30_000,
             )
         except TimeoutError:
             return None
 
-        htmls = await self.playwright.page.evaluate(
-            """
-            ([unvisited_selector, limit]) => {
-                const items = [...document.querySelectorAll(unvisited_selector)];
-                const elems = limit === -1 ? items : items.slice(0, limit);
-                
-                return elems.map(elem => {
-                    elem.setAttribute("data-npi-visited", "true");
-                    return elem.outerHTML;
-                });
-            }
-            """,
-            [unvisited_selector, limit],
-        )
+        sections = []
+        hashes = []
+        count = 0
+        marking_tasks = []
 
-        count = len(htmls)
+        for item_locator in await locator.all():
+            html = await item_locator.inner_html()
+            markdown, md5 = self._html_to_md_and_hash(html)
 
-        await ctx.send_debug_message(f"[{self.name}] Found {count} items to summarize")
+            if skip_item_hashes and md5 in skip_item_hashes:
+                continue
 
-        if count == 0:
+            # mark the item as visited
+            marking_tasks.append(
+                asyncio.create_task(
+                    item_locator.evaluate(
+                        "elem => elem.setAttribute('data-npi-visited', 'true')"
+                    )
+                )
+            )
+
+            sections.append(f'<section id="{count}">\n{markdown}\n</section>')
+            hashes.append(md5)
+            count += 1
+
+            if count == limit:
+                break
+
+        if not count:
             return None
 
-        sections = [
-            "<section>\n" + html_to_markdown(html) + "\n</section>" for html in htmls
-        ]
+        await asyncio.gather(*marking_tasks)
 
-        md = "\n".join(sections)
+        return ParsedResult(markdown="\n".join(sections), hashes=hashes)
 
-        await ctx.send_debug_message(f"[{self.name}] Items markdown: {md}")
-
-        return md
-
-    async def _get_ancestor_md(
+    async def _parse_ancestor(
         self,
-        ctx: Context,
         ancestor_selector: str,
-    ) -> str | None:
+        skip_item_hashes: List[str] | None = None,
+    ) -> ParsedResult | None | None:
         """
         Get the markdown content of the ancestor element
 
         Args:
-            ctx: NPi context.
             ancestor_selector: The selector of the ancestor element.
+            skip_item_hashes: A list of hashes of items to skip.
 
         Returns:
             The markdown content of the ancestor element.
@@ -474,29 +513,44 @@ class Scraper(BrowserTool):
             for elem in await locator.all():
                 htmls.append(await elem.inner_html())
 
-        sections = [
-            "<section>\n" + html_to_markdown(html) + "\n</section>" for html in htmls
-        ]
+        sections = []
+        hashes = []
+        count = 0
 
-        md = "\n".join(sections)
+        for html in htmls:
+            markdown, md5 = self._html_to_md_and_hash(html)
 
-        await ctx.send_debug_message(f"[{self.name}] Ancestor additions: {md}")
+            if skip_item_hashes and md5 in skip_item_hashes:
+                continue
 
-        return md
+            sections.append(f'<section id="{count}">\n{markdown}\n</section>')
+            hashes.append(md5)
+            count += 1
+
+        if not count:
+            return None
+
+        return ParsedResult(markdown="\n".join(sections), hashes=hashes)
+
+    @staticmethod
+    def _html_to_md_and_hash(html):
+        markdown = html_to_markdown(html)
+        md5 = hashlib.md5(markdown.encode()).hexdigest()
+        return markdown, md5
 
     async def _llm_summarize(
         self,
         ctx: Context,
-        md: str,
+        parsed_result: ParsedResult,
         output_columns: List[Column],
         scraping_type: ScrapingType,
-    ) -> List[Dict[str, str]]:
+    ) -> List[SummaryItem]:
         """
         Summarize the content of a webpage into a table using LLM.
 
         Args:
             ctx: NPi context.
-            md: The markdown content to summarize.
+            parsed_result: The parsed result containing the markdown content of the items to summarize.
             output_columns: The columns of the output table.
             scraping_type: The type of scraping to perform. If 'single', summarize the content into a single row. If 'list-like', summarize the content into multiple rows.
 
@@ -504,11 +558,11 @@ class Scraper(BrowserTool):
             The summarized items as a list of dictionaries.
         """
 
-        prompt = (
-            MULTI_COLUMN_SCRAPING_PROMPT
-            if scraping_type == "list-like"
-            else SINGLE_COLUMN_SCRAPING_PROMPT
-        )
+        if scraping_type == "list-like":
+            prompt = MULTI_COLUMN_SCRAPING_PROMPT
+            output_columns = [__ID_COLUMN__, *output_columns]
+        else:
+            prompt = SINGLE_COLUMN_SCRAPING_PROMPT
 
         messages = [
             ChatCompletionSystemMessageParam(
@@ -519,7 +573,7 @@ class Scraper(BrowserTool):
             ),
             ChatCompletionUserMessageParam(
                 role="user",
-                content=md,
+                content=parsed_result.markdown,
             ),
         ]
 
@@ -560,7 +614,13 @@ class Scraper(BrowserTool):
                 ),
             )
 
-        return list(csv.DictReader(final_response_content.splitlines()))
+        results = []
+
+        for row in csv.DictReader(final_response_content.splitlines()):
+            index = int(row.pop("id"))
+            results.append(SummaryItem(hash=parsed_result.hashes[index], values=row))
+
+        return results
 
     async def _load_more(
         self,

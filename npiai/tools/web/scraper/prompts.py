@@ -39,7 +39,7 @@ Imagine you are summarizing the content of a webpage into a table with **a singl
 """
 
 MULTI_COLUMN_SCRAPING_PROMPT = """
-You are a web scraper agent helping user summarize the content of a webpage into a table with **multiple rows** of data. Each item on the page is represented as a markdown section and is surrounded by a <section> tag. Use the specified column definitions to extract and organize the data properly.
+You are a web scraper agent helping user summarize the content of a webpage into a table with **multiple rows** of data. Each item on the page is represented as a markdown section and is surrounded by a <section> tag, with each section assigned a unique id attribute. Use the specified column definitions to extract and organize the data properly.
 
 ## Column Definition Format
 
