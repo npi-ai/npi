@@ -434,7 +434,7 @@ class Scraper(BrowserTool):
         marking_tasks = []
 
         for item_locator in await locator.all():
-            html = await item_locator.inner_html()
+            html = await item_locator.evaluate("elem => elem.outerHTML")
             markdown, md5 = self._html_to_md_and_hash(html)
 
             if skip_item_hashes and md5 in skip_item_hashes:
@@ -511,7 +511,7 @@ class Scraper(BrowserTool):
 
             # use all ancestors here to avoid missing any items
             for elem in await locator.all():
-                htmls.append(await elem.inner_html())
+                htmls.append(await elem.evaluate("elem => elem.outerHTML"))
 
         sections = []
         hashes = []
