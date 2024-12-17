@@ -56,7 +56,7 @@ class ParsedResult:
 
 
 __ID_COLUMN__ = Column(
-    name="id",
+    name="[[@item_id]]",
     type="text",
     description="Unique identifier for each item",
     prompt="Fill in the unique identifier for the corresponding <section> that represents the item",
@@ -561,17 +561,20 @@ class Scraper(BrowserTool):
             The summarized items as a list of dictionaries.
         """
 
-        if scraping_type == "list-like":
-            prompt = MULTI_COLUMN_SCRAPING_PROMPT
-            output_columns = [__ID_COLUMN__, *output_columns]
-        else:
-            prompt = SINGLE_COLUMN_SCRAPING_PROMPT
+        prompt = (
+            MULTI_COLUMN_SCRAPING_PROMPT
+            if scraping_type == "list-like"
+            else SINGLE_COLUMN_SCRAPING_PROMPT
+        )
+
+        # add id column to the output columns
+        output_columns_with_id = [__ID_COLUMN__, *output_columns]
 
         messages = [
             ChatCompletionSystemMessageParam(
                 role="system",
                 content=prompt.format(
-                    column_defs=json.dumps(output_columns, ensure_ascii=False)
+                    column_defs=json.dumps(output_columns_with_id, ensure_ascii=False)
                 ),
             ),
             ChatCompletionUserMessageParam(
@@ -619,9 +622,19 @@ class Scraper(BrowserTool):
 
         results = []
 
-        for row in csv.DictReader(final_response_content.splitlines()):
-            index = int(row.pop("id"))
-            results.append(SummaryItem(hash=parsed_result.hashes[index], values=row))
+        try:
+            for row in csv.DictReader(final_response_content.splitlines()):
+                index = int(row.pop(__ID_COLUMN__["name"]))
+                results.append(
+                    SummaryItem(
+                        hash=parsed_result.hashes[index],
+                        values=row,
+                    )
+                )
+        except Exception as e:
+            await ctx.send_error_message(
+                f"[{self.name}] Error parsing the response: {str(e)}"
+            )
 
         return results
 
