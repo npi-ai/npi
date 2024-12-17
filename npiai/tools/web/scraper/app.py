@@ -46,6 +46,7 @@ class SummaryItem(TypedDict):
 
 class SummaryChunk(TypedDict):
     batch_id: int
+    matched_hashes: List[str]
     items: List[SummaryItem]
 
 
@@ -53,6 +54,7 @@ class SummaryChunk(TypedDict):
 class ParsedResult:
     markdown: str
     hashes: List[str]
+    matched_hashes: List[str]
 
 
 __ID_COLUMN__ = Column(
@@ -201,6 +203,7 @@ class Scraper(BrowserTool):
             await results_queue.put(
                 {
                     "batch_id": current_index,
+                    "matched_hashes": parsed_result.matched_hashes,
                     "items": items_slice,
                 }
             )
@@ -432,7 +435,9 @@ class Scraper(BrowserTool):
 
         sections = []
         hashes = []
+        matched_hashes = []
         count = 0
+
         marking_tasks = []
 
         # use element handles here to snapshot the items
@@ -441,6 +446,7 @@ class Scraper(BrowserTool):
             markdown, md5 = self._html_to_md_and_hash(html)
 
             if skip_item_hashes and md5 in skip_item_hashes:
+                matched_hashes.append(md5)
                 continue
 
             # mark the item as visited
@@ -464,7 +470,11 @@ class Scraper(BrowserTool):
 
         await asyncio.gather(*marking_tasks)
 
-        return ParsedResult(markdown="\n".join(sections), hashes=hashes)
+        return ParsedResult(
+            markdown="\n".join(sections),
+            hashes=hashes,
+            matched_hashes=matched_hashes,
+        )
 
     async def _parse_ancestor(
         self,
@@ -518,12 +528,14 @@ class Scraper(BrowserTool):
 
         sections = []
         hashes = []
+        matched_hashes = []
         count = 0
 
         for html in htmls:
             markdown, md5 = self._html_to_md_and_hash(html)
 
             if skip_item_hashes and md5 in skip_item_hashes:
+                matched_hashes.append(md5)
                 continue
 
             sections.append(f'<section id="{count}">\n{markdown}\n</section>')
@@ -533,7 +545,11 @@ class Scraper(BrowserTool):
         if not count:
             return None
 
-        return ParsedResult(markdown="\n".join(sections), hashes=hashes)
+        return ParsedResult(
+            markdown="\n".join(sections),
+            hashes=hashes,
+            matched_hashes=matched_hashes,
+        )
 
     @staticmethod
     def _html_to_md_and_hash(html):

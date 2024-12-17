@@ -17,7 +17,8 @@ async def summarize(skip_item_hashes: Set[str] | None = None):
             scraping_type="list-like",
             ancestor_selector=".playbook_list",
             items_selector=".playbook_list .playbook_item",
-            limit=5,
+            limit=20,
+            concurrency=2,
             skip_item_hashes=skip_item_hashes,
             output_columns=[
                 {
