@@ -81,12 +81,17 @@ class Scraper(BrowserTool):
 
     _navigator: NavigatorAgent
 
+    # asyncio lock to prevent concurrent access to the webpage
+    # to avoid retrieving the same items multiple times
+    _webpage_access_lock: asyncio.Lock
+
     def __init__(self, batch_size: int = 10, **kwargs):
         super().__init__(**kwargs)
         self._navigator = NavigatorAgent(
             playwright=self.playwright,
         )
         self._batch_size = batch_size
+        self._webpage_access_lock = asyncio.Lock()
         self.add_tool(self._navigator)
 
     @classmethod
@@ -392,13 +397,14 @@ class Scraper(BrowserTool):
         limit: int = -1,
         skip_item_hashes: Set[str] | None = None,
     ) -> ParsedResult | None | None:
-        # convert relative links to absolute links
-        await self._process_relative_links()
+        async with self._webpage_access_lock:
+            # convert relative links to absolute links
+            await self._process_relative_links()
 
-        if items_selector is None:
-            return await self._parse_ancestor(ancestor_selector, skip_item_hashes)
-        else:
-            return await self._parse_items(items_selector, limit, skip_item_hashes)
+            if items_selector is None:
+                return await self._parse_ancestor(ancestor_selector, skip_item_hashes)
+            else:
+                return await self._parse_items(items_selector, limit, skip_item_hashes)
 
     async def _parse_items(
         self,
