@@ -43,16 +43,22 @@ async def summarize(skip_item_hashes: Set[str] | None = None):
         start = time.monotonic()
         count = 0
         hashes = set()
+        matched_hashes = set()
 
         async for chunk in stream:
             count += len(chunk["items"])
             print("Chunk:", json.dumps(chunk, indent=2))
+            matched_hashes.update(chunk["matched_hashes"])
 
             for item in chunk["items"]:
                 hashes.add(item["hash"])
 
         end = time.monotonic()
         print(f"Summarized {count} items in {end - start:.2f} seconds")
+
+        if skip_item_hashes:
+            print("Matched hashes:", matched_hashes)
+            print("Unmatched hashes:", skip_item_hashes - matched_hashes)
 
         return hashes
 
