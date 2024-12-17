@@ -451,10 +451,6 @@ class Scraper(BrowserTool):
             html = await elem.evaluate("elem => elem.outerHTML")
             markdown, md5 = self._html_to_md_and_hash(html)
 
-            if skip_item_hashes and md5 in skip_item_hashes:
-                matched_hashes.append(md5)
-                continue
-
             # mark the item as visited
             marking_tasks.append(
                 asyncio.create_task(
@@ -463,6 +459,10 @@ class Scraper(BrowserTool):
                     )
                 )
             )
+
+            if skip_item_hashes and md5 in skip_item_hashes:
+                matched_hashes.append(md5)
+                continue
 
             sections.append(f'<section id="{count}">\n{markdown}\n</section>')
             hashes.append(md5)
@@ -667,97 +667,102 @@ class Scraper(BrowserTool):
         items_selector: str | None,
         pagination_button_selector: str | None = None,
     ):
-        unvisited_items_selector = (items_selector or "*") + ":not([data-npi-visited])"
+        async with self._webpage_access_lock:
+            unvisited_items_selector = (
+                items_selector or "*"
+            ) + ":not([data-npi-visited])"
 
-        # check if there are unvisited items
-        has_unvisited_items = await self.playwright.page.evaluate(
-            f"selector => !!document.querySelector(selector)",
-            unvisited_items_selector,
-        )
-
-        if has_unvisited_items:
-            await ctx.send_debug_message(
-                f"[{self.name}] Found unvisited items, skipping loading more items"
-            )
-            return
-
-        # attach mutation observer to the ancestor element
-        await self.playwright.page.evaluate(
-            """
-            ([ancestor_selector, items_selector]) => {
-                window.addedNodes = [];
-                
-                window.npiObserver = new MutationObserver((records) => {
-                    for (const record of records) {
-                        for (const addedNode of record.addedNodes) {
-                            if (addedNode.nodeType === Node.ELEMENT_NODE &&
-                                (addedNode.matches(items_selector) || addedNode.querySelector(items_selector))
-                            ) {
-                                window.addedNodes.push(addedNode);
-                            }
-                        }
-                    }
-                });
-                
-                window.npiObserver.observe(
-                    document.querySelector(ancestor_selector), 
-                    { childList: true, subtree: true }
-                );
-            }
-            """,
-            [ancestor_selector, items_selector or "*"],
-        )
-
-        more_content_loaded = False
-
-        # check if the page is scrollable
-        # if so, scroll to load more items
-        if await self.is_scrollable():
-            await self.playwright.page.evaluate(
-                """
-                (ancestor_selector) => {
-                    let elem;
-                    const items = document.querySelectorAll('[data-npi-visited]');
-                    
-                    if (items.length) {
-                        const elem = items[items.length - 1];
-                        elem?.scrollIntoView();
-                    } else {
-                        const elem = document.querySelector(ancestor_selector);
-                        elem?.scrollIntoView({ block: 'end' });
-                    }
-                }
-                """,
-                ancestor_selector,
-            )
-            await ctx.send_debug_message(f"[{self.name}] Scrolled to load more items")
-            await self.playwright.page.wait_for_timeout(3000)
-            more_content_loaded = await self.playwright.page.evaluate(
-                "() => !!window.addedNodes?.length",
+            # check if there are unvisited items
+            has_unvisited_items = await self.playwright.page.evaluate(
+                f"selector => !!document.querySelector(selector)",
+                unvisited_items_selector,
             )
 
-        if not more_content_loaded and pagination_button_selector:
-            handle = await self.playwright.page.evaluate_handle(
-                "selector => document.querySelector(selector)",
-                pagination_button_selector,
-            )
-
-            elem = handle.as_element()
-
-            if not elem:
+            if has_unvisited_items:
                 await ctx.send_debug_message(
-                    f"[{self.name}] Pagination button not found"
+                    f"[{self.name}] Found unvisited items, skipping loading more items"
                 )
                 return
 
-            await self.click(elem)
-            await ctx.send_debug_message(f"[{self.name}] Clicked pagination button")
-            await self.playwright.page.wait_for_timeout(3000)
+            # attach mutation observer to the ancestor element
+            await self.playwright.page.evaluate(
+                """
+                ([ancestor_selector, items_selector]) => {
+                    window.addedNodes = [];
+                    
+                    window.npiObserver = new MutationObserver((records) => {
+                        for (const record of records) {
+                            for (const addedNode of record.addedNodes) {
+                                if (addedNode.nodeType === Node.ELEMENT_NODE &&
+                                    (addedNode.matches(items_selector) || addedNode.querySelector(items_selector))
+                                ) {
+                                    window.addedNodes.push(addedNode);
+                                }
+                            }
+                        }
+                    });
+                    
+                    window.npiObserver.observe(
+                        document.querySelector(ancestor_selector), 
+                        { childList: true, subtree: true }
+                    );
+                }
+                """,
+                [ancestor_selector, items_selector or "*"],
+            )
 
-        # clear the mutation observer
-        await self.playwright.page.evaluate(
-            "() => { window.npiObserver?.disconnect(); }"
-        )
+            more_content_loaded = False
+
+            # check if the page is scrollable
+            # if so, scroll to load more items
+            if await self.is_scrollable():
+                await self.playwright.page.evaluate(
+                    """
+                    (ancestor_selector) => {
+                        let elem;
+                        const items = document.querySelectorAll('[data-npi-visited]');
+                        
+                        if (items.length) {
+                            const elem = items[items.length - 1];
+                            elem?.scrollIntoView();
+                        } else {
+                            const elem = document.querySelector(ancestor_selector);
+                            elem?.scrollIntoView({ block: 'end' });
+                        }
+                    }
+                    """,
+                    ancestor_selector,
+                )
+                await ctx.send_debug_message(
+                    f"[{self.name}] Scrolled to load more items"
+                )
+                await self.playwright.page.wait_for_timeout(3000)
+                more_content_loaded = await self.playwright.page.evaluate(
+                    "() => !!window.addedNodes?.length",
+                )
+
+            if not more_content_loaded and pagination_button_selector:
+                handle = await self.playwright.page.evaluate_handle(
+                    "selector => document.querySelector(selector)",
+                    pagination_button_selector,
+                )
+
+                elem = handle.as_element()
+
+                if not elem:
+                    await ctx.send_debug_message(
+                        f"[{self.name}] Pagination button not found"
+                    )
+                    return
+
+                await self.click(elem)
+                await ctx.send_debug_message(f"[{self.name}] Clicked pagination button")
+                await self.playwright.page.wait_for_timeout(3000)
+
+            # clear the mutation observer
+            await self.playwright.page.evaluate(
+                "() => { window.npiObserver?.disconnect(); }"
+            )
 
     async def _process_relative_links(self):
         await self.playwright.page.evaluate(
