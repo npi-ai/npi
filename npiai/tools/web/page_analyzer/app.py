@@ -243,11 +243,12 @@ class PageAnalyzer(BrowserTool):
             (items_selector) => {
                 let mutateElementsCount = 0;
                 const threshold = items_selector === '*' ? 10 : 3;
+                const targetSelector = `${items_selector}, ${items_selector} *`;
                 
                 const npiScrollObserver = new MutationObserver((records) => {
                     for (const record of records) {
                         for (const node of record.addedNodes) {
-                            if (node.nodeType === Node.ELEMENT_NODE && node.matches(items_selector)) {
+                            if (node.nodeType === Node.ELEMENT_NODE && node.matches(targetSelector)) {
                                 mutateElementsCount++;
                             }
                         }
