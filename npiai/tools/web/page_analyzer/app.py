@@ -351,8 +351,9 @@ class PageAnalyzer(BrowserTool):
                         Follow the instructions to determine whether there is a pagination button on the current page for navigating to the next page:
                         1. Examine the screenshots, the URL, and the title of the page to understand the context, and then think about what the current page is.
                         2. Go through the elements array, pay attention to the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
-                        3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page. It usually contains text like "Next", "More", or "Load More".
-                        4. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
+                        3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page. It usually contains text like "Next" or "Load More".
+                        4. Buttons that expand the content on the same page are not considered as pagination buttons. Only consider the buttons that navigate to the next page.
+                        5. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
                         """
                     ),
                 ),
