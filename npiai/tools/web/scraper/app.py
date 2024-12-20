@@ -1,61 +1,40 @@
-import csv
-import json
-import re
-import os
 import asyncio
+import csv
 import hashlib
+import json
+import os
+import re
 from pathlib import Path
-from dataclasses import dataclass
-from typing import List, Dict, AsyncGenerator, Literal, Any, Iterable, Set
-from typing_extensions import TypedDict, Annotated
 from textwrap import dedent
-from playwright.async_api import TimeoutError
+from typing import List, AsyncGenerator, Any, Iterable, Set
+from markdownify import MarkdownConverter
 
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from playwright.async_api import TimeoutError
 
 from npiai import function, BrowserTool, Context
 from npiai.core import NavigatorAgent
-from npiai.utils import is_cloud_env, llm_tool_call, html_to_markdown
-
+from npiai.utils import (
+    is_cloud_env,
+    llm_tool_call,
+    CompactMarkdownConverter,
+)
 from .prompts import (
     MULTI_COLUMN_INFERENCE_PROMPT,
     MULTI_COLUMN_SCRAPING_PROMPT,
     SINGLE_COLUMN_INFERENCE_PROMPT,
     SINGLE_COLUMN_SCRAPING_PROMPT,
 )
-
-ScrapingType = Literal["single", "list-like"]
-
-
-class Column(TypedDict):
-    name: Annotated[str, "Name of the column"]
-    type: Annotated[Literal["text", "link", "image"], "Type of the column"]
-    description: Annotated[str, "A brief description of the column"]
-    prompt: Annotated[
-        str | None, "A step-by-step prompt on how to extract the column data"
-    ]
-
-
-class SummaryItem(TypedDict):
-    hash: str
-    values: Dict[str, str]
-
-
-class SummaryChunk(TypedDict):
-    batch_id: int
-    matched_hashes: List[str]
-    items: List[SummaryItem]
-
-
-@dataclass
-class ParsedResult:
-    markdown: str
-    hashes: List[str]
-    matched_hashes: List[str]
-
+from .types import (
+    Column,
+    ScrapingType,
+    SummaryItem,
+    SummaryChunk,
+    ConversionResult,
+)
 
 __ID_COLUMN__ = Column(
     name="[[@item_id]]",
@@ -75,6 +54,8 @@ class Scraper(BrowserTool):
         You are a general web scraper agent helping user summarize the content of a webpage into a table.
         """
     )
+
+    markdown_converter: MarkdownConverter = CompactMarkdownConverter()
 
     # The maximum number of items to summarize in a single batch
     _batch_size: int
@@ -170,7 +151,7 @@ class Scraper(BrowserTool):
             # so that the other tasks will not exceed the limit
             remaining -= requested_count
 
-            parsed_result = await self._parse(
+            parsed_result = await self._convert(
                 ancestor_selector=ancestor_selector,
                 items_selector=items_selector,
                 limit=requested_count,
@@ -343,7 +324,7 @@ class Scraper(BrowserTool):
         if not ancestor_selector:
             ancestor_selector = "body"
 
-        parsed_result = await self._parse(
+        parsed_result = await self._convert(
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
             limit=10,
@@ -390,28 +371,30 @@ class Scraper(BrowserTool):
 
         return callback(**res.model_dump())
 
-    async def _parse(
+    async def _convert(
         self,
         ancestor_selector: str,
         items_selector: str | None,
         limit: int = -1,
         skip_item_hashes: Set[str] | None = None,
-    ) -> ParsedResult | None | None:
+    ) -> ConversionResult | None | None:
         async with self._webpage_access_lock:
             # convert relative links to absolute links
             await self._process_relative_links()
 
             if items_selector is None:
-                return await self._parse_ancestor(ancestor_selector, skip_item_hashes)
+                return await self._convert_ancestor(ancestor_selector, skip_item_hashes)
             else:
-                return await self._parse_items(items_selector, limit, skip_item_hashes)
+                return await self._convert_items(
+                    items_selector, limit, skip_item_hashes
+                )
 
-    async def _parse_items(
+    async def _convert_items(
         self,
         items_selector: str,
         limit: int = -1,
         skip_item_hashes: List[str] | None = None,
-    ) -> ParsedResult | None | None:
+    ) -> ConversionResult | None | None:
         """
         Get the markdown content of the items to summarize
 
@@ -434,7 +417,7 @@ class Scraper(BrowserTool):
         try:
             await locator.first.wait_for(
                 state="attached",
-                timeout=30_000,
+                timeout=3_000,
             )
         except TimeoutError:
             return None
@@ -444,21 +427,36 @@ class Scraper(BrowserTool):
         matched_hashes = []
         count = 0
 
-        marking_tasks = []
-
         # use element handles here to snapshot the items
         for elem in await locator.element_handles():
-            html = await elem.evaluate("elem => elem.outerHTML")
-            markdown, md5 = self._html_to_md_and_hash(html)
-
-            # mark the item as visited
-            marking_tasks.append(
-                asyncio.create_task(
-                    elem.evaluate(
-                        "elem => elem.setAttribute('data-npi-visited', 'true')"
-                    )
-                )
+            html = await elem.evaluate(
+                """
+                async (elem) => {
+                    elem.scrollIntoView();
+                    elem.setAttribute('data-npi-visited', 'true');
+                    
+                    const contentLength = elem.textContent?.replace(/\\s/g, '').length || 0;
+                    
+                    if (contentLength > 10) {
+                        return elem.outerHTML;
+                    }
+                    
+                    // in case the page uses lazy loading,
+                    // wait for the content to be loaded
+                    
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve(elem.outerHTML);
+                        }, 300);
+                    });
+                }
+                """
             )
+
+            if not html:
+                continue
+
+            markdown, md5 = self._html_to_md_and_hash(html)
 
             if skip_item_hashes and md5 in skip_item_hashes:
                 matched_hashes.append(md5)
@@ -474,19 +472,17 @@ class Scraper(BrowserTool):
         if not count:
             return None
 
-        await asyncio.gather(*marking_tasks)
-
-        return ParsedResult(
+        return ConversionResult(
             markdown="\n".join(sections),
             hashes=hashes,
             matched_hashes=matched_hashes,
         )
 
-    async def _parse_ancestor(
+    async def _convert_ancestor(
         self,
         ancestor_selector: str,
         skip_item_hashes: Set[str] | None = None,
-    ) -> ParsedResult | None | None:
+    ) -> ConversionResult | None | None:
         """
         Get the markdown content of the ancestor element
 
@@ -551,22 +547,21 @@ class Scraper(BrowserTool):
         if not count:
             return None
 
-        return ParsedResult(
+        return ConversionResult(
             markdown="\n".join(sections),
             hashes=hashes,
             matched_hashes=matched_hashes,
         )
 
-    @staticmethod
-    def _html_to_md_and_hash(html):
-        markdown = html_to_markdown(html)
+    def _html_to_md_and_hash(self, html: str):
+        markdown = re.sub(r"\n+", "\n", self.markdown_converter.convert(html)).strip()
         md5 = hashlib.md5(markdown.encode()).hexdigest()
         return markdown, md5
 
     async def _llm_summarize(
         self,
         ctx: Context,
-        parsed_result: ParsedResult,
+        parsed_result: ConversionResult,
         output_columns: List[Column],
         scraping_type: ScrapingType,
     ) -> List[SummaryItem]:
