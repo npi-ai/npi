@@ -1,7 +1,7 @@
 from markdownify import MarkdownConverter
 
 
-class CompactConverter(MarkdownConverter):
+class CompactMarkdownConverter(MarkdownConverter):
     def convert_img(self, el, text, convert_as_inline):
         src = el.attrs.get("src", "")
 
@@ -36,4 +36,4 @@ class CompactConverter(MarkdownConverter):
 
 
 def html_to_markdown(html: str, **options) -> str:
-    return CompactConverter(**options).convert(html).strip()
+    return CompactMarkdownConverter(**options).convert(html).strip()
