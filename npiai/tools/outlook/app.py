@@ -1,11 +1,12 @@
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, List, cast
 
 from azure.core.credentials import TokenCredential
 from markdown import markdown
 from msgraph import GraphServiceClient
 from msgraph.generated.models.body_type import BodyType
 from msgraph.generated.models.email_address import EmailAddress
+from msgraph.generated.models.file_attachment import FileAttachment
 from msgraph.generated.models.item_body import ItemBody
 from msgraph.generated.models.message import Message
 from msgraph.generated.models.recipient import Recipient
@@ -18,7 +19,11 @@ from msgraph.generated.users.item.send_mail.send_mail_post_request_body import (
 
 from npiai import FunctionTool, function, Context
 from npiai.utils import html_to_markdown
-from npiai.tools.shared_types.base_email_tool import BaseEmailTool, EmailMessage
+from npiai.tools.shared_types.base_email_tool import (
+    BaseEmailTool,
+    EmailMessage,
+    EmailAttachment,
+)
 
 
 class Outlook(FunctionTool, BaseEmailTool):
@@ -55,6 +60,16 @@ class Outlook(FunctionTool, BaseEmailTool):
             recipient=recipients,
             subject=message.subject,
             body=html_to_markdown(message.body.content) if message.body else None,
+            cc=(
+                [self._get_email_address(cc) for cc in message.cc_recipients]
+                if message.cc_recipients
+                else None
+            ),
+            bcc=(
+                [self._get_email_address(bcc) for bcc in message.bcc_recipients]
+                if message.bcc_recipients
+                else None
+            ),
         )
 
     async def get_message_by_id(self, message_id: str):
@@ -112,10 +127,50 @@ class Outlook(FunctionTool, BaseEmailTool):
                 if limit != -1 and count >= limit:
                     return
 
+    async def download_attachments_in_message(
+        self,
+        message_id: str,
+        filter_by_type: str = None,
+    ) -> List[EmailAttachment] | None:
+        """
+        Download attachments in a message
+
+        Args:
+            message_id: The ID of the message
+            filter_by_type: Filter the attachments by type. Default is None.
+        """
+        msg = await self._client.me.messages.by_message_id(message_id).get()
+
+        if not msg.attachments:
+            return None
+
+        results: List[EmailAttachment] = []
+
+        for attachment in msg.attachments:
+            if filter_by_type and attachment.content_type != filter_by_type:
+                continue
+
+            att = cast(
+                FileAttachment,
+                await self._client.me.messages.by_message_id(message_id)
+                .attachments.by_attachment_id(attachment.id)
+                .get(),
+            )
+
+            results.append(
+                EmailAttachment(
+                    id=att.id,
+                    message_id=message_id,
+                    filename=att.name,
+                    filetype=att.content_type,
+                    data=att.content_bytes,
+                )
+            )
+
     @function
     async def search_emails(
         self,
-        limit: int = 100,
+        limit: int = -1,
         query: str = None,
     ) -> str:
         """
