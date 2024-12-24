@@ -3,6 +3,7 @@ import json
 import os
 from typing import List, AsyncGenerator
 
+
 from googleapiclient.errors import HttpError
 from markdown import markdown
 from simplegmail.message import Message
@@ -12,7 +13,11 @@ from npiai.error import UnauthorizedError
 from npiai.context import Context
 from npiai.constant import app
 from npiai.utils import html_to_markdown
-from npiai.tools.shared_types.base_email_tool import BaseEmailTool, EmailMessage
+from npiai.tools.shared_types.base_email_tool import (
+    BaseEmailTool,
+    EmailMessage,
+    EmailAttachment,
+)
 
 from google.oauth2.credentials import Credentials as GoogleCredentials
 from oauth2client.client import OAuth2Credentials
@@ -98,6 +103,36 @@ class Gmail(FunctionTool, BaseEmailTool):
         try:
             message = self._gmail_client.get_message_by_id(message_id)
             return self.convert_message(message)
+        except HttpError:
+            return None
+
+    async def download_attachments_in_message(
+        self,
+        message_id: str,
+        filter_by_type: str = None,
+    ) -> List[EmailAttachment] | None:
+        try:
+            msg = self._gmail_client.get_message_by_id(message_id)
+            results: List[EmailAttachment] = []
+
+            if not msg.attachments:
+                return None
+
+            for att in msg.attachments:
+                if filter_by_type and att.filetype != filter_by_type:
+                    continue
+
+                att.download()
+                results.append(
+                    EmailAttachment(
+                        id=att.id,
+                        message_id=msg.id,
+                        filename=att.filename,
+                        filetype=att.filetype,
+                        data=att.data,
+                    )
+                )
+            return results
         except HttpError:
             return None
 
