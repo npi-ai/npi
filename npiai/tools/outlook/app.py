@@ -187,53 +187,36 @@ class Outlook(BaseEmailTool):
             if not messages.odata_next_link:
                 return
 
-    async def download_attachments_in_message(
+    async def download_attachment(
         self,
         message_id: str,
-        filter_by_type: str = None,
-    ) -> List[EmailAttachment] | None:
+        attachment_id: str,
+    ) -> bytes | None:
         """
         Download attachments in a message
 
         Args:
             message_id: The ID of the message
-            filter_by_type: Filter the attachments by type. Default is None.
+            attachment_id: The ID of the attachment
         """
-        attachments = await self._client.me.messages.by_message_id(
-            message_id
-        ).attachments.get()
+        attachment = (
+            await self._client.me.messages.by_message_id(message_id)
+            .attachments.by_attachment_id(attachment_id)
+            .get()
+        )
 
-        if not attachments or not attachments.value:
+        if not attachment or attachment.odata_type != FileAttachment.odata_type:
             return None
 
-        results: List[EmailAttachment] = []
+        attachment = cast(FileAttachment, attachment)
 
-        for attachment in attachments.value:
-            if filter_by_type and attachment.content_type != filter_by_type:
-                continue
+        if not attachment.content_bytes:
+            return None
 
-            att = cast(
-                FileAttachment,
-                await self._client.me.messages.by_message_id(message_id)
-                .attachments.by_attachment_id(attachment.id)
-                .get(),
-            )
-
-            results.append(
-                EmailAttachment(
-                    id=att.id,
-                    message_id=message_id,
-                    filename=att.name,
-                    filetype=att.content_type,
-                    data=(
-                        base64.urlsafe_b64decode(att.content_bytes)
-                        if att.content_bytes
-                        else None
-                    ),
-                )
-            )
-
-        return results
+        try:
+            return base64.urlsafe_b64decode(attachment.content_bytes)
+        except Exception:
+            return None
 
     @function
     async def search_emails(

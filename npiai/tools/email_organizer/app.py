@@ -1,19 +1,17 @@
 import asyncio
 import json
-from typing import AsyncGenerator, List, cast, Literal
-
-from typing_extensions import TypedDict, overload
+from typing import AsyncGenerator, List, cast
 
 import pymupdf
 from litellm.types.completion import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from typing_extensions import TypedDict
 
 from npiai import FunctionTool, Context
-from npiai.utils import llm_tool_call, concurrent_task_runner, llm_summarize
 from npiai.tools.shared_types.base_email_tool import BaseEmailTool, EmailMessage
-
+from npiai.utils import llm_tool_call, concurrent_task_runner, llm_summarize
 from .prompts import FILTER_PROMPT, SUMMARIZE_PROMPT
 from .types import FilterResult, Column, EmailSummary
 
@@ -277,21 +275,24 @@ class EmailOrganizer(FunctionTool):
         if not email["attachments"]:
             return cast(CompactEmailMessage, email)
 
-        attachments = await self._provider.download_attachments_in_message(
-            email["id"],
-            filter_by_type="application/pdf",
-        )
-
-        if not attachments:
-            return cast(CompactEmailMessage, {**email, "attachments": None})
-
         pdf_attachments = []
 
-        for attachment in attachments:
-            if not attachment["data"]:
+        for attachment in email["attachments"]:
+            if attachment["filetype"] != "application/pdf":
                 continue
 
-            doc = pymupdf.open(stream=attachment["data"], filetype="pdf")
+            data = attachment["data"]
+
+            if not data:
+                data = await self._provider.download_attachment(
+                    message_id=attachment["message_id"],
+                    attachment_id=attachment["id"],
+                )
+
+            if not data:
+                continue
+
+            doc = pymupdf.open(stream=data, filetype="pdf")
             content = ""
 
             for page in doc:

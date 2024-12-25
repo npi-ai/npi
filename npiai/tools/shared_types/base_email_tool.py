@@ -41,9 +41,9 @@ class BaseEmailTool(FunctionTool):
         pass
 
     @abstractmethod
-    async def download_attachments_in_message(
+    async def download_attachment(
         self,
         message_id: str,
-        filter_by_type: str = None,
-    ) -> List[EmailAttachment] | None:
+        attachment_id: str,
+    ) -> bytes | None:
         pass
