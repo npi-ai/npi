@@ -39,6 +39,7 @@ websockets = "^12.0"
 mcp = "^1.1.1"
 azure-identity = "^1.19.0"
 msgraph-sdk = "^1.15.0"
+pymupdf = "^1.25.1"
 
 
 [tool.poetry.group.dev.dependencies]

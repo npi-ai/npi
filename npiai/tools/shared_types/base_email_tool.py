@@ -1,16 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import AsyncGenerator, List, TypedDict
+from abc import abstractmethod
+from typing import AsyncGenerator, List
 
+from typing_extensions import TypedDict
 
-class EmailMessage(TypedDict):
-    id: str
-    thread_id: str
-    sender: str
-    recipient: str
-    subject: str
-    body: str | None
-    cc: list[str] | None
-    bcc: list[str] | None
+from npiai import FunctionTool
 
 
 class EmailAttachment(TypedDict):
@@ -21,9 +14,22 @@ class EmailAttachment(TypedDict):
     data: bytes | None
 
 
-class BaseEmailTool(ABC):
+class EmailMessage(TypedDict):
+    id: str
+    thread_id: str
+    sender: str
+    recipient: str
+    date: str
+    subject: str
+    body: str | None
+    cc: list[str] | None
+    bcc: list[str] | None
+    attachments: List[EmailAttachment] | None
+
+
+class BaseEmailTool(FunctionTool):
     @abstractmethod
-    async def list_inbox_stream(
+    def list_inbox_stream(
         self,
         limit: int = 10,
         query: str = None,

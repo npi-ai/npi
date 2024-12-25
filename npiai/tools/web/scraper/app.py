@@ -20,7 +20,9 @@ from npiai.core import NavigatorAgent
 from npiai.utils import (
     is_cloud_env,
     llm_tool_call,
+    llm_summarize,
     CompactMarkdownConverter,
+    concurrent_task_runner,
 )
 from .prompts import (
     MULTI_COLUMN_INFERENCE_PROMPT,
@@ -132,12 +134,11 @@ class Scraper(BrowserTool):
         # batch index
         batch_index = 0
 
-        results_queue: asyncio.Queue[SummaryChunk] = asyncio.Queue()
         lock = asyncio.Lock()
 
         skip_item_hashes_set = set(skip_item_hashes) if skip_item_hashes else None
 
-        async def run_batch():
+        async def run_batch(results_queue: asyncio.Queue[SummaryChunk]):
             nonlocal count, remaining, batch_index
 
             if limit != -1 and remaining <= 0:
@@ -170,7 +171,7 @@ class Scraper(BrowserTool):
                 f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
             )
 
-            items = await self._llm_summarize(
+            items = await self._summarize_llm_call(
                 ctx=ctx,
                 parsed_result=parsed_result,
                 output_columns=output_columns,
@@ -211,35 +212,9 @@ class Scraper(BrowserTool):
                     pagination_button_selector,
                 )
 
-                await run_batch()
+                await run_batch(results_queue)
 
-        # number of running tasks
-        running_task_count = 0
-
-        async def task_runner():
-            nonlocal running_task_count
-            running_task_count += 1
-            await run_batch()
-            running_task_count -= 1
-
-        # schedule tasks
-        tasks = [asyncio.create_task(task_runner()) for _ in range(concurrency)]
-
-        # wait for the first task to start
-        while running_task_count == 0:
-            await asyncio.sleep(0.1)
-
-        # collect results
-        while running_task_count > 0 or not results_queue.empty():
-            chunk = await results_queue.get()
-            yield chunk
-
-        # wait for all tasks to finish
-        await asyncio.gather(*tasks)
-
-        # consume the remaining items if any
-        while not results_queue.empty():
-            chunk = await results_queue.get()
+        async for chunk in concurrent_task_runner(run_batch, concurrency):
             yield chunk
 
     @function
@@ -563,7 +538,7 @@ class Scraper(BrowserTool):
         md5 = hashlib.md5(markdown.encode()).hexdigest()
         return markdown, md5
 
-    async def _llm_summarize(
+    async def _summarize_llm_call(
         self,
         ctx: Context,
         parsed_result: ConversionResult,
@@ -605,47 +580,10 @@ class Scraper(BrowserTool):
             ),
         ]
 
-        final_response_content = ""
-
-        while True:
-            response = await ctx.llm.completion(
-                messages=messages,
-                max_tokens=4096,
-                # use fixed temperature and seed to ensure deterministic results
-                temperature=0.0,
-                seed=42,
-            )
-
-            messages.append(response.choices[0].message)
-
-            content = response.choices[0].message.content
-            match = re.match(r"```.*\n([\s\S]+?)(```|$)", content)
-
-            if match:
-                csv_table = match.group(1)
-            else:
-                csv_table = content
-
-            final_response_content += csv_table
-
-            await ctx.send_debug_message(
-                f"[{self.name}] Received summarization response: {content}"
-            )
-
-            if response.choices[0].finish_reason != "length":
-                break
-
-            messages.append(
-                ChatCompletionUserMessageParam(
-                    role="user",
-                    content="Continue generating the response.",
-                ),
-            )
-
         results = []
 
         try:
-            for row in csv.DictReader(final_response_content.splitlines()):
+            async for row in llm_summarize(ctx.llm, messages):
                 index = int(row.pop(__ID_COLUMN__["name"]))
                 results.append(
                     SummaryItem(

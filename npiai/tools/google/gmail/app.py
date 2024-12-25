@@ -1,14 +1,16 @@
 import asyncio
 import json
 import os
+import re
 from typing import List, AsyncGenerator
 
 
 from googleapiclient.errors import HttpError
 from markdown import markdown
+from simplegmail.attachment import Attachment
 from simplegmail.message import Message
 
-from npiai import FunctionTool, function, utils
+from npiai import function, utils
 from npiai.error import UnauthorizedError
 from npiai.context import Context
 from npiai.constant import app
@@ -41,7 +43,7 @@ def convert_google_cred_to_oauth2_cred(
     )
 
 
-class Gmail(FunctionTool, BaseEmailTool):
+class Gmail(BaseEmailTool):
     name = "gmail"
     description = 'interact with Gmail using English, e.g., gmail("send an email to test@gmail.com")'
     system_prompt = "You are a Gmail Agent helping users to manage their emails"
@@ -88,15 +90,36 @@ class Gmail(FunctionTool, BaseEmailTool):
         await super().start()
 
     def convert_message(self, message: Message) -> EmailMessage:
+        attachments = []
+
+        if message.attachments:
+            for att in message.attachments:  # type: Attachment
+                attachments.append(
+                    EmailAttachment(
+                        id=att.id,
+                        message_id=message.id,
+                        filename=att.filename,
+                        filetype=att.filetype,
+                        data=None,
+                    )
+                )
+
+        body = message.plain or html_to_markdown(message.html)
+
+        if body:
+            body = re.sub(r"\n+", "\n", body).strip()
+
         return EmailMessage(
             id=message.id,
             thread_id=message.thread_id,
             sender=message.sender,
             recipient=message.recipient,
+            date=message.date,
             cc=message.cc,
             bcc=message.bcc,
             subject=message.subject,
-            body=message.plain or html_to_markdown(message.html),
+            body=body,
+            attachments=attachments or None,
         )
 
     async def get_message_by_id(self, message_id: str) -> EmailMessage | None:
@@ -177,8 +200,6 @@ class Gmail(FunctionTool, BaseEmailTool):
                     user_id="me",
                     message_ref=msg_ref,
                 )
-
-                msg.attachments[0].download()
 
                 yield self.convert_message(msg)
 

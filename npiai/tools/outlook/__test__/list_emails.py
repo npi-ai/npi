@@ -1,3 +1,4 @@
+import json
 import os
 import asyncio
 from npiai.tools.outlook import Outlook
@@ -13,8 +14,7 @@ async def main():
 
     async with Outlook(creds) as outlook:
         async for email in outlook.list_inbox_stream(limit=10):
-            msg_with_body = await outlook.get_message_by_id(email.id)
-            print(outlook.convert_message(msg_with_body))
+            print(json.dumps(email, indent=4))
 
 
 if __name__ == "__main__":
