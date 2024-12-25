@@ -17,9 +17,6 @@ async def main():
     async with EmailOrganizer(provider=Outlook(creds)) as tool:
         email_list = [email async for email in tool.list_inbox_stream(limit=10)]
 
-        for email in email_list:
-            print(await tool._to_compact_email_with_pdf_attachments(email))
-
         print("Raw email list:", json.dumps(email_list, indent=4, ensure_ascii=False))
 
         filtered_emails = []

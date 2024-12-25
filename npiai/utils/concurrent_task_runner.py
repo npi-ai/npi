@@ -1,4 +1,6 @@
 import asyncio
+import sys
+import traceback
 from typing import Callable, Awaitable, Any, AsyncGenerator
 
 
@@ -16,7 +18,13 @@ async def concurrent_task_runner[
     counter_lock = asyncio.Lock()
 
     async def process():
-        await fn(results_queue)
+        try:
+            await fn(results_queue)
+        except Exception:
+            print(
+                f"Error in concurrent_task_runner: {traceback.format_exc()}",
+                file=sys.stderr,
+            )
 
     async def task_runner():
         nonlocal running_task_count
