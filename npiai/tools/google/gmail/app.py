@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import os
 import re
@@ -129,33 +130,25 @@ class Gmail(BaseEmailTool):
         except HttpError:
             return None
 
-    async def download_attachments_in_message(
+    async def download_attachment(
         self,
         message_id: str,
-        filter_by_type: str = None,
-    ) -> List[EmailAttachment] | None:
+        attachment_id: str,
+    ) -> bytes | None:
         try:
-            msg = self._gmail_client.get_message_by_id(message_id)
-            results: List[EmailAttachment] = []
+            # noinspection PyProtectedMember
+            res = (
+                self._gmail_client._service.users()
+                .messages()
+                .attachments()
+                .get(userId="me", messageId=message_id, id=attachment_id)
+                .execute()
+            )
 
-            if not msg.attachments:
+            try:
+                return base64.urlsafe_b64decode(res["data"])
+            except Exception:
                 return None
-
-            for att in msg.attachments:
-                if filter_by_type and att.filetype != filter_by_type:
-                    continue
-
-                att.download()
-                results.append(
-                    EmailAttachment(
-                        id=att.id,
-                        message_id=msg.id,
-                        filename=att.filename,
-                        filetype=att.filetype,
-                        data=att.data,
-                    )
-                )
-            return results
         except HttpError:
             return None
 
