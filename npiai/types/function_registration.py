@@ -9,6 +9,8 @@ from npiai.types.from_context import FromVectorDB
 
 ToolFunction = Callable[..., Awaitable[Any]]
 
+__EMPTY_PARAMS__ = {"type": "object", "properties": {}}
+
 
 @dataclass(frozen=True)
 class FunctionRegistration:
@@ -44,11 +46,14 @@ class FunctionRegistration:
             "function": {
                 "name": self.name,
                 "description": self.description,
+                "parameters": (
+                    self.schema if self.schema is not None else __EMPTY_PARAMS__
+                ),
             },
         }
 
         if self.schema is not None and strict:
             tool["function"]["strict"] = True
-            tool["function"]["parameters"] = self.schema
+            # tool["function"]["parameters"] = self.schema
 
         return tool
