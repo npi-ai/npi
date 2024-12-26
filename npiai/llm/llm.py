@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Union
 import os
 import asyncio
-from litellm import acompletion, ModelResponse, CustomStreamWrapper
+from litellm import acompletion, ModelResponse, CustomStreamWrapper, drop_params
 
 
 class Provider(Enum):
@@ -27,7 +27,9 @@ class LLM:
 
     # TODO: kwargs typings
     async def completion(self, **kwargs) -> Union[ModelResponse, CustomStreamWrapper]:
-        return await acompletion(model=self.model, api_key=self.api_key, **kwargs)
+        return await acompletion(
+            model=self.model, api_key=self.api_key, drop_params=True, **kwargs
+        )
 
     def completion_sync(self, **kwargs) -> Union[ModelResponse, CustomStreamWrapper]:
         return asyncio.run(self.completion(**kwargs))
