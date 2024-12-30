@@ -12,7 +12,7 @@ from typing_extensions import TypedDict
 from npiai import FunctionTool, Context
 from npiai.tools.shared_types.base_email_tool import BaseEmailTool, EmailMessage
 from npiai.utils import llm_tool_call, concurrent_task_runner, llm_summarize
-from .prompts import FILTER_PROMPT, SUMMARIZE_PROMPT
+from .prompts import FILTER_PROMPT, SUMMARIZE_PROMPT, COLUMN_INFERENCE_PROMPT
 from .types import FilterResult, Column, EmailSummary
 
 
@@ -58,6 +58,67 @@ class EmailOrganizer(FunctionTool):
         """
         async for email in self._provider.list_inbox_stream(limit=limit, query=query):
             yield email
+
+    async def infer_columns(
+        self,
+        ctx: Context,
+        email_or_id_list: List[EmailMessage] | List[str],
+        with_pdf_attachments: bool = False,
+        goal: str | None = None,
+    ) -> List[Column] | None:
+        """
+        Infer columns for summarizing the email content into a table.
+
+        Args:
+            ctx: NPi Context
+            email_or_id_list: List of emails or message IDs
+            with_pdf_attachments: Whether to include PDF attachments in the summary
+            goal: Summary goal
+        """
+        emails = []
+
+        for email in email_or_id_list:
+            if isinstance(email, str):
+                email = await self._provider.get_message_by_id(email)
+
+            if with_pdf_attachments:
+                compact_email = await self._to_compact_email_with_pdf_attachments(email)
+            else:
+                compact_email = self._to_compact_email(email)
+
+            emails.append(compact_email)
+
+        if not emails:
+            return None
+
+        def callback(columns: List[Column]):
+            """
+            Callback with the inferred columns.
+
+            Args:
+                columns: The inferred columns.
+            """
+            return columns
+
+        res = await llm_tool_call(
+            llm=ctx.llm,
+            tool=callback,
+            messages=[
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=COLUMN_INFERENCE_PROMPT.format(
+                        goal=goal
+                        or "Extracting essential details from the content of emails."
+                    ),
+                ),
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=json.dumps(emails, ensure_ascii=False),
+                ),
+            ],
+        )
+
+        return callback(**res.model_dump())
 
     async def filter_stream(
         self,
@@ -137,13 +198,11 @@ class EmailOrganizer(FunctionTool):
                 return
 
             if with_pdf_attachments:
-                email = await self._to_compact_email_with_pdf_attachments(email)
+                compact_email = await self._to_compact_email_with_pdf_attachments(email)
             else:
-                email = self._to_compact_email(email)
+                compact_email = self._to_compact_email(email)
 
-            res = await self._summarize_llm_call(
-                ctx, cast(CompactEmailMessage, email), output_columns
-            )
+            res = await self._summarize_llm_call(ctx, compact_email, output_columns)
 
             if res:
                 await results_queue.put(res)

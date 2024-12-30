@@ -58,39 +58,22 @@ async def main():
                 f'Subject: {result["email"]["subject"]}, Matched: {result["matched"]}'
             )
 
+        columns = await tool.infer_columns(
+            ctx=Context(),
+            email_or_id_list=filtered_emails[:3],
+            with_pdf_attachments=True,
+            goal="Extract invoice-related information from the emails.",
+        )
+
+        print("Inferred columns:", json.dumps(columns, indent=4, ensure_ascii=False))
+
         # summarize invoice-like emails
         async for item in tool.summarize_stream(
             ctx=Context(),
             email_or_id_list=filtered_emails,
             concurrency=4,
             with_pdf_attachments=True,
-            output_columns=[
-                {
-                    "name": "Invoice Number",
-                    "type": "text",
-                    "description": "The invoice number",
-                },
-                {
-                    "name": "Issuer",
-                    "type": "text",
-                    "description": "The issuer of the invoice",
-                },
-                {
-                    "name": "Recipient",
-                    "type": "text",
-                    "description": "The recipient of the invoice",
-                },
-                {
-                    "name": "Amount",
-                    "type": "number",
-                    "description": "The total amount in the invoice",
-                },
-                {
-                    "name": "Date",
-                    "type": "text",
-                    "description": "The date of the invoice",
-                },
-            ],
+            output_columns=columns,
         ):
             print(json.dumps(item, indent=4, ensure_ascii=False))
 

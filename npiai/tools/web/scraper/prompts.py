@@ -1,5 +1,13 @@
 MULTI_COLUMN_INFERENCE_PROMPT = """
-Imagine you are summarizing the content of a webpage into a table with **multiple rows** of data. Each item on the page is represented as a markdown section and is surrounded by a <section> tag. Follow the steps below to infer the columns of the output table:
+Imagine you are summarizing the content of a webpage into a table with **multiple rows** of data. Each item on the page is represented as a markdown section and is surrounded by a <section> tag. Suggest columns that encapsulate the essential details of the content. 
+
+## Goal
+
+{goal}
+
+## Instructions
+
+Follow the steps below to infer the columns of the output table:
                         
 1. **Identify Common Themes**: Begin by examining the provided markdown sections to discern common themes or shared attributes across the items.
 
@@ -19,6 +27,14 @@ Imagine you are summarizing the content of a webpage into a table with **multipl
 
 SINGLE_COLUMN_INFERENCE_PROMPT = """
 Imagine you are summarizing the content of a webpage into a table with **a single row** of data. Suggest columns that encapsulate the essential details of the content. 
+
+## Goal
+
+{goal}
+
+## Instructions
+
+Follow the steps below to infer the columns of the output table:
 
 1. **Identify Key Information**: Review the provided markdown document to determine the most critical information that should be included in the table.
 

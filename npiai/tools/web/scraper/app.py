@@ -287,6 +287,7 @@ class Scraper(BrowserTool):
         scraping_type: ScrapingType,
         ancestor_selector: str | None = None,
         items_selector: str | None = None,
+        goal: str | None = None,
     ) -> List[Column] | None:
         """
         Infer the columns of the output table by finding the common nature of the items to summarize.
@@ -297,6 +298,7 @@ class Scraper(BrowserTool):
             scraping_type: The type of scraping to perform. If 'single', infer the columns based on a single item. If 'list-like', infer the columns based on a list of items.
             ancestor_selector: The selector of the ancestor element containing the items to summarize. If None, the 'body' element is used.
             items_selector: The selector of the items to summarize. If None, all the children of the ancestor element are used.
+            goal: The goal of the column inference.
         """
 
         await self.load_page(url)
@@ -330,7 +332,7 @@ class Scraper(BrowserTool):
             MULTI_COLUMN_INFERENCE_PROMPT
             if scraping_type == "list-like"
             else SINGLE_COLUMN_INFERENCE_PROMPT
-        )
+        ).format(goal=goal or "Extract essential details from the content")
 
         res = await llm_tool_call(
             llm=ctx.llm,
