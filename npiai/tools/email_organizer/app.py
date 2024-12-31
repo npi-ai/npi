@@ -167,7 +167,7 @@ class EmailOrganizer(FunctionTool):
         output_columns: List[Column],
         with_pdf_attachments: bool = False,
         concurrency: int = 1,
-    ):
+    ) -> AsyncGenerator[EmailSummary, None]:
         """
         Summarize emails into a table.
 
@@ -181,7 +181,7 @@ class EmailOrganizer(FunctionTool):
         lock = asyncio.Lock()
         index = 0
 
-        async def summarize_email(results_queue: asyncio.Queue[FilterResult]):
+        async def summarize_email(results_queue: asyncio.Queue[EmailSummary]):
             nonlocal index
             async with lock:
                 if index >= len(email_or_id_list):
