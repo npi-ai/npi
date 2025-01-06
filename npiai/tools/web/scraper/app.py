@@ -301,7 +301,11 @@ class Scraper(BrowserTool):
             goal: The goal of the column inference.
         """
 
-        await self.load_page(url)
+        await self.load_page(
+            url,
+            timeout=3000,
+            wait_for_selector=items_selector,
+        )
 
         if not ancestor_selector:
             ancestor_selector = "body"
