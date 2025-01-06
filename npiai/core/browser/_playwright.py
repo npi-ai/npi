@@ -1,6 +1,7 @@
 import os
 import pathlib
 import tempfile
+from textwrap import dedent
 from urllib.request import urlretrieve
 
 from playwright.async_api import (
@@ -67,7 +68,27 @@ class PlaywrightContext:
         # self.context.set_default_timeout(3000)
         await self.context.add_init_script(path=_prepare_browser_utils())
         await self.context.add_init_script(
-            script="""window.npi = new window.BrowserUtils()"""
+            script=dedent(
+                """
+                window.npi = new window.BrowserUtils();
+                window['ga-disable-GA_MEASUREMENT_ID'] = true;
+                """
+            )
+        )
+
+        def block_route(route):
+            return route.fulfill(status=204, body="")
+
+        # block Google Analytics
+        await self.context.route(
+            "https://www.googletagmanager.com/gtag/**/*",
+            block_route,
+        )
+
+        # block cloudflare challenges
+        await self.context.route(
+            "https://challenges.cloudflare.com/**/*",
+            block_route,
         )
 
         self.page = await self.context.new_page()

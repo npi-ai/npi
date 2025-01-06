@@ -236,7 +236,11 @@ class PageAnalyzer(BrowserTool):
             items_selector: CSS selector of the items on the page
         """
         # use long wait time for pages to be fully loaded
-        await self.load_page(url, wait=3000)
+        await self.load_page(
+            url,
+            timeout=3000,
+            wait_for_selector=items_selector,
+        )
 
         return await self.playwright.page.evaluate(
             """
@@ -261,33 +265,48 @@ class PageAnalyzer(BrowserTool):
                 );
                 
                 return new Promise((resolve) => {
-                      const body = document.body;
-                      const html = document.documentElement;
+                    function done() {
+                        npiScrollObserver.disconnect();
+                        resolve(mutateElementsCount >= threshold);
+                    }
                     
-                      const pageHeight = Math.max(
-                          body.scrollHeight,
-                          body.offsetHeight,
-                          html.clientHeight,
-                          html.scrollHeight,
-                          html.offsetHeight,
-                      );
-                     
-                      const stepSize = pageHeight / 10;
-                      let current = 0;
+                    const body = document.body;
+                    const html = document.documentElement;
+                
+                    const pageHeight = Math.max(
+                        body.scrollHeight,
+                        body.offsetHeight,
+                        html.clientHeight,
+                        html.scrollHeight,
+                        html.offsetHeight,
+                    );
+                    
+                    const stepSize = pageHeight / 10;
+                    let current = 0;
+                    
+                    if (items_selector !== '*') {
+                      const lastItem = [...document.querySelectorAll(items_selector)].at(-1);
                       
-                      const interval = setInterval(() => {
-                          current += stepSize;
+                      if (lastItem) {
+                          current = lastItem.getBoundingClientRect().top;
                           window.scrollTo(0, current);
-                          
-                            if (current >= pageHeight || mutateElementsCount >= threshold) {
-                                clearInterval(interval);
-                                npiScrollObserver.disconnect();
-                                
-                                setTimeout(() => {
-                                    resolve(mutateElementsCount >= threshold);
-                                }, 1000);
+                      }
+                    }
+                    
+                    const interval = setInterval(() => {
+                        current += stepSize;
+                        window.scrollTo(0, current);
+                        
+                        if (current >= pageHeight || mutateElementsCount >= threshold) {
+                            clearInterval(interval);
+                            
+                            if (mutateElementsCount >= threshold) {
+                                done();
+                            } else {
+                                setTimeout(done, 300);
                             }
-                      }, 300);
+                        }
+                    }, 300);
                 });
             }
             """,
@@ -468,7 +487,7 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.load_page(url)
+        await self.load_page(url, timeout=3000)
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()

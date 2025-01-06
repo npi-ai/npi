@@ -9,6 +9,7 @@ from utils import auto_scrape
 
 async def main():
     url = input("Enter the URL: ")
+    # url = "https://www.bardeen.ai/playbooks"
 
     async with PageAnalyzer(headless=False) as analyzer:
         scraper = Scraper(batch_size=5, playwright=analyzer.playwright)

@@ -30,16 +30,28 @@ class BrowserTool(FunctionTool):
         self.use_screenshot = use_screenshot
         self.playwright = playwright or PlaywrightContext(headless)
 
-    async def load_page(self, url: str, wait: int = 1000):
+    async def load_page(
+        self,
+        url: str,
+        timeout: int | None = None,
+        wait_for_selector: str = None,
+    ):
         await self.playwright.page.goto(url)
 
-        # wait for the page to become stable
         try:
-            await self.playwright.page.wait_for_load_state("networkidle", timeout=3000)
+            if wait_for_selector is not None:
+                locator = self.playwright.page.locator(wait_for_selector)
+                await locator.first.wait_for(state="attached", timeout=timeout)
+            # wait for the page to become stable
+            elif timeout is not None:
+                await self.playwright.page.wait_for_load_state(
+                    "networkidle",
+                    timeout=timeout,
+                )
         except TimeoutError:
             pass
 
-        await self.playwright.page.wait_for_timeout(wait)
+        # await self.playwright.page.wait_for_timeout(wait)
 
     @function
     async def get_text(self):
