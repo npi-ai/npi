@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urljoin
 from textwrap import dedent
 from typing import Literal, List
 from typing_extensions import TypedDict
@@ -348,8 +349,9 @@ class PageAnalyzer(BrowserTool):
         for el in elements:
             attrs = el.pop("attributes", None)
             el.pop("options", None)
+
             if attrs and "href" in attrs:
-                el["href"] = attrs["href"]
+                el["href"] = urljoin(page_url, attrs["href"])
 
         res = await llm_tool_call(
             llm=ctx.llm,
