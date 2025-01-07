@@ -1,5 +1,7 @@
 import base64
+import io
 
+from PIL import Image
 from playwright.async_api import ElementHandle, TimeoutError
 
 from npiai.core.browser import PlaywrightContext
@@ -77,7 +79,11 @@ class BrowserTool(FunctionTool):
         """
         await self.playwright.page.goto("about:blank")
 
-    async def get_screenshot(self, full_page: bool = False) -> str | None:
+    async def get_screenshot(
+        self,
+        full_page: bool = False,
+        max_size: tuple[int, int] | None = None,
+    ) -> str | None:
         """Get the screenshot of the current page"""
         if (
             not self.playwright
@@ -89,7 +95,15 @@ class BrowserTool(FunctionTool):
         screenshot = await self.playwright.page.screenshot(
             caret="initial",
             full_page=full_page,
+            # clip={"x": 0, "y": 0, "width": 1280, "height": 720 * 4},
         )
+
+        if max_size:
+            img = Image.open(io.BytesIO(screenshot))
+            img.thumbnail(max_size)
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            screenshot = buffer.getvalue()
 
         return "data:image/png;base64," + base64.b64encode(screenshot).decode()
 
