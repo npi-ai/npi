@@ -313,7 +313,7 @@ class Scraper(BrowserTool):
         parsed_result = await self._convert(
             ancestor_selector=ancestor_selector,
             items_selector=items_selector,
-            limit=10,
+            limit=3,
         )
 
         if not parsed_result:
