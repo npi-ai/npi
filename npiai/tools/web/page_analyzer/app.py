@@ -14,7 +14,9 @@ from litellm.types.completion import (
 from npiai import BrowserTool, function, Context
 from npiai.utils import llm_tool_call, html_to_markdown
 
-_ScrapingType = Literal["list-like", "single"]
+ScrapingType = Literal["list-like", "single"]
+
+_MAX_SCREENSHOT_SIZE = (1280, 720)
 
 
 class CommonSelectors(TypedDict):
@@ -47,7 +49,10 @@ class PageAnalyzer(BrowserTool):
             return False
 
         await self.back_to_top()
-        old_screenshot = await self.get_screenshot(full_page=True)
+        old_screenshot = await self.get_screenshot(
+            full_page=True,
+            max_size=_MAX_SCREENSHOT_SIZE,
+        )
         old_url = await self.get_page_url()
         old_title = await self.get_page_title()
 
@@ -60,7 +65,10 @@ class PageAnalyzer(BrowserTool):
 
         await self.playwright.page.wait_for_timeout(3000)
 
-        new_screenshot = await self.get_screenshot(full_page=True)
+        new_screenshot = await self.get_screenshot(
+            full_page=True,
+            max_size=_MAX_SCREENSHOT_SIZE,
+        )
         new_url = await self.get_page_url()
         new_title = await self.get_page_title()
 
@@ -136,16 +144,6 @@ class PageAnalyzer(BrowserTool):
         )
 
         return callback(**res.model_dump())
-
-    @staticmethod
-    async def set_scraping_type(scraping_type: _ScrapingType) -> _ScrapingType:
-        """
-        Set the inferrd scraping type of the page.
-
-        Args:
-            scraping_type: Inferred scraping type of the page. 'list-like' if the page contains a list of items, otherwise 'single'.
-        """
-        return scraping_type
 
     async def get_selector_of_marker(self, marker_id: int = -1) -> str | None:
         """
@@ -327,12 +325,18 @@ class PageAnalyzer(BrowserTool):
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
-        raw_screenshot = await self.get_screenshot(full_page=True)
+        raw_screenshot = await self.get_screenshot(
+            full_page=True,
+            max_size=_MAX_SCREENSHOT_SIZE,
+        )
         elements, _ = await self.get_interactive_elements(
             screenshot=raw_screenshot,
             full_page=True,
         )
-        annotated_screenshot = await self.get_screenshot(full_page=True)
+        annotated_screenshot = await self.get_screenshot(
+            full_page=True,
+            max_size=_MAX_SCREENSHOT_SIZE,
+        )
 
         res = await llm_tool_call(
             llm=ctx.llm,
@@ -410,7 +414,7 @@ class PageAnalyzer(BrowserTool):
         return selector if is_working else None
 
     @function
-    async def infer_scraping_type(self, ctx: Context, url: str) -> _ScrapingType:
+    async def infer_scraping_type(self, ctx: Context, url: str) -> ScrapingType:
         """
         Infer the scraping type of the page. Returns 'list-like' if the page contains a list of items, otherwise 'single'.
 
@@ -421,11 +425,23 @@ class PageAnalyzer(BrowserTool):
         await self.load_page(url)
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
-        screenshot = await self.get_screenshot(full_page=True)
+        screenshot = await self.get_screenshot(
+            full_page=True,
+            max_size=_MAX_SCREENSHOT_SIZE,
+        )
+
+        def callback(scraping_type: ScrapingType):
+            """
+            Set the inferrd scraping type of the page.
+
+            Args:
+                scraping_type: Inferred scraping type of the page. 'list-like' if the page contains a list of items, otherwise 'single'.
+            """
+            return scraping_type
 
         res = await llm_tool_call(
             llm=ctx.llm,
-            tool=self.set_scraping_type,
+            tool=callback,
             messages=[
                 ChatCompletionSystemMessageParam(
                     role="system",
@@ -472,7 +488,7 @@ class PageAnalyzer(BrowserTool):
             ],
         )
 
-        return await self.set_scraping_type(**res.model_dump())
+        return callback(**res.model_dump())
 
     @function
     async def infer_similar_items_selector(
