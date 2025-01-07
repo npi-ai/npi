@@ -179,10 +179,10 @@ class Scraper(BrowserTool):
             )
 
             await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
-
-            if not items:
-                await ctx.send_debug_message(f"[{self.name}] No items summarized")
-                return
+            #
+            # if not items:
+            #     await ctx.send_debug_message(f"[{self.name}] No items summarized")
+            #     return
 
             async with lock:
                 items_slice = items[:requested_count] if limit != -1 else items
