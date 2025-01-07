@@ -63,7 +63,13 @@ class PageAnalyzer(BrowserTool):
         except PlaywrightError:
             return False
 
-        await self.playwright.page.wait_for_timeout(3000)
+        try:
+            await self.playwright.page.wait_for_load_state(
+                "domcontentloaded",
+                timeout=1000,
+            )
+        except TimeoutError:
+            pass
 
         new_screenshot = await self.get_screenshot(
             full_page=True,
@@ -327,7 +333,7 @@ class PageAnalyzer(BrowserTool):
         page_title = await self.get_page_title()
         raw_screenshot = await self.get_screenshot(
             full_page=True,
-            max_size=_MAX_SCREENSHOT_SIZE,
+            max_size=(128, 72),  # raw screenshot is only used to mark elements
         )
         elements, _ = await self.get_interactive_elements(
             screenshot=raw_screenshot,
@@ -337,6 +343,13 @@ class PageAnalyzer(BrowserTool):
             full_page=True,
             max_size=_MAX_SCREENSHOT_SIZE,
         )
+
+        # remove unnecessary properties
+        for el in elements:
+            attrs = el.pop("attributes", None)
+            el.pop("options", None)
+            if attrs and "href" in attrs:
+                el["href"] = attrs["href"]
 
         res = await llm_tool_call(
             llm=ctx.llm,
@@ -365,8 +378,7 @@ class PageAnalyzer(BrowserTool):
                           role: string | null; // The WAI-ARIA accessible role of the element
                           accessibleName: string; // The WAI-ARIA accessible name of the element
                           accessibleDescription: string; // The WAI-ARIA accessible description of the element
-                          attributes: Record<string, string>; // Some helpful attributes of the element
-                          options?: string[]; // Available options of an <select> element. This property is only provided when the element is a <select> element.
+                          href?: string; // The href attribute of the element if it is a link
                         }
                         
                         ## Instructions
@@ -376,7 +388,8 @@ class PageAnalyzer(BrowserTool):
                         2. Go through the elements array, pay attention to the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
                         3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page. It usually contains text like "Next" or "Load More".
                         4. Buttons that expand the content on the same page are not considered as pagination buttons. Only consider the buttons that navigate to the next page.
-                        5. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
+                        5. Links pointing to the same url as the current page are not considered as pagination buttons.
+                        6. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
                         """
                     ),
                 ),
