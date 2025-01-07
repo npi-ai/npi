@@ -19,19 +19,24 @@ async def auto_scrape(
     items_selector = None
 
     print(f"Analyzing {url}:")
+    step_start_time = time.monotonic()
 
     scraping_type = await analyzer.infer_scraping_type(
         ctx=ctx,
         url=url,
     )
 
-    print("  - Inferred scraping type:", scraping_type)
+    print(
+        f"  - ({time.monotonic() - step_start_time:.2f}s) Inferred scraping type:",
+        scraping_type,
+    )
 
     if scraping_type == "list-like":
+        step_start_time = time.monotonic()
         selectors = await analyzer.infer_similar_items_selector(ctx, url)
 
         print(
-            "  - Possible selectors:",
+            f"  - ({time.monotonic() - step_start_time:.2f}s) Possible selectors:",
             indent(json.dumps(selectors, indent=2), prefix="    ").lstrip(),
         )
 
@@ -39,20 +44,30 @@ async def auto_scrape(
             ancestor_selector = selectors["ancestor"]
             items_selector = selectors["items"]
 
+    step_start_time = time.monotonic()
+
     infinite_scroll = await analyzer.support_infinite_scroll(
         url=url,
         items_selector=items_selector,
     )
 
-    print("  - Support infinite scroll:", infinite_scroll)
+    print(
+        f"  - ({time.monotonic() - step_start_time:.2f}s) Support infinite scroll:",
+        infinite_scroll,
+    )
 
+    step_start_time = time.monotonic()
     pagination_button_selector = await analyzer.get_pagination_button(
         ctx=ctx,
         url=url,
     )
 
-    print("  - Pagination button:", pagination_button_selector)
+    print(
+        f"  - ({time.monotonic() - step_start_time:.2f}s) Pagination button:",
+        pagination_button_selector,
+    )
 
+    step_start_time = time.monotonic()
     columns = await scraper.infer_columns(
         ctx=ctx,
         url=url,
@@ -62,7 +77,7 @@ async def auto_scrape(
     )
 
     print(
-        "  - Inferred columns:",
+        f"  - ({time.monotonic() - step_start_time:.2f}s) Inferred columns:",
         indent(json.dumps(columns, indent=2), prefix="   ").lstrip(),
     )
 
