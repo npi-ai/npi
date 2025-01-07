@@ -13,7 +13,7 @@ from playwright.async_api import (
     FileChooser,
 )
 
-__BROWSER_UTILS_VERSION__ = "0.0.13"
+__BROWSER_UTILS_VERSION__ = "0.0.15"
 
 
 def _prepare_browser_utils():
