@@ -734,8 +734,14 @@ class Scraper(BrowserTool):
                     return;
                 }
                 
-                function process() {
-                    [...document.querySelectorAll('a[href]')].forEach(a => {
+                function process(root) {
+                    const elements = [...root.querySelectorAll('a[href]')];
+                    
+                    if (root.matches('a[href]')) {
+                        elements.push(root);
+                    }
+                    
+                    elements.forEach(a => {
                         const href = a.getAttribute('href');
                         
                         if (!href) {
@@ -747,9 +753,18 @@ class Scraper(BrowserTool):
                     });
                 }
                 
-                process();
+                process(document.body);
                 
-                const observer = new MutationObserver(process);
+                const observer = new MutationObserver((records) => {
+                    for (const record of records) {
+                        for (const node of record.addedNodes) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                process(node);
+                            }
+                        }
+                    }
+                });
+                
                 observer.observe(document.body, { childList: true, subtree: true });
                 
                 window.npiProcessedRelativeLinks = true;
