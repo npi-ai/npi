@@ -64,6 +64,9 @@ class Scraper(BrowserTool):
     # The maximum number of items to summarize in a single batch
     _batch_size: int
 
+    # all items loaded flag
+    _all_items_loaded: bool = False
+
     _navigator: NavigatorAgent
 
     # asyncio lock to prevent concurrent access to the webpage
@@ -118,6 +121,9 @@ class Scraper(BrowserTool):
         Returns:
             A stream of items. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
         """
+        # reset the flag when starting a new scraping task
+        self._all_items_loaded = False
+
         if limit == 0:
             return
 
@@ -135,17 +141,15 @@ class Scraper(BrowserTool):
         remaining = limit
         # batch index
         batch_index = 0
-        # all items loaded flag
-        all_loaded = False
 
         lock = asyncio.Lock()
 
         skip_item_hashes_set = set(skip_item_hashes) if skip_item_hashes else None
 
         async def run_batch(results_queue: asyncio.Queue[SummaryChunk]):
-            nonlocal count, remaining, batch_index, all_loaded
+            nonlocal count, remaining, batch_index
 
-            if (limit != -1 and remaining <= 0) or all_loaded:
+            if (limit != -1 and remaining <= 0) or self._all_items_loaded:
                 return
 
             async with lock:
@@ -168,7 +172,6 @@ class Scraper(BrowserTool):
             )
 
             if not parsed_result:
-                all_loaded = True  # no lock here is needed
                 await ctx.send_debug_message(f"[{self.name}] No more items found")
                 return
 
@@ -370,15 +373,21 @@ class Scraper(BrowserTool):
         skip_item_hashes: Set[str] | None = None,
     ) -> ConversionResult | None | None:
         async with self._webpage_access_lock:
+            if self._all_items_loaded:
+                return None
+
             # convert relative links to absolute links
             await self._process_relative_links()
 
             if items_selector is None:
-                return await self._convert_ancestor(ancestor_selector, skip_item_hashes)
+                res = await self._convert_ancestor(ancestor_selector, skip_item_hashes)
             else:
-                return await self._convert_items(
-                    items_selector, limit, skip_item_hashes
-                )
+                res = await self._convert_items(items_selector, limit, skip_item_hashes)
+
+            if not res:
+                self._all_items_loaded = True
+
+            return res
 
     async def _convert_items(
         self,
