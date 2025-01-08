@@ -729,15 +729,30 @@ class Scraper(BrowserTool):
     async def _process_relative_links(self):
         await self.playwright.page.evaluate(
             """
-            [...document.querySelectorAll('a[href]')].forEach(a => {
-                const href = a.getAttribute('href');
-                
-                if (!href) {
+            () => {
+                if (window.npiProcessedRelativeLinks) {
                     return;
                 }
                 
-                const url = new URL(href, window.location.href);
-                a.setAttribute('href', url.href);
-            });
+                function process() {
+                    [...document.querySelectorAll('a[href]')].forEach(a => {
+                        const href = a.getAttribute('href');
+                        
+                        if (!href) {
+                            return;
+                        }
+                        
+                        const url = new URL(href, window.location.href);
+                        a.setAttribute('href', url.href);
+                    });
+                }
+                
+                process();
+                
+                const observer = new MutationObserver(process);
+                observer.observe(document.body, { childList: true, subtree: true });
+                
+                window.npiProcessedRelativeLinks = true;
+            }
             """
         )
