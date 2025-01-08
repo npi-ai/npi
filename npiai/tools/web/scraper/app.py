@@ -4,6 +4,8 @@ import hashlib
 import json
 import os
 import re
+import sys
+import traceback
 from pathlib import Path
 from textwrap import dedent
 from typing import List, AsyncGenerator, Any, Iterable, Set
@@ -39,7 +41,7 @@ from .types import (
 )
 
 __ID_COLUMN__ = Column(
-    name="[[@item_id]]",
+    name="[[item_id]]",
     type="text",
     description="Unique identifier for each item",
     prompt="Fill in the unique identifier for the corresponding <section> that represents the item",
@@ -133,15 +135,17 @@ class Scraper(BrowserTool):
         remaining = limit
         # batch index
         batch_index = 0
+        # all items loaded flag
+        all_loaded = False
 
         lock = asyncio.Lock()
 
         skip_item_hashes_set = set(skip_item_hashes) if skip_item_hashes else None
 
         async def run_batch(results_queue: asyncio.Queue[SummaryChunk]):
-            nonlocal count, remaining, batch_index
+            nonlocal count, remaining, batch_index, all_loaded
 
-            if limit != -1 and remaining <= 0:
+            if (limit != -1 and remaining <= 0) or all_loaded:
                 return
 
             async with lock:
@@ -164,12 +168,13 @@ class Scraper(BrowserTool):
             )
 
             if not parsed_result:
+                all_loaded = True  # no lock here is needed
                 await ctx.send_debug_message(f"[{self.name}] No more items found")
                 return
 
-            await ctx.send_debug_message(
-                f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
-            )
+            # await ctx.send_debug_message(
+            #     f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
+            # )
 
             items = await self._summarize_llm_call(
                 ctx=ctx,
@@ -319,9 +324,9 @@ class Scraper(BrowserTool):
         if not parsed_result:
             return None
 
-        await ctx.send_debug_message(
-            f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
-        )
+        # await ctx.send_debug_message(
+        #     f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
+        # )
 
         def callback(columns: List[Column]):
             """
@@ -598,6 +603,10 @@ class Scraper(BrowserTool):
                     )
                 )
         except Exception as e:
+            print(
+                f"Error parsing the response: {traceback.format_exc()}",
+                file=sys.stderr,
+            )
             await ctx.send_error_message(
                 f"[{self.name}] Error parsing the response: {str(e)}"
             )

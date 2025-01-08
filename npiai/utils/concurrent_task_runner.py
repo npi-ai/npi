@@ -44,9 +44,13 @@ async def concurrent_task_runner[
         await asyncio.sleep(0.1)
 
     # collect results
-    while running_task_count > 0 or not results_queue.empty():
-        res = await results_queue.get()
-        yield res
+    while running_task_count > 0:
+        # consume the queue only when there are running tasks
+        while not results_queue.empty():
+            res = await results_queue.get()
+            yield res
+
+        await asyncio.sleep(0.1)
 
     # wait for all tasks to finish
     await asyncio.gather(*tasks)

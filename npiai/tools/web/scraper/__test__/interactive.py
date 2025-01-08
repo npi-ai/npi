@@ -1,7 +1,8 @@
 import asyncio
 
-# from npiai.utils.test_utils import DebugContext
-from npiai import Context
+from npiai.utils.test_utils import DebugContext
+
+# from npiai import Context
 from npiai.tools.web.page_analyzer import PageAnalyzer
 from npiai.tools.web.scraper import Scraper
 from utils import auto_scrape
@@ -15,7 +16,7 @@ async def main():
         scraper = Scraper(batch_size=5, playwright=analyzer.playwright)
 
         await auto_scrape(
-            ctx=Context(),
+            ctx=DebugContext(),
             analyzer=analyzer,
             scraper=scraper,
             url=url,
