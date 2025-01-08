@@ -11,6 +11,7 @@ class Provider(Enum):
     Anthropic = 3
     Groq = 4
     AzureOpenAI = 5
+    Gemini = 6
 
 
 class LLM:
@@ -42,7 +43,9 @@ class OpenAI(LLM):
 
 class Anthropic(LLM):
     def __init__(self, api_key: str, model: str):
-        super().__init__(api_key=api_key, model=model, provider=Provider.Anthropic)
+        super().__init__(
+            api_key=api_key, model=f"anthropic/{model}", provider=Provider.Anthropic
+        )
 
 
 class AzureOpenAI(LLM):
@@ -52,3 +55,10 @@ class AzureOpenAI(LLM):
         os.environ["AZURE_API_BASE"] = api_base
         os.environ["AZURE_API_VERSION"] = api_version
         super().__init__(f"azure/{deployment_name}", api_key, Provider.AzureOpenAI)
+
+
+class Gemini(LLM):
+    def __init__(self, api_key: str, model: str):
+        super().__init__(
+            api_key=api_key, model=f"gemini/{model}", provider=Provider.Gemini
+        )

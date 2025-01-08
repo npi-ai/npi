@@ -4,7 +4,7 @@ from typing import List, Callable
 from litellm.types.completion import ChatCompletionMessageParam
 from pydantic import BaseModel
 
-from npiai.llm import LLM, Anthropic
+from npiai.llm import LLM
 from .parse_npi_function import parse_npi_function
 
 
@@ -20,7 +20,7 @@ async def llm_tool_call(
 
     response = await llm.completion(
         messages=messages,
-        tools=[fn_reg.get_tool_param(strict=not isinstance(llm, Anthropic))],
+        tools=[fn_reg.get_tool_param()],
         max_tokens=4096,
         tool_choice={"type": "function", "function": {"name": fn_reg.name}},
     )
