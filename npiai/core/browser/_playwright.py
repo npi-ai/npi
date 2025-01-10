@@ -54,6 +54,9 @@ class PlaywrightContext:
 
     async def start(self):
         """Start the Playwright chrome"""
+        if self.ready:
+            return
+
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,

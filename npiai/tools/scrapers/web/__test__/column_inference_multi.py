@@ -1,26 +1,32 @@
 import asyncio
 import json
 
-from npiai.tools.web.scraper import Scraper
+from npiai.tools.scrapers.web import WebScraper
 from npiai.utils.test_utils import DebugContext
 
-url = "https://www.amazon.co.jp/dp/B0DHCTRH16/"
+url = "https://www.bardeen.ai/playbooks"
+ancestor_selector = ".playbook_list"
+items_selector = ".playbook_list .playbook_item-link"
 
 
 async def main():
-    async with Scraper(headless=False, batch_size=10) as scraper:
+    async with WebScraper(
+        headless=False,
+        scraping_type="list-like",
+        url="https://www.bardeen.ai/playbooks",
+        ancestor_selector=".playbook_list",
+        items_selector=".playbook_list .playbook_item-link",
+    ) as scraper:
         columns = await scraper.infer_columns(
             ctx=DebugContext(),
-            url=url,
-            scraping_type="single",
         )
 
         print("Inferred columns:", json.dumps(columns, indent=2))
 
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
-            url=url,
-            scraping_type="single",
+            limit=10,
+            batch_size=5,
             output_columns=columns,
         )
 
