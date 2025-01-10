@@ -1,25 +1,26 @@
 import asyncio
 import json
 import time
-from typing import Set
 
-from npiai.tools.web.scraper import Scraper
+from npiai.tools.scrapers.web import WebScraper
 from npiai.utils.test_utils import DebugContext
 
 # from npiai.context import Context
 
 
-async def summarize(skip_item_hashes: Set[str] | None = None):
-    async with Scraper(headless=False, batch_size=5) as scraper:
+async def main():
+    async with WebScraper(
+        headless=False,
+        url="https://www.bardeen.ai/playbooks",
+        scraping_type="list-like",
+        ancestor_selector=".playbook_list",
+        items_selector=".playbook_list .playbook_item",
+    ) as scraper:
         stream = scraper.summarize_stream(
             ctx=DebugContext(),
-            url="https://www.bardeen.ai/playbooks",
-            scraping_type="list-like",
-            ancestor_selector=".playbook_list",
-            items_selector=".playbook_list .playbook_item",
-            limit=20,
-            concurrency=2,
-            skip_item_hashes=skip_item_hashes,
+            limit=100,
+            batch_size=5,
+            concurrency=10,
             output_columns=[
                 {
                     "name": "Apps Involved",
@@ -42,30 +43,13 @@ async def summarize(skip_item_hashes: Set[str] | None = None):
 
         start = time.monotonic()
         count = 0
-        hashes = set()
-        matched_hashes = set()
 
         async for chunk in stream:
             count += len(chunk["items"])
             print("Chunk:", json.dumps(chunk, indent=2))
-            matched_hashes.update(chunk["matched_hashes"])
-
-            for item in chunk["items"]:
-                hashes.add(item["hash"])
 
         end = time.monotonic()
         print(f"Summarized {count} items in {end - start:.2f} seconds")
-
-        if skip_item_hashes:
-            print("Matched hashes:", matched_hashes)
-            print("Unmatched hashes:", skip_item_hashes - matched_hashes)
-
-        return hashes
-
-
-async def main():
-    hashes = await summarize()
-    await summarize(hashes)
 
 
 if __name__ == "__main__":

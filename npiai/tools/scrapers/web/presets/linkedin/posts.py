@@ -2,14 +2,15 @@ import json
 import os
 import pathlib
 import tempfile
-from typing import Iterable, AsyncGenerator
+from typing import AsyncGenerator, List
 
 from slugify import slugify
 
 from npiai import Context
+from npiai.core import PlaywrightContext
 from npiai.error import UnauthorizedError
-from npiai.tools.web.scraper import Scraper
-from npiai.tools.web.scraper.types import SummaryChunk
+from npiai.tools.scrapers.web import WebScraper
+from npiai.tools.scrapers import SummaryChunk, Column
 from npiai.utils.html_to_markdown import CompactMarkdownConverter
 from .columns import POST_COLUMNS
 
@@ -25,8 +26,24 @@ class LinkedinMarkdownConverter(CompactMarkdownConverter):
         return ""
 
 
-class LinkedinScraper(Scraper):
+class LinkedinPostsScraper(WebScraper):
     markdown_converter = LinkedinMarkdownConverter()
+
+    def __init__(
+        self,
+        url: str,
+        skip_item_hashes: List[str] | None = None,
+        headless: bool = True,
+        playwright: PlaywrightContext = None,
+    ):
+        super().__init__(
+            url=url,
+            scraping_type="list-like",
+            items_selector=".fie-impression-container",
+            skip_item_hashes=skip_item_hashes,
+            headless=headless,
+            playwright=playwright,
+        )
 
     async def start(self):
         await super().start()
@@ -72,23 +89,20 @@ class LinkedinScraper(Scraper):
         os.makedirs(save_dir, exist_ok=True)
         await self.playwright.context.storage_state(path=state_file)
 
-    async def scrape_posts_stream(
+    async def summarize_stream(
         self,
         ctx: Context,
-        url: str,
+        output_columns: List[Column] | None = None,
+        batch_size: int = 1,
         limit: int = -1,
         concurrency: int = 1,
-        skip_item_hashes: Iterable[str] | None = None,
     ) -> AsyncGenerator[SummaryChunk, None]:
         stream = super().summarize_stream(
             ctx=ctx,
-            url=url,
+            output_columns=output_columns or POST_COLUMNS,
             limit=limit,
+            batch_size=batch_size,
             concurrency=concurrency,
-            skip_item_hashes=skip_item_hashes,
-            scraping_type="list-like",
-            items_selector=".fie-impression-container",
-            output_columns=POST_COLUMNS,
         )
 
         async for chunk in stream:

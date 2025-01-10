@@ -2,16 +2,18 @@ import asyncio
 import json
 import time
 
-from npiai.tools.web.scraper.presets.linkedin import LinkedinScraper
+from npiai.tools.scrapers.web.presets.linkedin import LinkedinPostsScraper
 from npiai.utils.test_utils import DebugContext
 from npiai import Context
 
 
 async def main():
-    async with LinkedinScraper(headless=False, batch_size=5) as scraper:
+    async with LinkedinPostsScraper(
+        headless=False,
+        url="https://www.linkedin.com/in/jerry-liu-64390071/recent-activity/all/",
+    ) as scraper:
         stream = scraper.scrape_posts_stream(
             ctx=DebugContext(),
-            url="https://www.linkedin.com/in/jerry-liu-64390071/recent-activity/all/",
             limit=100,
             concurrency=10,
         )

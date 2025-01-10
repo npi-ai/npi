@@ -1,5 +1,5 @@
 from textwrap import dedent
-from npiai.tools.web.scraper.types import Column
+from npiai.tools.scrapers import Column
 
 
 POST_COLUMNS: list[Column] = [

@@ -2,7 +2,7 @@ import asyncio
 import json
 from textwrap import indent
 
-from npiai.tools.web.page_analyzer import PageAnalyzer
+from npiai.tools.scrapers.page_analyzer import PageAnalyzer
 from npiai.tools.web.twitter import Twitter
 
 # from npiai.utils.test_utils import DebugContext
