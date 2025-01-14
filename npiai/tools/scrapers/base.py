@@ -38,17 +38,11 @@ __INDEX_COLUMN__ = Column(
 
 
 class BaseScraper(FunctionTool, ABC):
-    summarize_prompt: str
-    infer_prompt: str
+    name = "base_scraper"
+    description = "Generic scraper tool"
 
-    def __init__(
-        self,
-        summarize_prompt: str | None = None,
-        infer_prompt: str | None = None,
-    ):
-        super().__init__()
-        self.summarize_prompt = summarize_prompt or DEFAULT_COLUMN_SUMMARIZE_PROMPT
-        self.infer_prompt = infer_prompt or DEFAULT_COLUMN_INFERENCE_PROMPT
+    summarize_prompt: str = DEFAULT_COLUMN_SUMMARIZE_PROMPT
+    infer_prompt: str = DEFAULT_COLUMN_INFERENCE_PROMPT
 
     @abstractmethod
     async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None: ...
