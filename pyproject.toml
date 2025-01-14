@@ -41,6 +41,7 @@ azure-identity = "^1.19.0"
 msgraph-sdk = "^1.15.0"
 pymupdf = "^1.25.1"
 pillow = "^11.1.0"
+youtube-comment-downloader = "^0.1.76"
 
 
 [tool.poetry.group.dev.dependencies]
