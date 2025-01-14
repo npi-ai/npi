@@ -59,6 +59,7 @@ async def auto_scrape(
         pagination_button_selector = await analyzer.get_pagination_button(
             ctx=ctx,
             url=url,
+            items_selector=items_selector,
         )
 
         print(

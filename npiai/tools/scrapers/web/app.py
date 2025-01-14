@@ -10,9 +10,8 @@ from playwright.async_api import TimeoutError
 from npiai import BrowserTool, Context
 from npiai.core import PlaywrightContext
 from npiai.tools.scrapers import BaseScraper, SourceItem
-from npiai.utils import (
-    CompactMarkdownConverter,
-)
+from npiai.tools.scrapers.utils import init_items_observer, has_items_added
+from npiai.utils import CompactMarkdownConverter
 
 ScrapingType = Literal["single", "list-like"]
 
@@ -284,30 +283,10 @@ class WebScraper(BaseScraper, BrowserTool):
             return
 
         # attach mutation observer to the ancestor element
-        await self.playwright.page.evaluate(
-            """
-            ([ancestor_selector, items_selector]) => {
-                window.addedNodes = [];
-                
-                window.npiObserver = new MutationObserver((records) => {
-                    for (const record of records) {
-                        for (const addedNode of record.addedNodes) {
-                            if (addedNode.nodeType === Node.ELEMENT_NODE &&
-                                (addedNode.matches(items_selector) || addedNode.querySelector(items_selector))
-                            ) {
-                                window.addedNodes.push(addedNode);
-                            }
-                        }
-                    }
-                });
-                
-                window.npiObserver.observe(
-                    document.querySelector(ancestor_selector), 
-                    { childList: true, subtree: true }
-                );
-            }
-            """,
-            [self.ancestor_selector, self.items_selector or "*"],
+        await init_items_observer(
+            playwright=self.playwright,
+            ancestor_selector=self.ancestor_selector,
+            items_selector=self.items_selector,
         )
 
         more_content_loaded = False
@@ -333,10 +312,7 @@ class WebScraper(BaseScraper, BrowserTool):
                 self.ancestor_selector,
             )
             await ctx.send_debug_message(f"[{self.name}] Scrolled to load more items")
-            await self.playwright.page.wait_for_timeout(3000)
-            more_content_loaded = await self.playwright.page.evaluate(
-                "() => !!window.addedNodes?.length",
-            )
+            more_content_loaded = await has_items_added(self.playwright, timeout=3000)
 
         if not more_content_loaded and self.pagination_button_selector:
             handle = await self.playwright.page.evaluate_handle(
@@ -354,7 +330,13 @@ class WebScraper(BaseScraper, BrowserTool):
 
             await self.click(elem)
             await ctx.send_debug_message(f"[{self.name}] Clicked pagination button")
-            await self.playwright.page.wait_for_timeout(3000)
+            try:
+                await self.playwright.page.wait_for_load_state(
+                    "domcontentloaded",
+                    timeout=3000,
+                )
+            except TimeoutError:
+                pass
 
         # clear the mutation observer
         await self.playwright.page.evaluate(

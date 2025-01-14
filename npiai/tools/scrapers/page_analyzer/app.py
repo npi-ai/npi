@@ -14,6 +14,7 @@ from litellm.types.completion import (
 
 from npiai import BrowserTool, function, Context
 from npiai.utils import llm_tool_call, html_to_markdown
+from npiai.tools.scrapers.utils import init_items_observer, has_items_added
 
 ScrapingType = Literal["list-like", "single"]
 
@@ -35,13 +36,18 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
-    async def _validate_pagination(self, ctx: Context, selector: str) -> bool:
-        if not selector:
+    async def _validate_pagination(
+        self,
+        ctx: Context,
+        pagination_button_selector: str | None,
+        items_selector: str | None = None,
+    ) -> bool:
+        if not pagination_button_selector:
             return False
 
         handle = await self.playwright.page.evaluate_handle(
             "selector => document.querySelector(selector)",
-            selector,
+            pagination_button_selector,
         )
 
         elem = handle.as_element()
@@ -64,19 +70,33 @@ class PageAnalyzer(BrowserTool):
         except PlaywrightError:
             return False
 
+        has_items_selector = items_selector and items_selector != "*"
+
+        # attach mutation observer to check if new items are added
+        if has_items_selector:
+            await init_items_observer(
+                playwright=self.playwright,
+                ancestor_selector="body",
+                items_selector=items_selector,
+            )
+
         try:
             await self.playwright.page.wait_for_load_state(
                 "domcontentloaded",
-                timeout=1000,
+                timeout=3000,
             )
         except TimeoutError:
             pass
+
+        new_url = await self.get_page_url()
+
+        if new_url == old_url and has_items_selector:
+            return await has_items_added(self.playwright, timeout=5000)
 
         new_screenshot = await self.get_screenshot(
             full_page=True,
             max_size=_MAX_SCREENSHOT_SIZE,
         )
-        new_url = await self.get_page_url()
         new_title = await self.get_page_title()
 
         def callback(is_next_page: bool):
@@ -231,7 +251,7 @@ class PageAnalyzer(BrowserTool):
     async def support_infinite_scroll(
         self,
         url: str,
-        items_selector: str = None,
+        items_selector: str | None = None,
     ) -> bool:
         """
         Open the given URL and determine whether the page supports infinite scroll.
@@ -319,13 +339,16 @@ class PageAnalyzer(BrowserTool):
         )
 
     @function
-    async def get_pagination_button(self, ctx: Context, url: str) -> str | None:
+    async def get_pagination_button(
+        self, ctx: Context, url: str, items_selector: str | None = None
+    ) -> str | None:
         """
         Open the given URL and determine whether there is a pagination button. If there is, return the CSS selector of the pagination button. Otherwise, return None.
 
         Args:
             ctx: NPi Context
             url: URL of the page
+            items_selector: CSS selector of the items on the page
         """
         await self.load_page(url)
 
@@ -389,9 +412,8 @@ class PageAnalyzer(BrowserTool):
                         1. Examine the screenshots, the URL, and the title of the page to understand the context, and then think about what the current page is.
                         2. Go through the elements array, pay attention to the `role`, `accessibleName`, and `accessibleDescription` properties to grab semantic information of the elements.
                         3. Check if there is a pagination button on the page. Typically, a pagination button is a button or a link that allows users to navigate to the next page. It usually contains text like "Next" or "Load More".
-                        4. Buttons that expand the content on the same page are not considered as pagination buttons. Only consider the buttons that navigate to the next page.
-                        5. Links pointing to the same url as the current page are not considered as pagination buttons.
-                        6. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
+                        4. Links pointing to the same url as the current page are not considered as pagination buttons.
+                        5. If and only if you are confident that you have found a pagination button, call the tool with the ID of the element to retrieve the CSS selector. If you are not sure, or there is no pagination button, call the tool with -1. **Do not make any assumptions**.
                         """
                     ),
                 ),
@@ -420,13 +442,19 @@ class PageAnalyzer(BrowserTool):
             ],
         )
 
-        selector = await self.get_selector_of_marker(**res.model_dump())
-        await ctx.send_debug_message(f"Pagination button selector: {selector}")
+        pagination_button_selector = await self.get_selector_of_marker(
+            **res.model_dump()
+        )
+        await ctx.send_debug_message(
+            f"Pagination button selector: {pagination_button_selector}"
+        )
 
-        is_working = await self._validate_pagination(ctx, selector)
+        is_working = await self._validate_pagination(
+            ctx, pagination_button_selector, items_selector
+        )
         await ctx.send_debug_message(f"Pagination button is working: {is_working}")
 
-        return selector if is_working else None
+        return pagination_button_selector if is_working else None
 
     @function
     async def infer_scraping_type(self, ctx: Context, url: str) -> ScrapingType:
