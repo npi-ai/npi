@@ -50,6 +50,7 @@ The columns are defined in a json object with the following fields:
    - The subsequent lines should contain the scraped data.
 3. Enclose all values and column names in double quotes and separate them using commas.
 4. Ensure that column names in the CSV match exactly as defined in the column definitions.
+5. If an item contains a list of values for a column, separate them with a semicolon.
 
 ## Column Definitions for This Task
 
