@@ -10,6 +10,12 @@ async def init_items_observer(
     await playwright.page.evaluate(
         """
         ([ancestor_selector, items_selector]) => {
+            const ancestor = document.querySelector(ancestor_selector);
+            
+            if (!ancestor) {
+                return;
+            }
+            
             window.addedNodes = [];
             
             window.npiObserver = new MutationObserver((records) => {
