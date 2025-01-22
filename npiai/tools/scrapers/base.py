@@ -201,6 +201,7 @@ class BaseScraper(FunctionTool, ABC):
     async def infer_columns(
         self,
         ctx: Context,
+        sample_size: int = 3,
         goal: str | None = None,
     ) -> List[Column] | None:
         """
@@ -208,11 +209,12 @@ class BaseScraper(FunctionTool, ABC):
 
         Args:
             ctx: NPi context.
+            sample_size: The number of items to use for inferring the columns.
             goal: The goal of the column inference.
         """
         await self.init_data(ctx)
 
-        items = await self.next_items(ctx=ctx, count=3)
+        items = await self.next_items(ctx=ctx, count=sample_size)
 
         if not items:
             return None
