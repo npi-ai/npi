@@ -3,21 +3,17 @@ import asyncio
 import json
 import time
 
-from instagrapi import Client as InstagramClient
-
 from npiai.tools.scrapers.instagram import InstagramCommentsScraper
 from npiai.llm import OpenAI
 
 from npiai.utils.test_utils import DebugContext
+from utils import login_user
 
 
 async def main():
     ctx = DebugContext()
     ctx.use_llm(OpenAI(api_key=os.environ["OPENAI_API_KEY"], model="gpt-4o-mini"))
-    client = InstagramClient()
-    # session id login is not working when retrieving comments
-    # client.login_by_sessionid(os.environ["INSTAGRAM_SESSIONID"])
-    client.login(os.environ["INSTAGRAM_USERNAME"], os.environ["INSTAGRAM_PASSWORD"])
+    client = login_user()
 
     async with InstagramCommentsScraper(
         client=client,
