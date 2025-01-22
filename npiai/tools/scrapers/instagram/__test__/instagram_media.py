@@ -3,19 +3,17 @@ import asyncio
 import json
 import time
 
-from instagrapi import Client as InstagramClient
-
 from npiai.tools.scrapers.instagram import InstagramMediaScraper
 from npiai.llm import OpenAI
 
 from npiai.utils.test_utils import DebugContext
+from utils import login_user
 
 
 async def main():
     ctx = DebugContext()
     ctx.use_llm(OpenAI(api_key=os.environ["OPENAI_API_KEY"], model="gpt-4o-mini"))
-    client = InstagramClient()
-    client.login_by_sessionid(os.environ["INSTAGRAM_SESSIONID"])
+    client = login_user()
 
     async with InstagramMediaScraper(
         client=client,
