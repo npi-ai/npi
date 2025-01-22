@@ -42,6 +42,7 @@ msgraph-sdk = "^1.15.0"
 pymupdf = "^1.25.1"
 pillow = "^11.1.0"
 youtube-comment-downloader = "^0.1.76"
+instagrapi = "^2.1.3"
 
 
 [tool.poetry.group.dev.dependencies]
