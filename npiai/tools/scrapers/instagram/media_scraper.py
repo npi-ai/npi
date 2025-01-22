@@ -1,4 +1,5 @@
 import re
+import asyncio
 from typing import List
 from instagrapi import Client as InstagramClient
 from instagrapi.types import Media, HttpUrl
@@ -15,6 +16,7 @@ class InstagramMediaScraper(BaseScraper):
     _client: InstagramClient
     _user_id: str
     _pagination_code: str | None
+    _load_media_lock: asyncio.Lock
 
     def __init__(
         self,
@@ -24,6 +26,7 @@ class InstagramMediaScraper(BaseScraper):
         super().__init__()
         self._client = client
         self._pagination_code = None
+        self._load_media_lock = asyncio.Lock()
 
         # check if the input is a URL
         url_pattern = re.compile(r"(?:https://)?www.instagram.com/([^/]+)/?")
@@ -36,18 +39,19 @@ class InstagramMediaScraper(BaseScraper):
         self._user_id = client.user_info_by_username_v1(username).pk
 
     async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None:
-        all_media, pagination_code = self._client.user_medias_paginated(
-            user_id=self._user_id,
-            amount=count,
-            end_cursor=self._pagination_code,
-        )
+        async with self._load_media_lock:
+            all_media, pagination_code = self._client.user_medias_paginated(
+                user_id=self._user_id,
+                amount=count,
+                end_cursor=self._pagination_code,
+            )
 
-        if not all_media:
-            return None
+            if not all_media:
+                return None
 
-        self._pagination_code = pagination_code
+            self._pagination_code = pagination_code
 
-        return [self._parse_media(media) for media in all_media]
+            return [self._parse_media(media) for media in all_media]
 
     def _parse_media(self, media: Media) -> SourceItem:
         res = {

@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 from instagrapi import Client as InstagramClient
 from instagrapi.types import Comment
@@ -16,6 +17,7 @@ class InstagramCommentsScraper(BaseScraper):
     _pagination_code: str | None
 
     _remaining_comments: List[Comment]
+    _load_comments_lock: asyncio.Lock
 
     def __init__(
         self,
@@ -26,6 +28,7 @@ class InstagramCommentsScraper(BaseScraper):
         self._client = client
         self._pagination_code = None
         self._remaining_comments = []
+        self._load_comments_lock = asyncio.Lock()
 
         media_pk = client.media_pk_from_url(url)
         self._media_id = client.media_id(media_pk)
@@ -51,18 +54,19 @@ class InstagramCommentsScraper(BaseScraper):
         return res
 
     def _fetch_more_comments(self, count: int):
-        if len(self._remaining_comments) < count:
-            all_comments, pagination_code = self._client.media_comments_chunk(
-                media_id=self._media_id,
-                max_amount=count,
-                min_id=self._pagination_code,
-            )
+        async with self._load_comments_lock:
+            if len(self._remaining_comments) < count:
+                all_comments, pagination_code = self._client.media_comments_chunk(
+                    media_id=self._media_id,
+                    max_amount=count,
+                    min_id=self._pagination_code,
+                )
 
-            self._pagination_code = pagination_code
+                self._pagination_code = pagination_code
 
-            if all_comments:
-                self._remaining_comments.extend(all_comments)
+                if all_comments:
+                    self._remaining_comments.extend(all_comments)
 
-        res = self._remaining_comments[:count]
-        self._remaining_comments = self._remaining_comments[count:]
-        return res
+            res = self._remaining_comments[:count]
+            self._remaining_comments = self._remaining_comments[count:]
+            return res
