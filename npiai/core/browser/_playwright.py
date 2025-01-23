@@ -66,7 +66,7 @@ class PlaywrightContext:
         self.context = await self.browser.new_context(
             locale="en-US",
             bypass_csp=True,
-            **self.playwright.devices["Desktop Edge"],
+            **self.playwright.devices["Desktop Chrome"],
         )
         # self.context.set_default_timeout(3000)
         await self.context.add_init_script(path=_prepare_browser_utils())
