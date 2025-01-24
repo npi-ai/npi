@@ -35,22 +35,33 @@ def _prepare_browser_utils():
 
 
 class PlaywrightContext:
+    headless: bool
+    ready: bool
+    playwright: Playwright | None
+    browser: Browser | None
+    context: BrowserContext | None
+    page: Page | None
+    channel: str | None
+
     def __init__(
         self,
         headless: bool = True,
+        channel: str | None = None,
     ):
         """
         Initialize a Playwright context
 
         Args:
             headless: Whether to run playwright in headless mode
+            channel: The browser channel to use, see: https://playwright.dev/python/docs/browsers#google-chrome--microsoft-edge
         """
         self.headless = headless
         self.ready = False
-        self.playwright: Playwright | None = None
-        self.browser: Browser | None = None
-        self.context: BrowserContext | None = None
-        self.page: Page | None = None
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        self.page = None
+        self.channel = channel
 
     async def start(self):
         """Start the Playwright chrome"""
@@ -60,6 +71,7 @@ class PlaywrightContext:
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,
+            channel=self.channel,
             # args=["--disable-gpu", "--single-process"],
         )
 
