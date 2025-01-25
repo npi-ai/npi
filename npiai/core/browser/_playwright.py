@@ -161,6 +161,7 @@ class PlaywrightContext:
         Args:
             popup: Page instance
         """
+        await popup.set_viewport_size(self.page.viewport_size)
         self.page = popup
         self.attach_events(popup)
 
