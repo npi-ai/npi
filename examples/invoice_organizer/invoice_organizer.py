@@ -127,7 +127,7 @@ class InvoiceOrganizer(FunctionTool):
             ),
         ]
 
-        response = await ctx.llm.completion(
+        response = await ctx.llm.acompletion(
             messages=prompts,
             tools=self._processor.tools,
             tool_choice="auto",

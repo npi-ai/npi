@@ -263,7 +263,7 @@ class NavigatorAgent(BrowserAgentTool):
                 return f"Maximum number of steps reached. Last response was: {response_str}"
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
-        response = await ctx.llm.completion(
+        response = await ctx.llm.acompletion(
             messages=task.conversations(),
             max_tokens=4096,
         )

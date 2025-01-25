@@ -146,7 +146,7 @@ class SearchQueryConfigs(Configurator):
             ),
         ]
 
-        response = await ctx.llm.completion(
+        response = await ctx.llm.acompletion(
             messages=messages,
             tools=[fn_reg.get_tool_param()],
             tool_choice="required",

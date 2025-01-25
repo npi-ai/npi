@@ -82,7 +82,7 @@ class AgentTool(BaseAgentTool):
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
         while True:
-            response = await ctx.llm.completion(
+            response = await ctx.llm.acompletion(
                 messages=task.conversations(),
                 tools=self._tool.tools,
                 tool_choice="auto",

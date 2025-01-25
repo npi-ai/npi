@@ -18,7 +18,7 @@ async def llm_summarize(
     final_response_content = ""
 
     while True:
-        response = await llm.completion(
+        response = await llm.acompletion(
             messages=messages_copy,
             max_tokens=4096,
             # use fixed temperature and seed to ensure deterministic results

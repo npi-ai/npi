@@ -18,7 +18,7 @@ async def llm_tool_call(
     if fn_reg.model is None:
         raise RuntimeError("Unable to modeling tool function")
 
-    response = await llm.completion(
+    response = await llm.acompletion(
         messages=messages,
         tools=[fn_reg.get_tool_param()],
         max_tokens=4096,
