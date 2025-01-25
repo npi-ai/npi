@@ -13,7 +13,7 @@ async def auto_scrape(
     ctx: Context,
     url: str,
 ):
-    async with PageAnalyzer(headless=False) as analyzer:
+    async with PageAnalyzer(headless=False, force_captcha_detection=True) as analyzer:
         ancestor_selector = None
         items_selector = None
 
@@ -46,6 +46,7 @@ async def auto_scrape(
         step_start_time = time.monotonic()
 
         infinite_scroll = await analyzer.support_infinite_scroll(
+            ctx=ctx,
             url=url,
             items_selector=items_selector,
         )
@@ -89,7 +90,7 @@ async def auto_scrape(
         stream = scraper.summarize_stream(
             ctx=ctx,
             output_columns=columns,
-            limit=1 if scraping_type == "single" else 100,
+            limit=1,
             batch_size=5,
             concurrency=10,
         )

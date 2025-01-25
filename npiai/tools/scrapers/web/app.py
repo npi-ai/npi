@@ -77,8 +77,9 @@ class WebScraper(BaseScraper, BrowserTool):
     async def init_data(self, ctx: Context):
         self._matched_hashes = []
         await self.load_page(
-            self.url,
-            timeout=3000,
+            ctx=ctx,
+            url=self.url,
+            network_idle_timeout=3000,
             wait_for_selector=self.items_selector,
         )
 
@@ -102,6 +103,8 @@ class WebScraper(BaseScraper, BrowserTool):
                 res = await self._convert_items(count)
 
             if not res:
+                # if no items are found, check if there are any captcha
+                await self.detect_captcha(ctx)
                 self._all_items_loaded = True
 
             return res

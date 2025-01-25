@@ -1,11 +1,19 @@
 import base64
 import io
+from textwrap import dedent
+from typing import Literal
 
 from PIL import Image
 from playwright.async_api import ElementHandle, TimeoutError
 
+from litellm.types.completion import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
+
+from npiai.context import Context
 from npiai.core.browser import PlaywrightContext
-from npiai.utils import html_to_markdown
+from npiai.utils import html_to_markdown, llm_tool_call
 
 from ._function import FunctionTool, function
 
@@ -34,26 +42,38 @@ class BrowserTool(FunctionTool):
 
     async def load_page(
         self,
+        ctx: Context,
         url: str,
-        timeout: int | None = None,
         wait_for_selector: str = None,
+        network_idle_timeout: int | None = None,
+        force_capcha_detection: bool = False,
     ):
         await self.playwright.page.goto(url)
 
-        try:
-            if wait_for_selector is not None:
+        if wait_for_selector is not None:
+            try:
                 locator = self.playwright.page.locator(wait_for_selector)
-                await locator.first.wait_for(state="attached", timeout=timeout)
-            # wait for the page to become stable
-            elif timeout is not None:
+                await locator.first.wait_for(
+                    state="attached", timeout=network_idle_timeout
+                )
+            except TimeoutError:
+                await self.detect_captcha(ctx)
+        # wait for the page to become stable
+        elif network_idle_timeout is not None:
+            try:
                 await self.playwright.page.wait_for_load_state(
                     "networkidle",
-                    timeout=timeout,
+                    timeout=network_idle_timeout,
                 )
-        except TimeoutError:
-            pass
+            except TimeoutError:
+                pass
 
         # await self.playwright.page.wait_for_timeout(wait)
+
+        # capcha detection will be done (or unnecessary if elements matched) if selector is provided
+        # so we only do it if no selector is provided
+        if not wait_for_selector and force_capcha_detection:
+            await self.detect_captcha(ctx)
 
     @function
     async def get_text(self):
@@ -270,3 +290,58 @@ class BrowserTool(FunctionTool):
         await self.playwright.page.wait_for_timeout(300)
 
         return f"Successfully scrolled to top"
+
+    async def detect_captcha(self, ctx: Context):
+        url = await self.get_page_url()
+        screenshot = await self.get_screenshot(full_page=True, max_size=(1280, 720))
+
+        async def handle_captcha(captcha_type: Literal["none", "captcha", "login"]):
+            """
+            Handle the captcha detection result
+
+            Args:
+                captcha_type: "none" if no captcha is detected, "captcha" if a captcha is detected, "login" if a login form is detected
+            """
+            match captcha_type:
+                case "captcha":
+                    await ctx.hitl.web_interaction(
+                        tool_name=self.name,
+                        message="Would you please help me solve the captcha?",
+                        url=url,
+                    )
+                case "login":
+                    await ctx.hitl.web_interaction(
+                        tool_name=self.name,
+                        message="Would you please help me login to the website?",
+                        url=url,
+                    )
+
+            return captcha_type
+
+        res = await llm_tool_call(
+            llm=ctx.llm,
+            tool=handle_captcha,
+            messages=[
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=dedent(
+                        """
+                        You are given a screenshot of a webpage. Determine if a captcha or login form is present in the screenshot. If a captcha is present, call the tool with the argument "captcha". If a login form is present, call the tool with the argument "login". If neither is present, call the tool with the argument "none".
+                        """
+                    ),
+                ),
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": screenshot,
+                            },
+                        }
+                    ],
+                ),
+            ],
+        )
+
+        return await handle_captcha(**res.model_dump())

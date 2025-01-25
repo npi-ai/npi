@@ -31,13 +31,14 @@ class Chromium(BrowserTool):
         return cls()
 
     @function
-    async def goto(self, url: str):
+    async def goto(self, ctx: Context, url: str):
         """
         Open the given URL in chromium.
 
         Args:
+            ctx: NPi Context
             url: The URL to open.
         """
-        await self.load_page(url)
+        await self.load_page(ctx=ctx, url=url)
 
         return f"Opened {await self.get_page_url()}, page title: {await self.get_page_title()}"
