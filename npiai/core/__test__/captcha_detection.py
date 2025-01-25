@@ -1,11 +1,7 @@
 import asyncio
 
+from npiai import BrowserTool, HITL
 from npiai.utils.test_utils import DebugContext
-
-# from npiai import Context
-from utils import auto_scrape
-
-from npiai import HITL
 
 
 class TestHITL(HITL):
@@ -47,16 +43,23 @@ class TestHITL(HITL):
         return "web_interaction"
 
 
+urls = [
+    "https://www.google.com/recaptcha/api2/demo",
+    "https://nopecha.com/captcha/turnstile",
+    "https://github.com/login",
+    "https://google.com",
+]
+
+
 async def main():
-    url = input("Enter the URL: ")
     ctx = DebugContext()
     ctx.use_hitl(TestHITL())
-    # url = "https://www.bardeen.ai/playbooks"
 
-    await auto_scrape(
-        ctx=ctx,
-        url=url,
-    )
+    async with BrowserTool() as tool:
+        for url in urls:
+            await tool.load_page(ctx, url)
+            captcha_type = await tool.detect_captcha(ctx)
+            print(f"{url}: {captcha_type}")
 
 
 if __name__ == "__main__":

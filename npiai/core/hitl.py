@@ -33,4 +33,12 @@ class HITL(ABC):
         message: str,
         choices: List[str],
         default="",
-    ): ...
+    ) -> str: ...
+
+    @abstractmethod
+    async def web_interaction(
+        self,
+        tool_name: str,
+        message: str,
+        url: str,
+    ) -> str: ...

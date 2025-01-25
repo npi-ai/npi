@@ -36,6 +36,12 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
+    force_captcha_detection: bool
+
+    def __init__(self, force_captcha_detection: bool = False, **kwargs):
+        super().__init__(**kwargs)
+        self.force_captcha_detection = force_captcha_detection
+
     async def _validate_pagination(
         self,
         ctx: Context,
@@ -250,6 +256,7 @@ class PageAnalyzer(BrowserTool):
     @function
     async def support_infinite_scroll(
         self,
+        ctx: Context,
         url: str,
         items_selector: str | None = None,
     ) -> bool:
@@ -257,14 +264,17 @@ class PageAnalyzer(BrowserTool):
         Open the given URL and determine whether the page supports infinite scroll.
 
         Args:
+            ctx: NPi Context
             url: URL of the page
             items_selector: CSS selector of the items on the page
         """
         # use long wait time for pages to be fully loaded
         await self.load_page(
-            url,
-            timeout=3000,
+            ctx=ctx,
+            url=url,
+            network_idle_timeout=3000,
             wait_for_selector=items_selector,
+            force_capcha_detection=self.force_captcha_detection,
         )
 
         return await self.playwright.page.evaluate(
@@ -340,7 +350,10 @@ class PageAnalyzer(BrowserTool):
 
     @function
     async def get_pagination_button(
-        self, ctx: Context, url: str, items_selector: str | None = None
+        self,
+        ctx: Context,
+        url: str,
+        items_selector: str | None = None,
     ) -> str | None:
         """
         Open the given URL and determine whether there is a pagination button. If there is, return the CSS selector of the pagination button. Otherwise, return None.
@@ -350,7 +363,9 @@ class PageAnalyzer(BrowserTool):
             url: URL of the page
             items_selector: CSS selector of the items on the page
         """
-        await self.load_page(url)
+        await self.load_page(
+            ctx, url, force_capcha_detection=self.force_captcha_detection
+        )
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
@@ -465,7 +480,10 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.load_page(url)
+        await self.load_page(
+            ctx, url, force_capcha_detection=self.force_captcha_detection
+        )
+
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
         screenshot = await self.get_screenshot(
@@ -546,7 +564,12 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.load_page(url, timeout=3000)
+        await self.load_page(
+            ctx,
+            url,
+            network_idle_timeout=3000,
+            force_capcha_detection=self.force_captcha_detection,
+        )
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
