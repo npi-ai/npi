@@ -116,13 +116,16 @@ class PlaywrightContext:
         )
 
         self.page = await self.context.new_page()
-        self.page.on("dialog", self.on_dialog)
-        self.page.on("download", self.on_download)
-        self.page.on("filechooser", self.on_filechooser)
-        self.page.on("popup", self.on_popup)
-        self.context.on("close", self.on_close)
+        self.attach_events(self.page)
 
         self.ready = True
+
+    def attach_events(self, page: Page):
+        page.on("dialog", self.on_dialog)
+        page.on("download", self.on_download)
+        page.on("filechooser", self.on_filechooser)
+        page.on("popup", self.on_popup)
+        page.on("close", self.on_close)
 
     async def on_dialog(self, dialog: Dialog):
         """
@@ -158,14 +161,16 @@ class PlaywrightContext:
         Args:
             popup: Page instance
         """
-        print(f"popup {popup}")
         self.page = popup
+        self.attach_events(popup)
 
-    async def on_close(self, ctx: BrowserContext):
+    async def on_close(self, _):
         """
         Callback function invoked when the page is closed
         """
-        self.page = ctx.pages[-1] if ctx.pages else None
+        if self.context.pages:
+            self.page = self.context.pages[-1]
+            self.attach_events(self.page)
 
     async def stop(self):
         """
