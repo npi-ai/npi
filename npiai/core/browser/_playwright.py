@@ -11,6 +11,7 @@ from playwright.async_api import (
     BrowserContext,
     Page,
     FileChooser,
+    StorageState,
 )
 
 __BROWSER_UTILS_VERSION__ = "0.0.15"
@@ -42,11 +43,13 @@ class PlaywrightContext:
     context: BrowserContext | None
     page: Page | None
     channel: str | None
+    storage_state: str | pathlib.Path | StorageState | None
 
     def __init__(
         self,
         headless: bool = True,
         channel: str | None = None,
+        storage_state: str | pathlib.Path | StorageState | None = None,
     ):
         """
         Initialize a Playwright context
@@ -54,6 +57,7 @@ class PlaywrightContext:
         Args:
             headless: Whether to run playwright in headless mode
             channel: The browser channel to use, see: https://playwright.dev/python/docs/browsers#google-chrome--microsoft-edge
+            storage_state: Previously saved state to use for the browser context
         """
         self.headless = headless
         self.ready = False
@@ -62,6 +66,7 @@ class PlaywrightContext:
         self.context = None
         self.page = None
         self.channel = channel
+        self.storage_state = storage_state
 
     async def start(self):
         """Start the Playwright chrome"""
@@ -79,6 +84,7 @@ class PlaywrightContext:
         self.context = await self.browser.new_context(
             locale="en-US",
             bypass_csp=True,
+            storage_state=self.storage_state,
             **self.playwright.devices["Desktop Chrome"],
         )
         # self.context.set_default_timeout(3000)
