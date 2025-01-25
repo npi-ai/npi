@@ -45,7 +45,7 @@ class BrowserTool(FunctionTool):
         ctx: Context,
         url: str,
         wait_for_selector: str = None,
-        network_idle_timeout: int | None = None,
+        timeout: int | None = None,
         force_capcha_detection: bool = False,
     ):
         await self.playwright.page.goto(url)
@@ -53,17 +53,15 @@ class BrowserTool(FunctionTool):
         if wait_for_selector is not None:
             try:
                 locator = self.playwright.page.locator(wait_for_selector)
-                await locator.first.wait_for(
-                    state="attached", timeout=network_idle_timeout
-                )
+                await locator.first.wait_for(state="attached", timeout=timeout)
             except TimeoutError:
                 await self.detect_captcha(ctx)
         # wait for the page to become stable
-        elif network_idle_timeout is not None:
+        elif timeout is not None:
             try:
                 await self.playwright.page.wait_for_load_state(
                     "networkidle",
-                    timeout=network_idle_timeout,
+                    timeout=timeout,
                 )
             except TimeoutError:
                 pass

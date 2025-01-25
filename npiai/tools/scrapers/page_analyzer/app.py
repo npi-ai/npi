@@ -272,7 +272,7 @@ class PageAnalyzer(BrowserTool):
         await self.load_page(
             ctx=ctx,
             url=url,
-            network_idle_timeout=3000,
+            timeout=3000,
             wait_for_selector=items_selector,
             force_capcha_detection=self.force_captcha_detection,
         )
@@ -567,7 +567,7 @@ class PageAnalyzer(BrowserTool):
         await self.load_page(
             ctx,
             url,
-            network_idle_timeout=3000,
+            timeout=3000,
             force_capcha_detection=self.force_captcha_detection,
         )
 

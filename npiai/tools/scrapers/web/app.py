@@ -79,7 +79,7 @@ class WebScraper(BaseScraper, BrowserTool):
         await self.load_page(
             ctx=ctx,
             url=self.url,
-            network_idle_timeout=3000,
+            timeout=3000,
             wait_for_selector=self.items_selector,
         )
 
