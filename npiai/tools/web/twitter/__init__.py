@@ -1,3 +1,2 @@
-from npiai.tools.web.twitter.app import Twitter
-
-__all__ = ["Twitter"]
+from .app import Twitter
+from .twitter_client import TwitterClient

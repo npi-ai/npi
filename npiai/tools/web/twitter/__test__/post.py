@@ -1,11 +1,22 @@
+import os
 import asyncio
 from npiai import agent
-from npiai.tools.web import Twitter
+from npiai.utils.test_utils import DebugContext
+from npiai.tools.web.twitter import Twitter, TwitterClient
 
 
 async def main():
-    async with agent.wrap(Twitter(headless=False)) as twitter:
-        return await twitter.chat('Post a tweet about "The answer to everything."')
+    ctx = DebugContext()
+
+    client = TwitterClient(
+        ctx=ctx,
+        username=os.environ.get("TWITTER_USERNAME"),
+        password=os.environ.get("TWITTER_PASSWORD"),
+        headless=False,
+    )
+
+    async with agent.wrap(Twitter(client=client)) as twitter:
+        return await twitter.chat(ctx, 'Post a tweet about "The answer to everything."')
 
 
 if __name__ == "__main__":

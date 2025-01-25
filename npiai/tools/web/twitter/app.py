@@ -1,20 +1,17 @@
 import json
-import os
 import re
-import tempfile
-import pathlib
 from typing import Literal
 
-from playwright.async_api import TimeoutError, Error, Locator
 from markdownify import MarkdownConverter
-from slugify import slugify
+from playwright.async_api import TimeoutError
 
 from npiai import function, BrowserTool
+from npiai.constant import app
 from npiai.context import Context
+from npiai.core import PlaywrightContext
 from npiai.core.browser import NavigatorAgent
 from npiai.utils import is_cloud_env
-from npiai.error.auth import UnauthorizedError
-from npiai.constant import app
+from .twitter_client import TwitterClient
 
 __SYSTEM_PROMPT__ = """
 You are a Twitter Agent helping user retrieve and manage tweets. 
@@ -46,8 +43,6 @@ Steps:
   3.1. load_more_tweets()
   3.2. get_tweets({ "max_results": 10 })
 """
-
-__ROUTES__ = {"login": "https://x.com/", "home": "https://x.com/home"}
 
 
 class ImageFilterConverter(MarkdownConverter):
@@ -108,22 +103,20 @@ class Twitter(BrowserTool):
     description = "retrieve and manage tweets"
     system_prompt = __SYSTEM_PROMPT__
 
-    _username: str
-    _password: str
+    _client: TwitterClient
 
     def __init__(
         self,
-        username: str = None,
-        password: str = None,
+        client: TwitterClient,
+        playwright: PlaywrightContext | None = None,
         headless: bool = True,
     ):
         super().__init__(
+            playwright=playwright or client.playwright,
             headless=headless,
         )
 
-        self._username = username or os.environ.get("TWITTER_USERNAME", None)
-        self._password = password or os.environ.get("TWITTER_PASSWORD", None)
-        self.ctx = None
+        self._client = client
 
         self.add_tool(NavigatorAgent(playwright=self.playwright))
 
@@ -134,105 +127,12 @@ class Twitter(BrowserTool):
                 "Twitter tool can only be initialized from context in the NPi cloud environment"
             )
         creds = ctx.credentials(app_code=app.TWITTER)
-        return Twitter(**creds)
+        return Twitter(client=TwitterClient(ctx=ctx, **creds))
 
     async def start(self):
-        if self._username is None:
-            raise UnauthorizedError("No Twitter username provided.")
-
-        if self._password is None:
-            raise UnauthorizedError("No Twitter password provided.")
-
         if not self._started:
             await super().start()
-            await self._login(self.ctx)
-
-    async def _login(self, ctx: Context | None = None):
-        state_file = (
-            pathlib.Path(tempfile.gettempdir())
-            / f"{slugify(self._username)}/twitter_state.json"
-        )
-        if os.path.exists(state_file):
-            with open(state_file, "r") as f:
-                state = json.load(f)
-                await self.playwright.context.add_cookies(state["cookies"])
-            await self.playwright.page.goto(__ROUTES__["home"])
-            try:
-                # validate cookies
-                await self.playwright.page.wait_for_url(__ROUTES__["home"])
-                await ctx.send_debug_message("Twitter cookies restored.")
-                return
-            except TimeoutError:
-                # cookies expired, continue login process
-                await ctx.send_debug_message(
-                    "Twitter cookies expired. Continue login process."
-                )
-
-        await self.playwright.page.goto(__ROUTES__["login"])
-        await self.playwright.page.get_by_test_id("loginButton").click()
-        await self.playwright.page.get_by_label("Phone, email, or username").fill(
-            self._username
-        )
-        await self.playwright.page.get_by_role("button", name="Next").click()
-
-        # check if additional credentials (i.e, username) is required
-        await self._check_additional_credentials(ctx)
-
-        await self.playwright.page.get_by_label("Password", exact=True).fill(
-            self._password
-        )
-        await self.playwright.page.get_by_test_id("LoginForm_Login_Button").click()
-
-        # check again if additional credentials (i.e, phone number) is required
-        await self._check_additional_credentials(ctx)
-
-        # now we should be directed to twitter home
-        await self.playwright.page.wait_for_url(__ROUTES__["home"])
-
-        # save state
-        save_dir = os.path.dirname(state_file)
-        os.makedirs(save_dir, exist_ok=True)
-        await self.playwright.context.storage_state(path=state_file)
-
-    async def _get_additional_cred_input(self) -> Locator | None:
-        await self.playwright.page.wait_for_timeout(1000)
-        cred_input = self.playwright.page.get_by_test_id("ocfEnterTextTextInput")
-
-        try:
-            if await cred_input.count() != 0:
-                return cred_input
-        except Error:
-            return None
-
-    async def _check_additional_credentials(self, ctx: Context | None = None):
-        cred_input = await self._get_additional_cred_input()
-
-        if cred_input:
-            label = self.playwright.page.locator(
-                'label:has(input[data-testid="ocfEnterTextTextInput"])'
-            )
-            cred_name = await label.text_content()
-            cred = await self._request_additional_credentials(cred_name, ctx)
-            await cred_input.fill(cred)
-            await self.playwright.page.get_by_test_id("ocfEnterTextNextButton").click()
-
-            if await self._get_additional_cred_input() is not None:
-                raise UnauthorizedError(
-                    "Unable to login to Twitter. Please try again with the correct credentials."
-                )
-
-    async def _request_additional_credentials(
-        self, cred_name: str, ctx: Context | None = None
-    ) -> str:
-        if ctx is None:
-            raise UnauthorizedError(
-                f"Unable to login to Twitter. Please replace username with {cred_name} and try again."
-            )
-
-        return await ctx.hitl.input(
-            self.name,
-            f"Please enter {cred_name} to continue the login process.",
-        )
+            await self._client.login()
 
     @function
     async def search(
