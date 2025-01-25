@@ -12,6 +12,8 @@ from playwright.async_api import (
     Page,
     FileChooser,
     StorageState,
+    Dialog,
+    Download,
 )
 
 __BROWSER_UTILS_VERSION__ = "0.0.15"
@@ -114,10 +116,31 @@ class PlaywrightContext:
         )
 
         self.page = await self.context.new_page()
+        self.page.on("dialog", self.on_dialog)
+        self.page.on("download", self.on_download)
         self.page.on("filechooser", self.on_filechooser)
         self.page.on("popup", self.on_popup)
+        self.context.on("close", self.on_close)
 
         self.ready = True
+
+    async def on_dialog(self, dialog: Dialog):
+        """
+        Callback function invoked when a dialog is opened
+
+        Args:
+            dialog: Dialog instance
+        """
+        await dialog.dismiss()
+
+    async def on_download(self, download: Download):
+        """
+        Callback function invoked when a download is started
+
+        Args:
+            download: Download instance
+        """
+        await download.cancel()
 
     async def on_filechooser(self, chooser: FileChooser):
         """
@@ -137,6 +160,12 @@ class PlaywrightContext:
         """
         print(f"popup {popup}")
         self.page = popup
+
+    async def on_close(self, ctx: BrowserContext):
+        """
+        Callback function invoked when the page is closed
+        """
+        self.page = ctx.pages[-1] if ctx.pages else None
 
     async def stop(self):
         """
