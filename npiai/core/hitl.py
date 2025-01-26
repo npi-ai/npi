@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Literal
 
 from npiai.context import Context
 
@@ -41,4 +41,5 @@ class HITL(ABC):
         tool_name: str,
         message: str,
         url: str,
+        action: Literal["captcha", "login"],
     ) -> str: ...

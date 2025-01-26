@@ -55,7 +55,8 @@ class BrowserTool(FunctionTool):
                 locator = self.playwright.page.locator(wait_for_selector)
                 await locator.first.wait_for(state="attached", timeout=timeout)
             except TimeoutError:
-                await self.detect_captcha(ctx)
+                # if the selector is not found, check if a captcha is present
+                force_capcha_detection = True
         # wait for the page to become stable
         elif timeout is not None:
             try:
@@ -68,9 +69,7 @@ class BrowserTool(FunctionTool):
 
         # await self.playwright.page.wait_for_timeout(wait)
 
-        # capcha detection will be done (or unnecessary if elements matched) if selector is provided
-        # so we only do it if no selector is provided
-        if not wait_for_selector and force_capcha_detection:
+        if force_capcha_detection:
             await self.detect_captcha(ctx)
 
     @function
@@ -306,12 +305,14 @@ class BrowserTool(FunctionTool):
                         tool_name=self.name,
                         message="Would you please help me solve the captcha?",
                         url=url,
+                        action="captcha",
                     )
                 case "login":
                     await ctx.hitl.web_interaction(
                         tool_name=self.name,
                         message="Would you please help me login to the website?",
                         url=url,
+                        action="login",
                     )
 
             return captcha_type

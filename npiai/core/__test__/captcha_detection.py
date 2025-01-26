@@ -1,4 +1,5 @@
 import asyncio
+from typing import Literal
 
 from npiai import BrowserTool, HITL
 from npiai.utils.test_utils import DebugContext
@@ -38,8 +39,9 @@ class TestHITL(HITL):
         tool_name: str,
         message: str,
         url: str,
+        action: Literal["captcha", "login"],
     ) -> str:
-        print(f"[HITL] web_interaction: {message=}, {url=}")
+        print(f"[HITL] web_interaction: {message=}, {url=}, {action=}")
         return "web_interaction"
 
 

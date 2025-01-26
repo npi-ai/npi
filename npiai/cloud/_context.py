@@ -1,7 +1,6 @@
 import asyncio
 from typing import Dict, TypedDict
 from fastapi import WebSocket
-from mem0 import Memory
 
 from npiai.context import Context
 from npiai.cloud import Client
@@ -20,9 +19,8 @@ class CloudContext(Context):
     def __init__(
         self,
         client: Client,
-        memory: Memory | None = None,
     ):
-        super().__init__(memory=memory)
+        super().__init__()
         self.client = client
         self.ws = None
         self.action_result_queue = asyncio.Queue()
