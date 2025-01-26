@@ -306,6 +306,7 @@ class BrowserTool(FunctionTool):
                         message="Would you please help me solve the captcha?",
                         url=url,
                         action="captcha",
+                        playwright=self.playwright,
                     )
                 case "login":
                     await ctx.hitl.web_interaction(
@@ -313,6 +314,7 @@ class BrowserTool(FunctionTool):
                         message="Would you please help me login to the website?",
                         url=url,
                         action="login",
+                        playwright=self.playwright,
                     )
 
             return captcha_type

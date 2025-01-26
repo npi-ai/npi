@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Literal
 
 from npiai.context import Context
+from npiai.core import PlaywrightContext
 
 
 class HITL(ABC):
@@ -42,4 +43,5 @@ class HITL(ABC):
         message: str,
         url: str,
         action: Literal["captcha", "login"],
+        playwright: PlaywrightContext,
     ) -> str: ...

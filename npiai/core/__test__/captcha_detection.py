@@ -2,6 +2,7 @@ import asyncio
 from typing import Literal
 
 from npiai import BrowserTool, HITL
+from npiai.core import PlaywrightContext
 from npiai.utils.test_utils import DebugContext
 
 
@@ -40,6 +41,7 @@ class TestHITL(HITL):
         message: str,
         url: str,
         action: Literal["captcha", "login"],
+        playwright: PlaywrightContext,
     ) -> str:
         print(f"[HITL] web_interaction: {message=}, {url=}, {action=}")
         return "web_interaction"
