@@ -44,6 +44,7 @@ class TestHITL(HITL):
         playwright: PlaywrightContext,
     ) -> str:
         print(f"[HITL] web_interaction: {message=}, {url=}, {action=}")
+        await playwright.restore_state(await playwright.get_state())
         return "web_interaction"
 
 
@@ -59,10 +60,12 @@ async def main():
     ctx = DebugContext()
     ctx.use_hitl(TestHITL())
 
-    async with BrowserTool() as tool:
+    async with BrowserTool(headless=False) as tool:
         for url in urls:
             await tool.load_page(ctx, url)
-            captcha_type = await tool.detect_captcha(ctx)
+            captcha_type = await tool.detect_captcha(
+                ctx, return_to="https://google.com"
+            )
             print(f"{url}: {captcha_type}")
 
 

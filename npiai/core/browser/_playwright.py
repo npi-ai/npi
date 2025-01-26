@@ -83,10 +83,32 @@ class PlaywrightContext:
             # args=["--disable-gpu", "--single-process"],
         )
 
+        await self.restore_state(self.storage_state)
+
+        self.ready = True
+
+    async def get_state(self) -> StorageState:
+        return await self.context.storage_state()
+
+    async def restore_state(self, state: str | pathlib.Path | StorageState):
+        """
+        Restore the browser state from a previously saved state
+
+        Args:
+            state: Previously saved state to use for the browser context
+        """
+        # clean up the previous context
+        if self.page:
+            self.detach_events(self.page)
+            self.page = None
+        if self.context:
+            await self.context.close()
+            self.context = None
+
         self.context = await self.browser.new_context(
             locale="en-US",
             bypass_csp=True,
-            storage_state=self.storage_state,
+            storage_state=state,
             **self.playwright.devices["Desktop Chrome"],
         )
         # self.context.set_default_timeout(3000)
@@ -118,14 +140,19 @@ class PlaywrightContext:
         self.page = await self.context.new_page()
         self.attach_events(self.page)
 
-        self.ready = True
-
     def attach_events(self, page: Page):
         page.on("dialog", self.on_dialog)
         page.on("download", self.on_download)
         page.on("filechooser", self.on_filechooser)
         page.on("popup", self.on_popup)
         page.on("close", self.on_close)
+
+    def detach_events(self, page: Page):
+        page.remove_listener("dialog", self.on_dialog)
+        page.remove_listener("download", self.on_download)
+        page.remove_listener("filechooser", self.on_filechooser)
+        page.remove_listener("popup", self.on_popup)
+        page.remove_listener("close", self.on_close)
 
     async def on_dialog(self, dialog: Dialog):
         """
@@ -165,12 +192,12 @@ class PlaywrightContext:
         self.page = popup
         self.attach_events(popup)
 
-    async def on_close(self, _):
+    async def on_close(self, page: Page):
         """
         Callback function invoked when the page is closed
         """
-        if self.context.pages:
-            self.page = self.context.pages[-1]
+        if page.context.pages:
+            self.page = page.context.pages[-1]
             self.attach_events(self.page)
 
     async def stop(self):

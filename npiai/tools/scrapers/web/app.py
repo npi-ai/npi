@@ -105,8 +105,10 @@ class WebScraper(BaseScraper, BrowserTool):
 
             if not res:
                 # if no items are found, check if there are any captcha
-                await self.detect_captcha(ctx)
-                self._all_items_loaded = True
+                captcha = await self.detect_captcha(ctx, return_to=self.url)
+
+                if captcha == "none":
+                    self._all_items_loaded = True
 
             return res
 

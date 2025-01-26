@@ -70,7 +70,7 @@ class BrowserTool(FunctionTool):
         # await self.playwright.page.wait_for_timeout(wait)
 
         if force_capcha_detection:
-            await self.detect_captcha(ctx)
+            await self.detect_captcha(ctx, return_to=url)
 
     @function
     async def get_text(self):
@@ -288,7 +288,7 @@ class BrowserTool(FunctionTool):
 
         return f"Successfully scrolled to top"
 
-    async def detect_captcha(self, ctx: Context):
+    async def detect_captcha(self, ctx: Context, return_to: str | None = None):
         url = await self.get_page_url()
         screenshot = await self.get_screenshot(full_page=True, max_size=(1280, 720))
 
@@ -316,6 +316,14 @@ class BrowserTool(FunctionTool):
                         action="login",
                         playwright=self.playwright,
                     )
+
+            if (
+                captcha_type != "none"
+                and return_to
+                and self.playwright.page.url != return_to
+            ):
+                # TODO: do we need to check captcha again after returning to the original page?
+                await self.load_page(ctx, return_to)
 
             return captcha_type
 
