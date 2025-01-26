@@ -81,6 +81,7 @@ class WebScraper(BaseScraper, BrowserTool):
             url=self.url,
             timeout=3000,
             wait_for_selector=self.items_selector,
+            force_capcha_detection=True,
         )
 
     async def next_items(
