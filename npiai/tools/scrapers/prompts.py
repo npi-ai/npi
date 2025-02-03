@@ -39,7 +39,6 @@ The columns are defined in a json object with the following fields:
     - **number**: Columns that contain numerical information.
     - **link**: Columns that contain URLs or hyperlinks.
     - **image**: Columns that contain image URLs.
-- **description**: A brief description of the data to be extracted.
 - **prompt**: An optional step-by-step prompt on how to extract the column data.
 
 ## Instructions

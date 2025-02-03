@@ -32,7 +32,6 @@ from .types import (
 __INDEX_COLUMN__ = Column(
     name="[[item_index]]",
     type="text",
-    description="The index of the item in the list",
     prompt="Extract the index of the item in the list",
 )
 

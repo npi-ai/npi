@@ -6,7 +6,6 @@ from typing_extensions import TypedDict, Annotated
 class Column(TypedDict):
     name: Annotated[str, "Name of the column"]
     type: Annotated[Literal["text", "number", "link", "image"], "Type of the column"]
-    description: Annotated[str, "A brief description of the column"]
     prompt: Annotated[
         str | None, "A step-by-step prompt on how to extract the column data"
     ]
