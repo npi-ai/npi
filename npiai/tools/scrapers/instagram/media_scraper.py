@@ -38,6 +38,9 @@ class InstagramMediaScraper(BaseScraper):
         # see: https://github.com/subzeroid/instagrapi/issues/1802#issuecomment-1944589499
         self._user_id = client.user_info_by_username_v1(username).pk
 
+    async def init_data(self, ctx: Context):
+        self._pagination_code = None
+
     async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None:
         async with self._load_media_lock:
             all_media, pagination_code = self._client.user_medias_paginated(
@@ -85,7 +88,7 @@ class InstagramMediaScraper(BaseScraper):
             data=res,
         )
 
-    def _get_media_type(self, media: Media) -> str:
+    def _get_media_type(self, media: Media) -> str | None:
         if media.media_type == 1:
             return "photo"
 

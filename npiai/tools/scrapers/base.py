@@ -45,10 +45,10 @@ class BaseScraper(FunctionTool, ABC):
     infer_prompt: str = DEFAULT_COLUMN_INFERENCE_PROMPT
 
     @abstractmethod
-    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None: ...
+    async def init_data(self, ctx: Context): ...
 
-    async def init_data(self, ctx: Context):
-        pass
+    @abstractmethod
+    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None: ...
 
     async def summarize_stream(
         self,

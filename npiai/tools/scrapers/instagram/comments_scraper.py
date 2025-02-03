@@ -33,6 +33,10 @@ class InstagramCommentsScraper(BaseScraper):
         media_pk = client.media_pk_from_url(url)
         self._media_id = client.media_id(media_pk)
 
+    async def init_data(self, ctx: Context):
+        self._pagination_code = None
+        self._remaining_comments = []
+
     async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None:
         all_comments = self._fetch_more_comments(count)
 
