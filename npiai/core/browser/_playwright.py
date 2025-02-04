@@ -40,6 +40,7 @@ def _prepare_browser_utils():
 class PlaywrightContext:
     headless: bool
     ready: bool
+    closed: bool
     playwright: Playwright | None
     browser: Browser | None
     context: BrowserContext | None
@@ -63,6 +64,7 @@ class PlaywrightContext:
         """
         self.headless = headless
         self.ready = False
+        self.closed = False
         self.playwright = None
         self.browser = None
         self.context = None
@@ -86,6 +88,7 @@ class PlaywrightContext:
         await self.restore_state(self.storage_state)
 
         self.ready = True
+        self.closed = False
 
     async def get_state(self) -> StorageState:
         return await self.context.storage_state()
@@ -207,3 +210,5 @@ class PlaywrightContext:
         await self.context.close()
         await self.browser.close()
         await self.playwright.stop()
+        self.ready = False
+        self.closed = True
