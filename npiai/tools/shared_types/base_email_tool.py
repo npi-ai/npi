@@ -31,7 +31,7 @@ class BaseEmailTool(FunctionTool):
     @abstractmethod
     def list_inbox_stream(
         self,
-        limit: int = 10,
+        limit: int = -1,
         query: str = None,
     ) -> AsyncGenerator[EmailMessage, None]:
         pass
