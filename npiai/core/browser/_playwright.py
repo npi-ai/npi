@@ -212,3 +212,10 @@ class PlaywrightContext:
         await self.playwright.stop()
         self.ready = False
         self.closed = True
+
+    async def __aenter__(self):
+        await self.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.stop()
