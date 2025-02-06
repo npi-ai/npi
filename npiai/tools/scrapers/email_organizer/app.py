@@ -90,10 +90,16 @@ class EmailOrganizer(BaseScraper):
             else:
                 compact_email = self._to_compact_email(email)
 
+            # remove id and thread_id to avoid showing up in summary
+            data = cast(dict, compact_email)
+
+            data.pop("id", None)
+            data.pop("thread_id", None)
+
             items.append(
                 SourceItem(
                     hash=email["id"],
-                    data=compact_email,
+                    data=data,
                 )
             )
 
