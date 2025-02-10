@@ -221,7 +221,7 @@ class NavigatorAgent(BrowserAgentTool):
             ],
         }
 
-    async def chat(self, ctx: Context, instruction: str) -> str:
+    async def chat(self, ctx: Context, instruction: str) -> str | None:
         history: List[Response] = []
 
         step = 0
@@ -304,7 +304,6 @@ class NavigatorAgent(BrowserAgentTool):
 
         call_msg = f'[{self.name}]: {action["type"]} - {action["description"]}'
 
-        await ctx.send_debug_message(call_msg)
         await ctx.send_debug_message(call_msg)
 
         match action["type"]:
