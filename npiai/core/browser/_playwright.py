@@ -207,11 +207,11 @@ class PlaywrightContext:
         """
         Dispose the chrome tools
         """
+        self.ready = False
+        self.closed = True
         await self.context.close()
         await self.browser.close()
         await self.playwright.stop()
-        self.ready = False
-        self.closed = True
 
     async def __aenter__(self):
         await self.start()
