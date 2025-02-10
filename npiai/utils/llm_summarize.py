@@ -48,5 +48,5 @@ async def llm_summarize(
             ),
         )
 
-    for row in csv.DictReader(final_response_content.splitlines()):
+    for row in csv.DictReader(final_response_content.splitlines(), delimiter=";"):
         yield row

@@ -90,7 +90,7 @@ async def auto_scrape(
         stream = scraper.summarize_stream(
             ctx=ctx,
             output_columns=columns,
-            limit=1,
+            limit=100,
             batch_size=5,
             concurrency=10,
         )

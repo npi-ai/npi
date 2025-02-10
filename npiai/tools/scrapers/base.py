@@ -30,8 +30,8 @@ from .types import (
 )
 
 __INDEX_COLUMN__ = Column(
-    name="[[item_index]]",
-    type="text",
+    name="__npi_item_index__",
+    type="number",
     prompt="Extract the index of the item in the list",
 )
 
