@@ -304,6 +304,7 @@ class BaseScraper(FunctionTool, ABC):
                 results.append(
                     SummaryItem(
                         hash=items[index]["hash"],
+                        index=index,
                         values=row,
                     )
                 )

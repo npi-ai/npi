@@ -1,3 +1,17 @@
+COLUMN_DEFINITION = """
+## Column Definition Format
+
+The columns are defined in a json object with the following fields:
+
+- **name**: The name of the column.
+- **type**: The type of the column. Possible values are as follows:
+    - **text**: Columns that contain textual information.
+    - **number**: Columns that contain numerical information.
+    - **link**: Columns that contain URLs or hyperlinks.
+    - **image**: Columns that contain image URLs.
+- **prompt**: An optional step-by-step prompt on how to extract the column data.
+"""
+
 DEFAULT_COLUMN_INFERENCE_PROMPT = """
 Imagine you are summarizing a list of item into a table. Each item is represented as a json object. Suggest columns that encapsulate the essential details of the content. 
 
@@ -26,20 +40,10 @@ Follow the steps below to infer the columns of the output table:
     - **Note**: Any additional notes or considerations for extracting the data if needed. This could include handling special cases or edge scenarios. For example, if a column contains currency values, specify the currency format.
 """
 
-DEFAULT_COLUMN_SUMMARIZE_PROMPT = """
+DEFAULT_COLUMN_SUMMARIZE_PROMPT = f"""
 You are a general scraper agent helping user summarize a list of items into a table. Each item is represented as a json object. Use the specified column definitions to extract and organize the data properly.
 
-## Column Definition Format
-
-The columns are defined in a json object with the following fields:
-
-- **name**: The name of the column.
-- **type**: The type of the column. Possible values are as follows:
-    - **text**: Columns that contain textual information.
-    - **number**: Columns that contain numerical information.
-    - **link**: Columns that contain URLs or hyperlinks.
-    - **image**: Columns that contain image URLs.
-- **prompt**: An optional step-by-step prompt on how to extract the column data.
+{COLUMN_DEFINITION}
 
 ## Instructions
 
@@ -47,13 +51,14 @@ The columns are defined in a json object with the following fields:
 2. Organize this data into a CSV format table with the following format:
    - The first line contains the column names.
    - The subsequent lines should contain the scraped data.
-3. Enclose all values and column names in double quotes and separate them using commas.
+3. Enclose all values and column names in double quotes and separate them using semicolons.
 4. Ensure that column names in the CSV match exactly as defined in the column definitions.
 5. If an item contains a list of values for a column, separate them with a comma and a space.
+6. If a column is not applicable to an item, leave the corresponding cell empty.
 
 ## Column Definitions for This Task
 
 ```json
-{column_defs}
+{{column_defs}}
 ```
 """

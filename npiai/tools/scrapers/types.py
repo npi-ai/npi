@@ -18,6 +18,7 @@ class SourceItem(TypedDict):
 
 class SummaryItem(TypedDict):
     hash: str
+    index: int
     values: Dict[str, str]
 
 
