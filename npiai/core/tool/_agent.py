@@ -159,3 +159,45 @@ class BrowserAgentTool(AgentTool):
         )
 
         return await self._call_llm(ctx, task)
+
+    async def _call_llm(self, ctx: Context, task: Task) -> str:
+        while True:
+            if self._tool.use_screenshot:
+                screenshot = await self.get_screenshot()
+                if screenshot:
+                    await task.step(
+                        [
+                            ChatCompletionUserMessageParam(
+                                role="user",
+                                content=[
+                                    {
+                                        "type": "text",
+                                        "text": "Here is the screenshot of the current page:",
+                                    },
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": screenshot,
+                                        },
+                                    },
+                                ],
+                            )
+                        ]
+                    )
+
+            response = await ctx.llm.acompletion(
+                messages=task.conversations(),
+                tools=self._tool.tools,
+                tool_choice="auto",
+                max_tokens=4096,
+            )
+            await task.step([response.choices[0].message])
+
+            response_message = response.choices[0].message
+            tool_calls = response_message.get("tool_calls", None)
+
+            if tool_calls is None:
+                return response_message.content
+
+            results = await self._tool.call(tool_calls, ctx)
+            await task.step(results)
