@@ -154,9 +154,9 @@ class FunctionTool(BaseFunctionTool, ABC):
                 res = f"Exception while executing {fn_name}: {e}"
                 await session.send_error_message(res)
 
-            await session.send_debug_message(
-                f"[{self.name}]: function `{fn_name}` returned: {res}"
-            )
+            # await session.send_debug_message(
+            #     f"[{self.name}]: function `{fn_name}` returned: {res}"
+            # )
 
             results.append(
                 ChatCompletionToolMessageParam(
