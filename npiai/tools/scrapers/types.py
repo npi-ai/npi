@@ -23,5 +23,6 @@ class SummaryItem(TypedDict):
 
 
 class SummaryChunk(TypedDict):
+    index: int
     batch_id: int
     items: List[SummaryItem]

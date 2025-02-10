@@ -84,8 +84,10 @@ class BaseScraper(FunctionTool, ABC):
 
         lock = asyncio.Lock()
 
+        no_count_index = 0
+
         async def run_batch(results_queue: asyncio.Queue[SummaryChunk]):
-            nonlocal count, remaining, batch_index
+            nonlocal count, no_count_index, remaining, batch_index
 
             if limit != -1 and remaining <= 0:
                 return
@@ -112,6 +114,10 @@ class BaseScraper(FunctionTool, ABC):
             #     f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
             # )
 
+            async with lock:
+                no_index = no_count_index
+                no_count_index += len(data)
+
             items = await self._summarize_llm_call(
                 ctx=ctx,
                 items=data,
@@ -134,6 +140,7 @@ class BaseScraper(FunctionTool, ABC):
 
             await results_queue.put(
                 SummaryChunk(
+                    index=no_index,
                     batch_id=current_index,
                     items=items_slice,
                 )
