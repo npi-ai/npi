@@ -53,6 +53,7 @@ urls = [
     "https://nopecha.com/captcha/turnstile",
     "https://github.com/login",
     "https://google.com",
+    "https://x.com/elonmusk",
 ]
 
 
@@ -63,9 +64,7 @@ async def main():
     async with BrowserTool(headless=False) as tool:
         for url in urls:
             await tool.load_page(ctx, url)
-            captcha_type = await tool.detect_captcha(
-                ctx, return_to="https://google.com"
-            )
+            captcha_type = await tool.detect_captcha(ctx, return_to=url)
             print(f"{url}: {captcha_type}")
 
 

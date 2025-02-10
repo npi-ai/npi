@@ -337,7 +337,9 @@ class BrowserTool(FunctionTool):
                         """
                         You are given a screenshot of a webpage. Determine if a captcha or login form is present in the screenshot. If a captcha is present, call the tool with the argument "captcha". If a login form is present, call the tool with the argument "login". If neither is present, call the tool with the argument "none".
                         
-                        NOTE: popups like cookie consent banners should not be considered as login forms.
+                        NOTE: 
+                        - Popups like cookie consent banners should not be considered as login forms.
+                        - The login action can be ignored if the main content is visible in the screenshot.
                         """
                     ),
                 ),
