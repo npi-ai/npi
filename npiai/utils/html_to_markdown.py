@@ -22,6 +22,9 @@ class CompactMarkdownConverter(MarkdownConverter):
             return f"[{el.attrs.get('type')} checked:{'true' if checked else 'false'}]"
         return ""
 
+    def convert_span(self, el, text, convert_as_inline):
+        return f" {text} " if text else ""
+
     def convert_div(self, el, text, convert_as_inline):
         aria_label = el.attrs.get("aria-label", "")
 
