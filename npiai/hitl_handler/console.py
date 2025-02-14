@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Literal
 
 import questionary
 from questionary import Style
 
-from npiai.core import HITL
+from npiai.core import HITL, PlaywrightContext
 
 _PROMPT_STYLE = Style(
     [
@@ -48,5 +48,19 @@ class ConsoleHandler(HITL):
             message=f"[{tool_name}]: {message}",
             choices=choices,
             default=default,
+            style=_PROMPT_STYLE,
+        ).ask_async()
+
+    async def web_interaction(
+        self,
+        tool_name: str,
+        message: str,
+        url: str,
+        action: Literal["captcha", "login"],
+        playwright: PlaywrightContext,
+    ) -> str:
+        return await questionary.text(
+            message=f"[{tool_name}]: {message}",
+            default="I have completed the action",
             style=_PROMPT_STYLE,
         ).ask_async()
