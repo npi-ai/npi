@@ -17,6 +17,9 @@ from npiai.utils import html_to_markdown, llm_tool_call
 
 from ._function import FunctionTool, function
 
+# Disable the maximum image pixels limit
+Image.MAX_IMAGE_PIXELS = None
+
 
 class BrowserTool(FunctionTool):
     use_screenshot: bool
