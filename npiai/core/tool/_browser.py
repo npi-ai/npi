@@ -343,6 +343,7 @@ class BrowserTool(FunctionTool):
                         NOTE: 
                         - Popups like cookie consent banners should not be considered as login forms.
                         - The login action can be ignored if the main content is visible in the screenshot.
+                        - Login button that triggers a login form should not be considered as login forms. Only visible login forms should be considered.
                         """
                     ),
                 ),

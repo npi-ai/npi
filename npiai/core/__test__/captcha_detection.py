@@ -49,11 +49,12 @@ class TestHITL(HITL):
 
 
 urls = [
-    "https://www.google.com/recaptcha/api2/demo",
-    "https://nopecha.com/captcha/turnstile",
-    "https://github.com/login",
-    "https://google.com",
-    "https://x.com/elonmusk",
+    # "https://www.google.com/recaptcha/api2/demo",
+    # "https://nopecha.com/captcha/turnstile",
+    # "https://github.com/login",
+    # "https://google.com",
+    # "https://x.com/elonmusk",
+    "https://github.com/npi-ai/npi/issues",
 ]
 
 
