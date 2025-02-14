@@ -42,6 +42,6 @@ class HITL(ABC):
         tool_name: str,
         message: str,
         url: str,
-        action: Literal["captcha", "login"],
+        action: Literal["captcha", "login", "other"],
         playwright: PlaywrightContext,
     ) -> str: ...
