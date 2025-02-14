@@ -78,7 +78,20 @@ class BrowserTool(FunctionTool):
     @function
     async def get_text(self):
         """Get the text content (as markdown) of the current page"""
-        html = await self.playwright.page.evaluate("() => document.body.innerHTML")
+        html = await self.playwright.page.evaluate(
+            """
+            () => {
+                [...document.querySelectorAll('input[type="checkbox"], input[type="radio"]')].forEach(el => {
+                    if (el.checked) {
+                        el.setAttribute('checked', '');
+                    } else {
+                        el.removeAttribute('checked');
+                    }
+                });
+                return document.body.innerHTML;
+            }
+            """
+        )
         return html_to_markdown(html)
 
     async def start(self):

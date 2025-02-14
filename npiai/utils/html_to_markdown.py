@@ -16,6 +16,12 @@ class CompactMarkdownConverter(MarkdownConverter):
     def convert_noscript(self, el, text, convert_as_inline):
         return ""
 
+    def convert_input(self, el, text, convert_as_inline):
+        if el.attrs.get("type") == "checkbox" or el.attrs.get("type") == "radio":
+            checked = "checked" in el.attrs
+            return f"[{el.attrs.get('type')} checked:{'true' if checked else 'false'}]"
+        return ""
+
     def convert_div(self, el, text, convert_as_inline):
         aria_label = el.attrs.get("aria-label", "")
 
