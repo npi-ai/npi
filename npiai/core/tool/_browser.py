@@ -193,7 +193,7 @@ class BrowserTool(FunctionTool):
 
     async def init_observer(self):
         """Initialize a mutation observer on the current page"""
-        await self.playwright.page.evaluate("() => npi.initObserver()")
+        await self.playwright.page.evaluate("() => npi.initObserver(3000)")
 
     async def wait_for_stable(self):
         """Wait for the current page to be stable"""
