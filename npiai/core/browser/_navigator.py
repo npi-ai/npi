@@ -158,6 +158,8 @@ class NavigatorAgent(BrowserAgentTool):
             playwright=playwright,
         )
 
+        self._browser_app.name = "navigator"
+
         super().__init__(
             tool=self._browser_app,
         )
