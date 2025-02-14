@@ -70,6 +70,7 @@ Here are some conventions to choose a suitable tool:
 - If you are performing a critical action, such as submitting a form to place an order, clicking a "Send" button to send a message, or clicking a "Save" button to save the form, you should set the `action.type` to "confirmation" and ask for user confirmation.
 - If you need more information from the user to fulfill the task, such as requesting the user's name and making a choice, you should set the `action.type` to "human-intervention" and wait for user response.
 - If the whole task is done, you should set the `action.type` to "done" not call any further tools.
+- Avoid repeating the same action multiple times, even if the previous action was unsuccessful. Instead, try to analyze the reason for the failure and take a different approach.
 
 ## Response Format
 
