@@ -7,4 +7,4 @@ class DebugContext(Context):
     async def send(self, msg: RuntimeMessage):
         if msg["type"] == "screenshot":
             return
-        logger.debug(msg["message"] if "message" in msg else msg)
+        logger.info(msg["message"] if "message" in msg else msg)
