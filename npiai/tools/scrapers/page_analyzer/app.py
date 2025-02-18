@@ -36,11 +36,26 @@ class PageAnalyzer(BrowserTool):
         """
     )
 
-    force_captcha_detection: bool
+    _force_captcha_detection: bool
+    _open_new_page: bool
 
-    def __init__(self, force_captcha_detection: bool = False, **kwargs):
+    def __init__(
+        self,
+        force_captcha_detection: bool = False,
+        open_new_page=True,
+        **kwargs,
+    ):
+        """
+        Initialize the PageAnalyzer tool
+
+        Args:
+            force_captcha_detection: Whether to force the captcha detection when loading the page.
+            open_new_page: Whether to open a new page when analyzing the page. If set to False, the current page will be used.
+            **kwargs: BrowserTool arguments
+        """
         super().__init__(**kwargs)
-        self.force_captcha_detection = force_captcha_detection
+        self._force_captcha_detection = force_captcha_detection
+        self._open_new_page = open_new_page
 
     async def _validate_pagination(
         self,
@@ -268,14 +283,15 @@ class PageAnalyzer(BrowserTool):
             url: URL of the page
             items_selector: CSS selector of the items on the page
         """
-        # use long wait time for pages to be fully loaded
-        await self.load_page(
-            ctx=ctx,
-            url=url,
-            timeout=3000,
-            wait_for_selector=items_selector,
-            force_capcha_detection=self.force_captcha_detection,
-        )
+        if self._open_new_page:
+            # use long wait time for pages to be fully loaded
+            await self.load_page(
+                ctx=ctx,
+                url=url,
+                timeout=3000,
+                wait_for_selector=items_selector,
+                force_capcha_detection=self._force_captcha_detection,
+            )
 
         return await self.playwright.page.evaluate(
             """
@@ -363,9 +379,12 @@ class PageAnalyzer(BrowserTool):
             url: URL of the page
             items_selector: CSS selector of the items on the page
         """
-        await self.load_page(
-            ctx, url, force_capcha_detection=self.force_captcha_detection
-        )
+        if self._open_new_page:
+            await self.load_page(
+                ctx,
+                url,
+                force_capcha_detection=self._force_captcha_detection,
+            )
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
@@ -480,9 +499,12 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.load_page(
-            ctx, url, force_capcha_detection=self.force_captcha_detection
-        )
+        if self._open_new_page:
+            await self.load_page(
+                ctx,
+                url,
+                force_capcha_detection=self._force_captcha_detection,
+            )
 
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
@@ -564,12 +586,13 @@ class PageAnalyzer(BrowserTool):
             ctx: NPi Context
             url: URL of the page
         """
-        await self.load_page(
-            ctx,
-            url,
-            timeout=3000,
-            force_capcha_detection=self.force_captcha_detection,
-        )
+        if self._open_new_page:
+            await self.load_page(
+                ctx,
+                url,
+                timeout=3000,
+                force_capcha_detection=self._force_captcha_detection,
+            )
 
         # use latest page url in case of redirections
         page_url = await self.get_page_url()

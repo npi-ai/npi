@@ -36,9 +36,6 @@ class WebScraper(BaseScraper, BrowserTool):
     pagination_button_selector: str | None
     skip_item_hashes: Set[str] | None
 
-    # The maximum number of items to summarize in a single batch
-    _batch_size: int
-
     # all items loaded flag
     _all_items_loaded: bool = False
 
@@ -49,6 +46,9 @@ class WebScraper(BaseScraper, BrowserTool):
     # The list of hashes of items that have been skipped
     _matched_hashes: List[str]
 
+    # Whether to open a new page when start scraping
+    _open_new_page: bool
+
     def __init__(
         self,
         url: str,
@@ -58,6 +58,7 @@ class WebScraper(BaseScraper, BrowserTool):
         pagination_button_selector: str | None = None,
         skip_item_hashes: List[str] | None = None,
         headless: bool = True,
+        open_new_page: bool = True,
         playwright: PlaywrightContext = None,
     ):
         BaseScraper.__init__(self)
@@ -68,6 +69,7 @@ class WebScraper(BaseScraper, BrowserTool):
         self.items_selector = items_selector
         self.pagination_button_selector = pagination_button_selector
         self.skip_item_hashes = set(skip_item_hashes) if skip_item_hashes else None
+        self._open_new_page = open_new_page
         self._matched_hashes = []
         self._webpage_access_lock = asyncio.Lock()
 
@@ -76,13 +78,15 @@ class WebScraper(BaseScraper, BrowserTool):
 
     async def init_data(self, ctx: Context):
         self._matched_hashes = []
-        await self.load_page(
-            ctx=ctx,
-            url=self.url,
-            timeout=3000,
-            wait_for_selector=self.items_selector,
-            force_capcha_detection=True,
-        )
+
+        if self._open_new_page:
+            await self.load_page(
+                ctx=ctx,
+                url=self.url,
+                timeout=3000,
+                wait_for_selector=self.items_selector,
+                force_capcha_detection=True,
+            )
 
     async def next_items(
         self,

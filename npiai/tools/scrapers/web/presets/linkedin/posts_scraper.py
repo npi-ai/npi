@@ -34,6 +34,7 @@ class LinkedinPostsScraper(WebScraper):
         url: str,
         skip_item_hashes: List[str] | None = None,
         headless: bool = True,
+        open_new_page: bool = True,
         playwright: PlaywrightContext = None,
     ):
         super().__init__(
@@ -42,6 +43,7 @@ class LinkedinPostsScraper(WebScraper):
             items_selector=".fie-impression-container",
             skip_item_hashes=skip_item_hashes,
             headless=headless,
+            open_new_page=open_new_page,
             playwright=playwright,
         )
 
