@@ -60,138 +60,145 @@ class PageAnalyzer(BrowserTool):
     async def _validate_pagination(
         self,
         ctx: Context,
+        url: str,
         pagination_button_selector: str | None,
         items_selector: str | None = None,
     ) -> bool:
         if not pagination_button_selector:
             return False
 
-        handle = await self.playwright.page.evaluate_handle(
-            "selector => document.querySelector(selector)",
-            pagination_button_selector,
-        )
+        # validate the pagination button in a new playwright instance to avoid side effects
+        playwright_clone = await self.playwright.clone()
 
-        elem = handle.as_element()
+        async with BrowserTool(playwright=playwright_clone) as browser:
+            await browser.load_page(ctx, url)
 
-        if not elem:
-            return False
-
-        await self.back_to_top()
-        old_screenshot = await self.get_screenshot(
-            full_page=True,
-            max_size=_MAX_SCREENSHOT_SIZE,
-        )
-        old_url = await self.get_page_url()
-        old_title = await self.get_page_title()
-
-        await self.clear_bboxes()
-
-        try:
-            await self.click(elem)
-        except PlaywrightError:
-            return False
-
-        has_items_selector = items_selector and items_selector != "*"
-
-        # attach mutation observer to check if new items are added
-        if has_items_selector:
-            await init_items_observer(
-                playwright=self.playwright,
-                ancestor_selector="body",
-                items_selector=items_selector,
+            handle = await browser.playwright.page.evaluate_handle(
+                "selector => document.querySelector(selector)",
+                pagination_button_selector,
             )
 
-        try:
-            await self.playwright.page.wait_for_load_state(
-                "domcontentloaded",
-                timeout=3000,
+            elem = handle.as_element()
+
+            if not elem:
+                return False
+
+            await browser.back_to_top()
+            old_screenshot = await browser.get_screenshot(
+                full_page=True,
+                max_size=_MAX_SCREENSHOT_SIZE,
             )
-        except TimeoutError:
-            pass
+            old_url = await browser.get_page_url()
+            old_title = await browser.get_page_title()
 
-        new_url = await self.get_page_url()
+            await browser.clear_bboxes()
 
-        if new_url == old_url and has_items_selector:
-            return await has_items_added(self.playwright, timeout=5000)
+            try:
+                await browser.click(elem)
+            except PlaywrightError:
+                return False
 
-        new_screenshot = await self.get_screenshot(
-            full_page=True,
-            max_size=_MAX_SCREENSHOT_SIZE,
-        )
-        new_title = await self.get_page_title()
+            has_items_selector = items_selector and items_selector != "*"
 
-        def callback(is_next_page: bool):
-            """
-            Callback function to determine whether the pagination button is working.
+            # attach mutation observer to check if new items are added
+            if has_items_selector:
+                await init_items_observer(
+                    playwright=browser.playwright,
+                    ancestor_selector="body",
+                    items_selector=items_selector,
+                )
 
-            Args:
-                is_next_page: A boolean value indicating whether the page is navigated to the next page or the content within pagination component is changed.
-            """
-            return is_next_page
+            try:
+                await browser.playwright.page.wait_for_load_state(
+                    "domcontentloaded",
+                    timeout=3000,
+                )
+            except TimeoutError:
+                pass
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
-            tool=callback,
-            messages=[
-                ChatCompletionSystemMessageParam(
-                    role="system",
-                    content=dedent(
-                        """
-                        Compare the screenshots of the page before and after clicking the pagination button to determine whether the pagination button is working.
-                        
-                        ## Provided Context
-                        - The URL of the page before clicking the pagination button.
-                        - The title of the page before clicking the pagination button.
-                        - The URL of the page after clicking the pagination button.
-                        - The title of the page after clicking the pagination button.
-                        - The screenshot of the page before clicking the pagination button.
-                        - The screenshot of the page after clicking the pagination button.
-                        
-                        ## Instructions
-                        
-                        Follow the instructions to determine whether the pagination button is working:
-                        1. Review the screenshot of the page before clicking the pagination button (the first screenshot) and think if the page actually supports pagination.
-                        2. Compare the old URL and the new URL to see if the page is navigated to the next page.
-                        3. Compare the old title and the new title to see the two pages are related.
-                        4. Compare the first screenshot (the screenshot before clicking the pagination button) with the second screenshot (the screenshot after clicking the pagination button) to see if there are any differences. 
-                        5. Check if previous page and the next page have the same structure but different content. If so, the pagination button is working. Note that opening or closing a popup/modal in the same page is not considered as pagination.
-                        6. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
-                        """
+            new_url = await browser.get_page_url()
+
+            if new_url == old_url and has_items_selector:
+                return await has_items_added(browser.playwright, timeout=5000)
+
+            new_screenshot = await browser.get_screenshot(
+                full_page=True,
+                max_size=_MAX_SCREENSHOT_SIZE,
+            )
+            new_title = await browser.get_page_title()
+
+            def callback(is_next_page: bool):
+                """
+                Callback function to determine whether the pagination button is working.
+
+                Args:
+                    is_next_page: A boolean value indicating whether the page is navigated to the next page or the content within pagination component is changed.
+                """
+                return is_next_page
+
+            res = await llm_tool_call(
+                llm=ctx.llm,
+                tool=callback,
+                messages=[
+                    ChatCompletionSystemMessageParam(
+                        role="system",
+                        content=dedent(
+                            """
+                            Compare the screenshots of the page before and after clicking the pagination button to determine whether the pagination button is working.
+                            
+                            ## Provided Context
+                            - The URL of the page before clicking the pagination button.
+                            - The title of the page before clicking the pagination button.
+                            - The URL of the page after clicking the pagination button.
+                            - The title of the page after clicking the pagination button.
+                            - The screenshot of the page before clicking the pagination button.
+                            - The screenshot of the page after clicking the pagination button.
+                            
+                            ## Instructions
+                            
+                            Follow the instructions to determine whether the pagination button is working:
+                            1. Review the screenshot of the page before clicking the pagination button (the first screenshot) and think if the page actually supports pagination.
+                            2. Compare the old URL and the new URL to see if the page is navigated to the next page.
+                            3. Compare the old title and the new title to see the two pages are related.
+                            4. Compare the first screenshot (the screenshot before clicking the pagination button) with the second screenshot (the screenshot after clicking the pagination button) to see if there are any differences. 
+                            5. Check if previous page and the next page have the same structure but different content. If so, the pagination button is working. Note that opening or closing a popup/modal in the same page is not considered as pagination.
+                            6. If the pagination button is working, call the tool with `true`. Otherwise, call the tool with `false`.
+                            """
+                        ),
                     ),
-                ),
-                ChatCompletionUserMessageParam(
-                    role="user",
-                    content=[
-                        {
-                            "type": "text",
-                            "text": json.dumps(
-                                {
-                                    "old_url": old_url,
-                                    "old_title": old_title,
-                                    "new_url": new_url,
-                                    "new_title": new_title,
+                    ChatCompletionUserMessageParam(
+                        role="user",
+                        content=[
+                            {
+                                "type": "text",
+                                "text": json.dumps(
+                                    {
+                                        "old_url": old_url,
+                                        "old_title": old_title,
+                                        "new_url": new_url,
+                                        "new_title": new_title,
+                                    },
+                                    ensure_ascii=False,
+                                ),
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": old_screenshot,
                                 },
-                                ensure_ascii=False,
-                            ),
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": old_screenshot,
                             },
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": new_screenshot,
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": new_screenshot,
+                                },
                             },
-                        },
-                    ],
-                ),
-            ],
-        )
+                        ],
+                    ),
+                ],
+            )
 
-        return callback(**res.model_dump())
+            return callback(**res.model_dump())
 
     async def get_selector_of_marker(self, marker_id: int = -1) -> str | None:
         """
@@ -484,7 +491,10 @@ class PageAnalyzer(BrowserTool):
         )
 
         is_working = await self._validate_pagination(
-            ctx, pagination_button_selector, items_selector
+            ctx=ctx,
+            url=url,
+            pagination_button_selector=pagination_button_selector,
+            items_selector=items_selector,
         )
         await ctx.send_debug_message(f"Pagination button is working: {is_working}")
 
