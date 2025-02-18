@@ -72,6 +72,15 @@ class PlaywrightContext:
         self.channel = channel
         self.storage_state = storage_state
 
+    async def clone(self):
+        state = await self.get_state()
+
+        return PlaywrightContext(
+            headless=self.headless,
+            channel=self.channel,
+            storage_state=state,
+        )
+
     async def start(self):
         """Start the Playwright chrome"""
         if self.ready:
