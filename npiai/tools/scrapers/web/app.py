@@ -126,6 +126,8 @@ class WebScraper(BaseScraper, BrowserTool):
 
                 if captcha == "none":
                     self._all_items_loaded = True
+            elif self.scraping_type == "single":
+                self._all_items_loaded = True
 
             return res
 
