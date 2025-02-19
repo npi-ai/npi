@@ -50,6 +50,7 @@ class BrowserTool(FunctionTool):
         wait_for_selector: str = None,
         timeout: int | None = None,
         force_capcha_detection: bool = False,
+        captcha_detection_hints: str | None = None,
     ):
         await self.playwright.page.goto(url)
 
@@ -73,7 +74,7 @@ class BrowserTool(FunctionTool):
         # await self.playwright.page.wait_for_timeout(wait)
 
         if force_capcha_detection:
-            await self.detect_captcha(ctx, return_to=url)
+            await self.detect_captcha(ctx, return_to=url, hints=captcha_detection_hints)
 
     @function
     async def get_text(self):
@@ -304,7 +305,12 @@ class BrowserTool(FunctionTool):
 
         return f"Successfully scrolled to top"
 
-    async def detect_captcha(self, ctx: Context, return_to: str | None = None):
+    async def detect_captcha(
+        self,
+        ctx: Context,
+        return_to: str | None = None,
+        hints: str | None = None,
+    ):
         url = await self.get_page_url()
         screenshot = await self.get_screenshot(full_page=True, max_size=(1280, 720))
 
@@ -350,13 +356,16 @@ class BrowserTool(FunctionTool):
                 ChatCompletionSystemMessageParam(
                     role="system",
                     content=dedent(
-                        """
+                        f"""
                         You are given a screenshot of a webpage. Determine if a captcha or login form with input fields is present in the screenshot. If a captcha is present, call the tool with the argument "captcha". If a login form is present, call the tool with the argument "login". If neither is present, call the tool with the argument "none".
                         
                         NOTE: 
                         - Popups like cookie consent banners should not be considered as login forms.
                         - The login action can be ignored if the main content is visible in the screenshot.
                         - Login button that triggers a login form should not be considered as login forms. Only visible login forms with input fields should be considered.
+                        
+                        HINTS:
+                        {hints}
                         """
                     ),
                 ),
