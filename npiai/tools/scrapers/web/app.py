@@ -87,6 +87,19 @@ class WebScraper(BaseScraper, BrowserTool):
                 wait_for_selector=self.items_selector,
                 force_capcha_detection=True,
             )
+        else:
+            # clear visited marks and scroll to the top
+            await self.playwright.page.evaluate(
+                """
+                () => {
+                    window.scrollTo(0, 0);
+                    
+                    [...document.querySelectorAll('[data-npi-visited]')].forEach(e => {
+                        e.removeAttribute('data-npi-visited');
+                    });
+                }
+                """
+            )
 
     async def next_items(
         self,
