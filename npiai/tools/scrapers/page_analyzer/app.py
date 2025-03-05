@@ -611,7 +611,7 @@ class PageAnalyzer(BrowserTool):
 
         contentful_elements = await self.playwright.page.evaluate(
             """
-            () => npi.getMostContentfulElements()
+            () => npi.getMostContentfulElements(null, 10)
             """,
         )
 
