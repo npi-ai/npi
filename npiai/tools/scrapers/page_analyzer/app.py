@@ -607,15 +607,16 @@ class PageAnalyzer(BrowserTool):
         # use latest page url in case of redirections
         page_url = await self.get_page_url()
         page_title = await self.get_page_title()
-        # raw_screenshot = await self.get_screenshot(full_page=True)
+        raw_screenshot = await self.get_screenshot(full_page=True)
 
         contentful_elements = await self.playwright.page.evaluate(
             """
-            () => npi.getMostContentfulElements(null, 10)
+            (screenshot) => npi.getMostContentfulElements(screenshot, 10)
             """,
+            raw_screenshot,
         )
 
-        # annotated_screenshot = await self.get_screenshot(full_page=True)
+        annotated_screenshot = await self.get_screenshot(full_page=True)
 
         elements_as_markdown = []
         group_element_count = {}
@@ -656,6 +657,7 @@ class PageAnalyzer(BrowserTool):
                         - The URL of the page.
                         - The title of the page.
                         - An array of the most contextful elements on the page. The elements are described as JSON objects defined in the Element Object section. Some irrelevant elements are filtered out.
+                        - An annotated screenshot of the target page where the most contextful elements are surrounded with rectangular bounding boxes in different colors. At the top left of each bounding box is a small rectangle in the same color as the bounding box. This is the label and it contains a number indicating the ID of that box. The label number starts from 0.
                         
                         ## Element Object
 
@@ -669,7 +671,7 @@ class PageAnalyzer(BrowserTool):
                         
                         ## Instructions
                         
-                        Follow the instructions to determine whether there is a pagination button on the current page for navigating to the next page:
+                        Follow the instructions to determine whether there are similar elements representing the most meaningful list of items:
                         1. Examine the URL, and the title of the page to understand the context, and then think about what the current page is.
                         2. Go through the elements array, grab the semantic information of the elements via the "content" property. Pay attention to the elements with the same group ID as they are under the same parent element.
                         3. Check if there are similar elements representing **the most meaningful list** of items. Typically, these elements link to the detail pages of the items. Note that these elements should not be the pagination buttons and should contain enough meaningful information, not just some short phrases.
@@ -691,12 +693,12 @@ class PageAnalyzer(BrowserTool):
                                 ensure_ascii=False,
                             ),
                         },
-                        # {
-                        #     "type": "image_url",
-                        #     "image_url": {
-                        #         "url": annotated_screenshot,
-                        #     },
-                        # },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": annotated_screenshot,
+                            },
+                        },
                     ],
                 ),
             ],
