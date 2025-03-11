@@ -25,8 +25,8 @@ from .prompts import (
 from .types import (
     Column,
     SourceItem,
-    SummaryItem,
-    SummaryChunk,
+    Row,
+    RowBatch,
 )
 
 __INDEX_COLUMN__ = Column(
@@ -44,10 +44,12 @@ class BaseScraper(FunctionTool, ABC):
     infer_prompt: str = DEFAULT_COLUMN_INFERENCE_PROMPT
 
     @abstractmethod
-    async def init_data(self, ctx: Context): ...
+    async def init_data(self, ctx: Context):
+        ...
 
     @abstractmethod
-    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None: ...
+    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None:
+        ...
 
     async def summarize_stream(
         self,
@@ -56,58 +58,62 @@ class BaseScraper(FunctionTool, ABC):
         batch_size: int = 1,
         limit: int = -1,
         concurrency: int = 1,
-    ) -> AsyncGenerator[SummaryChunk, None]:
+        row_offset: int = 0,
+    ) -> AsyncGenerator[RowBatch, None]:
         """
         Summarize the content of a webpage into a csv table represented as a stream of item objects.
 
         Args:
+            row_offset: row offset of the first batch in the entire task
             ctx: NPi context.
             output_columns: The columns of the output table. If not provided, use the `infer_columns` function to infer the columns.
-            batch_size: The number of items to summarize in each batch. Default is 1.
-            limit: The maximum number of items to summarize. If -1, all items are summarized.
+            batch_size: The number of rows to summarize in each batch. Default is 1.
+            limit: The maximum number of rows to summarize. If -1, all rows are summarized.
             concurrency: The number of concurrent tasks to run. Default is 1.
 
         Returns:
-            A stream of items. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
+            A stream of rows. Each item is a dictionary with keys corresponding to the column names and values corresponding to the column values.
         """
         if limit == 0:
             return
 
         await self.init_data(ctx)
 
-        # total items summarized
-        count = 0
-        # remaining items to summarize, excluding the items being summarized
-        remaining = limit
-        # batch index
-        batch_index = 0
+        total_row_summarized = 0
+        # remaining rows to summarize, excluding the rows being summarized
+        remaining_rows = limit
+        batch_no = 0
 
         lock = asyncio.Lock()
 
-        no_count_index = 0
+        row_number_count = 0
 
-        async def run_batch(results_queue: asyncio.Queue[SummaryChunk]):
-            nonlocal count, no_count_index, remaining, batch_index
+        # TODO
+        # 1. one task for retrieve html items
+        # 2. one task for summarize html items
 
-            if limit != -1 and remaining <= 0:
+        async def run_batch(results_queue: asyncio.Queue[RowBatch]):
+            nonlocal total_row_summarized, row_number_count, remaining_rows, batch_no
+
+            if limit != -1 and remaining_rows <= 0:
                 return
 
             async with lock:
-                current_index = batch_index
-                batch_index += 1
+                current_batch = batch_no
+                batch_no += 1
 
-                # calculate the number of items to summarize in the current batch
+                # calculate the number of rows to summarize in the current batch
                 requested_count = (
-                    min(batch_size, remaining) if limit != -1 else batch_size
+                    min(batch_size, remaining_rows) if limit != -1 else batch_size
                 )
-                # reduce the remaining count by the number of items in the current batch
+                # reduce the remaining count by the number of rows in the current batch
                 # so that the other tasks will not exceed the limit
-                remaining -= requested_count
+                remaining_rows -= requested_count
 
             data = await self.next_items(ctx=ctx, count=requested_count)
 
             if not data:
-                await ctx.send_debug_message(f"[{self.name}] No more items found")
+                await ctx.send_debug_message(f"[{self.name}] No more rows found")
                 return
 
             # await ctx.send_debug_message(
@@ -115,42 +121,47 @@ class BaseScraper(FunctionTool, ABC):
             # )
 
             async with lock:
-                no_index = no_count_index
-                no_count_index += len(data)
+                current_batch_row_number_offset = row_number_count
+                row_number_count += len(data)
 
-            items = await self._summarize_llm_call(
+            rows = await self._summarize_llm_call(
                 ctx=ctx,
                 items=data,
                 output_columns=output_columns,
             )
 
-            await ctx.send_debug_message(f"[{self.name}] Summarized {len(items)} items")
+            await ctx.send_debug_message(f"[{self.name}] Summarized {len(rows)} rows")
             #
-            # if not items:
-            #     await ctx.send_debug_message(f"[{self.name}] No items summarized")
+            # if not rows:
+            #     await ctx.send_debug_message(f"[{self.name}] No rows summarized")
             #     return
 
             async with lock:
-                items_slice = items[:requested_count] if limit != -1 else items
+                items_slice = rows[:requested_count] if limit != -1 else rows
                 summarized_count = len(items_slice)
-                count += summarized_count
-                # recalculate the remaining count in case summary returned fewer items than requested
+                total_row_summarized += summarized_count
+                # recalculate the remaining count in case summary returned fewer rows than requested
                 if summarized_count < requested_count:
-                    remaining += requested_count - summarized_count
+                    remaining_rows += requested_count - summarized_count
+
+            count = 1
+            for row in items_slice:
+                row["row_no"] = current_batch_row_number_offset + row_offset + count
+                count += 1
 
             await results_queue.put(
-                SummaryChunk(
-                    index=no_index,
-                    batch_id=current_index,
+                RowBatch(
+                    offset=current_batch_row_number_offset + row_offset,
+                    batch_id=current_batch,
                     items=items_slice,
                 )
             )
 
             await ctx.send_debug_message(
-                f"[{self.name}] Summarized {count} items in total"
+                f"[{self.name}] Summarized {total_row_summarized} rows in total"
             )
 
-            if limit == -1 or remaining > 0:
+            if limit == -1 or remaining_rows > 0:
                 await run_batch(results_queue)
 
         async for chunk in concurrent_task_runner(run_batch, concurrency):
@@ -268,7 +279,7 @@ class BaseScraper(FunctionTool, ABC):
         ctx: Context,
         items: List[SourceItem],
         output_columns: List[Column],
-    ) -> List[SummaryItem]:
+    ) -> List[Row]:
         """
         Summarize the content of a webpage into a table using LLM.
 
@@ -309,9 +320,9 @@ class BaseScraper(FunctionTool, ABC):
             async for row in llm_summarize(ctx.llm, messages):
                 index = int(row.pop(__INDEX_COLUMN__["name"]))
                 results.append(
-                    SummaryItem(
+                    Row(
                         hash=items[index]["hash"],
-                        index=index,
+                        original_data_index=index,
                         values=row,
                     )
                 )

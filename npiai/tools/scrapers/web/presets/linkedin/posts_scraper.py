@@ -10,7 +10,7 @@ from npiai import Context
 from npiai.core import PlaywrightContext
 from npiai.error import UnauthorizedError
 from npiai.tools.scrapers.web import WebScraper
-from npiai.tools.scrapers import SummaryChunk, Column
+from npiai.tools.scrapers import RowBatch, Column
 from npiai.utils.html_to_markdown import CompactMarkdownConverter
 from .columns import POST_COLUMNS
 
@@ -98,7 +98,7 @@ class LinkedinPostsScraper(WebScraper):
         batch_size: int = 1,
         limit: int = -1,
         concurrency: int = 1,
-    ) -> AsyncGenerator[SummaryChunk, None]:
+    ) -> AsyncGenerator[RowBatch, None]:
         stream = super().summarize_stream(
             ctx=ctx,
             output_columns=output_columns or POST_COLUMNS,

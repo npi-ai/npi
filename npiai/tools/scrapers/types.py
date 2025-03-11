@@ -16,13 +16,15 @@ class SourceItem(TypedDict):
     data: Any
 
 
-class SummaryItem(TypedDict):
+class Row(TypedDict):
     hash: str
-    index: int
+    original_data_index: int
+    row_no: int
     values: Dict[str, str]
 
 
-class SummaryChunk(TypedDict):
-    index: int
+class RowBatch(TypedDict):
+    # row offset of this batch in the entire task
+    offset: int
     batch_id: int
-    items: List[SummaryItem]
+    items: List[Row]
