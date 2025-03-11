@@ -18,6 +18,7 @@ from playwright.async_api import (
 
 __BROWSER_UTILS_VERSION__ = "0.0.19"
 
+from npiai.utils import logger
 
 def _prepare_browser_utils():
     # path to the js bundle
@@ -83,10 +84,14 @@ class PlaywrightContext:
 
     async def start(self):
         """Start the Playwright chrome"""
+        logger.info("a")
         if self.ready:
             return
 
+        logger.info("b")
         self.playwright = await async_playwright().start()
+
+        logger.info("c")
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,
             channel=self.channel,
@@ -94,8 +99,9 @@ class PlaywrightContext:
             # args=["--disable-gpu", "--single-process"],
         )
 
+        logger.info("d")
         await self.restore_state(self.storage_state)
-
+        logger.info("e")
         self.ready = True
         self.closed = False
 
@@ -110,19 +116,24 @@ class PlaywrightContext:
             state: Previously saved state to use for the browser context
         """
         # clean up the previous context
+        logger.info("1")
         if self.page:
             self.detach_events(self.page)
             self.page = None
+
+        logger.info("2")
         if self.context:
             await self.context.close()
             self.context = None
 
+        logger.info("3")
         self.context = await self.browser.new_context(
             locale="en-US",
             bypass_csp=True,
             storage_state=state,
             **self.playwright.devices["Desktop Chrome"],
         )
+        logger.info("4")
         # self.context.set_default_timeout(3000)
         await self.context.add_init_script(path=_prepare_browser_utils())
         await self.context.add_init_script(
@@ -148,9 +159,10 @@ class PlaywrightContext:
             "https://challenges.cloudflare.com/**/*",
             block_route,
         )
-
+        logger.info("5")
         self.page = await self.context.new_page()
         self.attach_events(self.page)
+        logger.info("6")
 
     def attach_events(self, page: Page):
         page.on("dialog", self.on_dialog)
