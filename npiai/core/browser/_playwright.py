@@ -90,7 +90,11 @@ class PlaywrightContext:
         self.browser = await self.playwright.chromium.launch(
             headless=self.headless,
             channel=self.channel,
-            args=["--disable-blink-features=AutomationControlled"],
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-extensions",
+                "--disable-file-system",
+            ],
             # args=["--disable-gpu", "--single-process"],
         )
 
