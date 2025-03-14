@@ -2,7 +2,6 @@
 
 import json
 import re
-from textwrap import dedent
 from typing import Union, List, Literal, Tuple
 
 from playwright.async_api import Error
@@ -174,22 +173,37 @@ class NavigatorAgent(BrowserAgentTool):
     async def end(self):
         pass
 
-    async def generate_user_prompt(self, task: str, history: List[Response]):
+    async def generate_user_prompt(
+        self, ctx: Context, task: str, history: List[Response]
+    ):
         await self._browser_app.clear_bboxes()
         raw_screenshot = await self._browser_app.get_screenshot()
         elements, added_ids = await self._browser_app.get_interactive_elements(
             raw_screenshot
         )
-
-        user_prompt: str = dedent(
-            f"""
-            Page Title: {await self._browser_app.get_page_title()}
-            Task: {task}
-            Scrollable: {await self._browser_app.is_scrollable()}
-            Previous Actions: {json.dumps(history[-10:])}
-            Elements: {json.dumps(elements)}
-            Newly Added Elements' ID: {json.dumps(added_ids)}
-            """
+        #
+        # user_prompt: str = dedent(
+        #     f"""
+        #     Page Title: {await self._browser_app.get_page_title()}
+        #     Task: {task}
+        #     Scrollable: {await self._browser_app.is_scrollable()}
+        #     Previous Actions: {json.dumps(history[-10:])}
+        #     Elements: {json.dumps(elements)}
+        #     Newly Added Elements' ID: {json.dumps(added_ids)}
+        #     Hints: {await ctx.get_hints()}
+        #     """
+        # )
+        user_prompt = json.dumps(
+            {
+                "page_title": await self._browser_app.get_page_title(),
+                "task": task,
+                "scrollable": await self._browser_app.is_scrollable(),
+                "previous_actions": history[-10:],
+                "elements": elements,
+                "newly_added_elements_id": added_ids,
+                "hints": await ctx.get_hints(),
+            },
+            ensure_ascii=False,
         )
 
         # print(user_prompt)
@@ -240,7 +254,9 @@ class NavigatorAgent(BrowserAgentTool):
                     }
                 ]
             )
-            await task.step([await self.generate_user_prompt(instruction, history)])
+            await task.step(
+                [await self.generate_user_prompt(ctx, instruction, history)]
+            )
 
             response_str = await self._call_llm(ctx, task)
             response = _parse_response(response_str)

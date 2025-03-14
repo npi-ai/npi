@@ -50,7 +50,6 @@ class BrowserTool(FunctionTool):
         wait_for_selector: str = None,
         timeout: int | None = None,
         force_capcha_detection: bool = False,
-        captcha_detection_hints: str | None = None,
     ):
         await self.playwright.page.goto(url)
 
@@ -74,7 +73,7 @@ class BrowserTool(FunctionTool):
         # await self.playwright.page.wait_for_timeout(wait)
 
         if force_capcha_detection:
-            await self.detect_captcha(ctx, return_to=url, hints=captcha_detection_hints)
+            await self.detect_captcha(ctx, return_to=url)
 
     @function
     async def get_text(self):
@@ -309,7 +308,6 @@ class BrowserTool(FunctionTool):
         self,
         ctx: Context,
         return_to: str | None = None,
-        hints: str | None = None,
     ):
         url = await self.get_page_url()
         screenshot = await self.get_screenshot(full_page=True, max_size=(1280, 720))
@@ -365,7 +363,7 @@ class BrowserTool(FunctionTool):
                         - Login button that triggers a login form should not be considered as login forms. Only visible login forms with input fields should be considered.
                         
                         HINTS:
-                        {hints}
+                        {await ctx.get_hints()}
                         """
                     ),
                 ),

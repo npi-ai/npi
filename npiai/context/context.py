@@ -61,6 +61,8 @@ class Context:
     _hitl: Union["HITL", None]
     _configurators: List["Configurator"]
 
+    _hints: List[str]
+
     @property
     def hitl(self) -> "HITL":
         if self._hitl is None:
@@ -109,6 +111,7 @@ class Context:
         self._hitl = None
         self._llm = None
         self._configurators = []
+        self._hints = []
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -123,6 +126,18 @@ class Context:
     async def setup_configs(self, instruction: str):
         for config_agent in self._configurators:
             await config_agent.setup(self, instruction)
+
+    async def add_hints(self, *hints: str):
+        self._hints.extend(hints)
+
+    async def get_hints(self) -> str:
+        if not self._hints:
+            return "None"
+
+        return "- " + "\n - ".join(self._hints)
+
+    async def clear_hints(self) -> None:
+        self._hints.clear()
 
     # @abstractmethod
     # NOTE: this method should not be abstract
