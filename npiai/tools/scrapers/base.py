@@ -17,6 +17,7 @@ from npiai.utils import (
     llm_tool_call,
     llm_summarize,
     concurrent_task_runner,
+    logger
 )
 from .prompts import (
     DEFAULT_COLUMN_INFERENCE_PROMPT,
@@ -319,6 +320,9 @@ class BaseScraper(FunctionTool, ABC):
         try:
             async for row in llm_summarize(ctx.llm, messages):
                 index = int(row.pop(__INDEX_COLUMN__["name"]))
+                if index >= len(items):
+                    logger.warning(f"Index {index} out of range, row: {row}, items: {items}")
+                    continue
                 results.append(
                     Row(
                         hash=items[index]["hash"],
@@ -327,9 +331,8 @@ class BaseScraper(FunctionTool, ABC):
                     )
                 )
         except Exception as e:
-            print(
+            logger.warning(
                 f"Error parsing the response: {traceback.format_exc()}",
-                file=sys.stderr,
             )
             await ctx.send_error_message(f"Error parsing the response: {str(e)}")
 
