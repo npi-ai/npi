@@ -25,11 +25,8 @@ def with_checkpoint(checkpoint: Any):
                 logger.warning("Context not found")
                 return await async_fn(*args, **kwargs)
 
-            try:
-                ctx.checkpoint(checkpoint)
+            with ctx.checkpoint(checkpoint):
                 return await async_fn(*args, **kwargs)
-            finally:
-                ctx.clear_checkpoint()
 
         return wrapper
 

@@ -10,7 +10,7 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class Record:
-    checkpoint: Any
+    checkpoints: List[Any]
     prompts: List[ChatCompletionMessageParam]
     response: ModelResponse
     id: str = field(default_factory=lambda: str(uuid.uuid4()))

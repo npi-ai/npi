@@ -5,6 +5,7 @@ import datetime
 import os
 import uuid
 from typing import List, Union, Dict, TYPE_CHECKING, Literal, Any
+from contextlib import contextmanager
 
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm import ModelResponse
@@ -66,7 +67,7 @@ class Context:
     _hints: List[str]
     _history: List[Record]
 
-    _current_checkpoint: Any = None
+    _current_checkpoints: List[Any]
 
     @property
     def hitl(self) -> "HITL":
@@ -106,8 +107,8 @@ class Context:
         return self._history
 
     @property
-    def current_checkpoint(self) -> Any:
-        return self._current_checkpoint
+    def current_checkpoints(self) -> List[Any]:
+        return self._current_checkpoints
 
     def __init__(
         self,
@@ -126,7 +127,7 @@ class Context:
         self._configurators = []
         self._hints = []
         self._history = []
-        self._current_checkpoint = None
+        self._current_checkpoints = []
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -154,11 +155,22 @@ class Context:
     async def clear_hints(self) -> None:
         self._hints.clear()
 
-    def checkpoint(self, checkpoint: Any):
-        self._current_checkpoint = checkpoint
+    def enter_checkpoint(self, checkpoint: Any):
+        self._current_checkpoints.append(checkpoint)
 
-    def clear_checkpoint(self):
-        self._current_checkpoint = None
+    def leave_checkpoint(self, checkpoint: Any):
+        self._current_checkpoints.remove(checkpoint)
+
+    def clear_checkpoints(self):
+        self._current_checkpoints.clear()
+
+    @contextmanager
+    def checkpoint(self, checkpoint: Any):
+        self.enter_checkpoint(checkpoint)
+        try:
+            yield
+        finally:
+            self.leave_checkpoint(checkpoint)
 
     def record(
         self,
@@ -167,7 +179,7 @@ class Context:
     ) -> List[Record]:
         self._history.append(
             Record(
-                checkpoint=self.current_checkpoint,
+                checkpoints=self.current_checkpoints,
                 prompts=prompts,
                 response=response,
             )
