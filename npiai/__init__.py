@@ -7,7 +7,7 @@ from npiai.core.tool import (
 )
 from npiai.core.hitl import HITL
 from npiai.llm import OpenAI, LLM
-from npiai.context import Context, Configurator
+from npiai.context import Context, Configurator, Record
 from npiai.types import FromVectorDB
 
 __all__ = [
@@ -22,4 +22,5 @@ __all__ = [
     "LLM",
     "Context",
     "FromVectorDB",
+    "Record",
 ]

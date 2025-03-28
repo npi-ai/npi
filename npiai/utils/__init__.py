@@ -11,6 +11,7 @@ from .parse_npi_function import parse_npi_function
 from .html_to_markdown import html_to_markdown, CompactMarkdownConverter
 from .concurrent_task_runner import concurrent_task_runner
 from .llm_summarize import llm_summarize
+from .with_checkpoint import with_checkpoint
 
 __all__ = [
     "logger",
@@ -27,4 +28,5 @@ __all__ = [
     "CompactMarkdownConverter",
     "concurrent_task_runner",
     "llm_summarize",
+    "with_checkpoint",
 ]

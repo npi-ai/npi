@@ -4,14 +4,16 @@ import asyncio
 import datetime
 import os
 import uuid
-from typing import List, Union, Dict, TYPE_CHECKING, Literal
+from typing import List, Union, Dict, TYPE_CHECKING, Literal, Any
 
 from litellm.types.completion import ChatCompletionMessageParam
+from litellm import ModelResponse
 
 from npiai.types import RuntimeMessage
 from npiai.llm import OpenAI, LLM
 
 from .memory import VectorDBMemory, KVMemory
+from .record import Record
 
 if TYPE_CHECKING:
     from npiai import HITL
@@ -62,6 +64,9 @@ class Context:
     _configurators: List["Configurator"]
 
     _hints: List[str]
+    _history: List[Record]
+
+    _current_checkpoint: Any = None
 
     @property
     def hitl(self) -> "HITL":
@@ -96,6 +101,14 @@ class Context:
 
         return self._kv
 
+    @property
+    def history(self) -> List[Record]:
+        return self._history
+
+    @property
+    def current_checkpoint(self) -> Any:
+        return self._current_checkpoint
+
     def __init__(
         self,
     ) -> None:
@@ -112,6 +125,8 @@ class Context:
         self._llm = None
         self._configurators = []
         self._hints = []
+        self._history = []
+        self._current_checkpoint = None
 
     def use_hitl(self, hitl: "HITL") -> None:
         self._hitl = hitl
@@ -138,6 +153,33 @@ class Context:
 
     async def clear_hints(self) -> None:
         self._hints.clear()
+
+    def checkpoint(self, checkpoint: Any):
+        self._current_checkpoint = checkpoint
+
+    def clear_checkpoint(self):
+        self._current_checkpoint = None
+
+    def record(
+        self,
+        prompts: List[ChatCompletionMessageParam],
+        response: ModelResponse,
+    ) -> List[Record]:
+        self._history.append(
+            Record(
+                checkpoint=self.current_checkpoint,
+                prompts=prompts,
+                response=response,
+            )
+        )
+
+        return self._history
+
+    def remove_record(self, record: Record):
+        self._history.remove(record)
+
+    def clear_history(self):
+        self._history.clear()
 
     # @abstractmethod
     # NOTE: this method should not be abstract
