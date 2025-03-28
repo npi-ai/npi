@@ -2,13 +2,14 @@ import itertools
 import functools
 from typing import Callable, Any
 
-from npiai import Context
 
 from .logger import logger
 from .to_async_fn import to_async_fn
 
 
 def with_checkpoint(checkpoint: Any):
+    from npiai import Context
+
     def decorator(fn: Callable):
         @functools.wraps(fn)
         async def wrapper(*args, **kwargs):

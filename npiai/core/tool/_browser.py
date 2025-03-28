@@ -347,8 +347,8 @@ class BrowserTool(FunctionTool):
 
             return captcha_type
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        return await llm_tool_call(
+            ctx=ctx,
             tool=handle_captcha,
             messages=[
                 ChatCompletionSystemMessageParam(
@@ -380,5 +380,3 @@ class BrowserTool(FunctionTool):
                 ),
             ],
         )
-
-        return await handle_captcha(**res.model_dump())

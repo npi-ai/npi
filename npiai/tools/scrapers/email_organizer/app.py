@@ -149,7 +149,7 @@ class EmailOrganizer(BaseScraper):
             criteria: Filtering criteria
         """
 
-        def callback(matched: bool):
+        async def callback(matched: bool):
             """
             Callback function to determine whether the email meets the filtering criteria
 
@@ -161,8 +161,8 @@ class EmailOrganizer(BaseScraper):
                 email=self._email_map[email["id"]],
             )
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        return await llm_tool_call(
+            ctx=ctx,
             tool=callback,
             messages=[
                 ChatCompletionSystemMessageParam(role="system", content=FILTER_PROMPT),
@@ -178,8 +178,6 @@ class EmailOrganizer(BaseScraper):
                 ),
             ],
         )
-
-        return callback(**res.model_dump())
 
     def _to_compact_email(self, email: EmailMessage) -> CompactEmailMessage:
         attachments = email.get("attachments", None)

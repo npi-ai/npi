@@ -1,5 +1,4 @@
 import json
-import os
 from textwrap import dedent
 
 from litellm.types.completion import (
@@ -8,7 +7,7 @@ from litellm.types.completion import (
 )
 
 from npiai.utils import llm_tool_call
-from npiai.llm import OpenAI
+from npiai.context import Context
 
 
 __PROMPT__ = """
@@ -30,23 +29,33 @@ You are given the agent's output and the expectations in a JSON format:
 """
 
 
-def report(passed: bool, reason: str | None = None):
-    """
-    Report the result of the assertion.
+async def llm_assert(
+    ctx: Context,
+    output: str,
+    expectations: str,
+    constraints: str = None,
+):
+    async def report(passed: bool, reason: str | None = None):
+        """
+        Report the result of the assertion.
 
-    Args:
-        passed: Whether the assertion passed.
-        reason: The reason for the assertion failure.
-    """
-    assert passed, reason
+        Args:
+            passed: Whether the assertion passed.
+            reason: The reason for the assertion failure.
+        """
+        if not passed:
+            reason = dedent(
+                f"""
+                {reason}
+                
+                Agent Output: {output}
+                Expectations: {expectations}
+                """.strip()
+            )
+        assert passed, reason
 
-
-async def llm_assert(output: str, expectations: str, constraints: str = None):
-    res = await llm_tool_call(
-        llm=OpenAI(
-            api_key=os.environ.get("OPENAI_API_KEY", None),
-            model="gpt-4o",
-        ),
+    return await llm_tool_call(
+        ctx=ctx,
         tool=report,
         messages=[
             ChatCompletionSystemMessageParam(
@@ -65,18 +74,3 @@ async def llm_assert(output: str, expectations: str, constraints: str = None):
             ),
         ],
     )
-
-    passed = res.passed
-    reason = res.reason
-
-    if not passed:
-        reason = dedent(
-            f"""
-            {res.reason}
-            
-            Agent Output: {output}
-            Expectations: {expectations}
-            """.strip()
-        )
-
-    return report(passed, reason)

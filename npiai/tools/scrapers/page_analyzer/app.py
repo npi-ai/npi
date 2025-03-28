@@ -127,7 +127,7 @@ class PageAnalyzer(BrowserTool):
             )
             new_title = await browser.get_page_title()
 
-            def callback(is_next_page: bool):
+            async def callback(is_next_page: bool):
                 """
                 Callback function to determine whether the pagination button is working.
 
@@ -136,8 +136,8 @@ class PageAnalyzer(BrowserTool):
                 """
                 return is_next_page
 
-            res = await llm_tool_call(
-                llm=ctx.llm,
+            return await llm_tool_call(
+                ctx=ctx,
                 tool=callback,
                 messages=[
                     ChatCompletionSystemMessageParam(
@@ -197,8 +197,6 @@ class PageAnalyzer(BrowserTool):
                     ),
                 ],
             )
-
-            return callback(**res.model_dump())
 
     async def get_selector_of_marker(self, marker_id: int = -1) -> str | None:
         """
@@ -417,8 +415,8 @@ class PageAnalyzer(BrowserTool):
             if attrs and "href" in attrs:
                 el["href"] = urljoin(page_url, attrs["href"])
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        pagination_button_selector = await llm_tool_call(
+            ctx=ctx,
             tool=self.get_selector_of_marker,
             messages=[
                 ChatCompletionSystemMessageParam(
@@ -483,9 +481,6 @@ class PageAnalyzer(BrowserTool):
             ],
         )
 
-        pagination_button_selector = await self.get_selector_of_marker(
-            **res.model_dump()
-        )
         await ctx.send_debug_message(
             f"Pagination button selector: {pagination_button_selector}"
         )
@@ -523,7 +518,7 @@ class PageAnalyzer(BrowserTool):
             max_size=_MAX_SCREENSHOT_SIZE,
         )
 
-        def callback(scraping_type: ScrapingType):
+        async def callback(scraping_type: ScrapingType):
             """
             Set the inferrd scraping type of the page.
 
@@ -532,8 +527,8 @@ class PageAnalyzer(BrowserTool):
             """
             return scraping_type
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        return await llm_tool_call(
+            ctx=ctx,
             tool=callback,
             messages=[
                 ChatCompletionSystemMessageParam(
@@ -580,8 +575,6 @@ class PageAnalyzer(BrowserTool):
                 ),
             ],
         )
-
-        return callback(**res.model_dump())
 
     @function
     async def infer_similar_items_selector(
@@ -642,8 +635,8 @@ class PageAnalyzer(BrowserTool):
                 }
             )
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        return await llm_tool_call(
+            ctx=ctx,
             tool=self.compute_common_selectors,
             messages=[
                 ChatCompletionSystemMessageParam(
@@ -703,5 +696,3 @@ class PageAnalyzer(BrowserTool):
                 ),
             ],
         )
-
-        return await self.compute_common_selectors(**res.model_dump())

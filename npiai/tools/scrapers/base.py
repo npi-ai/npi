@@ -2,7 +2,6 @@ import asyncio
 import csv
 import json
 import os
-import sys
 import traceback
 from abc import ABC, abstractmethod
 from typing import List, AsyncGenerator, Any
@@ -13,12 +12,7 @@ from litellm.types.completion import (
 )
 
 from npiai import function, Context, FunctionTool
-from npiai.utils import (
-    llm_tool_call,
-    llm_summarize,
-    concurrent_task_runner,
-    logger
-)
+from npiai.utils import llm_tool_call, llm_summarize, concurrent_task_runner, logger
 from .prompts import (
     DEFAULT_COLUMN_INFERENCE_PROMPT,
     DEFAULT_COLUMN_SUMMARIZE_PROMPT,
@@ -45,12 +39,10 @@ class BaseScraper(FunctionTool, ABC):
     infer_prompt: str = DEFAULT_COLUMN_INFERENCE_PROMPT
 
     @abstractmethod
-    async def init_data(self, ctx: Context):
-        ...
+    async def init_data(self, ctx: Context): ...
 
     @abstractmethod
-    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None:
-        ...
+    async def next_items(self, ctx: Context, count: int) -> List[SourceItem] | None: ...
 
     async def summarize_stream(
         self,
@@ -241,7 +233,7 @@ class BaseScraper(FunctionTool, ABC):
         #     f"[{self.name}] Parsed markdown: {parsed_result.markdown}"
         # )
 
-        def callback(columns: List[Column]):
+        async def callback(columns: List[Column]):
             """
             Callback with the inferred columns.
 
@@ -256,8 +248,8 @@ class BaseScraper(FunctionTool, ABC):
 
         items_data = [item["data"] for item in items]
 
-        res = await llm_tool_call(
-            llm=ctx.llm,
+        return await llm_tool_call(
+            ctx=ctx,
             tool=callback,
             messages=[
                 ChatCompletionSystemMessageParam(
@@ -270,10 +262,6 @@ class BaseScraper(FunctionTool, ABC):
                 ),
             ],
         )
-
-        await ctx.send_debug_message(f"[{self.name}] Columns inference response: {res}")
-
-        return callback(**res.model_dump())
 
     async def _summarize_llm_call(
         self,
@@ -321,7 +309,9 @@ class BaseScraper(FunctionTool, ABC):
             async for row in llm_summarize(ctx.llm, messages):
                 index = int(row.pop(__INDEX_COLUMN__["name"]))
                 if index >= len(items):
-                    logger.warning(f"Index {index} out of range, row: {row}, items: {items}")
+                    logger.warning(
+                        f"Index {index} out of range, row: {row}, items: {items}"
+                    )
                     continue
                 results.append(
                     Row(

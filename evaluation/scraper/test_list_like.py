@@ -58,8 +58,9 @@ def test_list_like_results_length(list_like_scraping_results):
 
 async def test_list_like_columns(list_like_scraping_results):
     await llm_assert(
-        json.dumps(list_like_scraping_results),
-        dedent(
+        ctx=Context(),
+        output=json.dumps(list_like_scraping_results),
+        expectations=dedent(
             f"""
             The agent should output a list of dictionaries, where each dictionary has the following keys:
             {json.dumps(list_like_output_columns)}
