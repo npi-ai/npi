@@ -306,7 +306,7 @@ class BaseScraper(FunctionTool, ABC):
         results = []
 
         try:
-            async for row in llm_summarize(ctx.llm, messages):
+            async for row in llm_summarize(ctx, messages):
                 index = int(row.pop(__INDEX_COLUMN__["name"]))
                 if index >= len(items):
                     logger.warning(

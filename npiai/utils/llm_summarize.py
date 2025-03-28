@@ -8,23 +8,26 @@ from litellm.types.completion import (
 )
 
 from npiai.llm import LLM
+from npiai.context import Context
 
 
 async def llm_summarize(
-    llm: LLM,
+    ctx: Context,
     messages: List[ChatCompletionMessageParam],
 ) -> AsyncGenerator[Dict[str, str], None]:
     messages_copy = messages.copy()
     final_response_content = ""
 
     while True:
-        response = await llm.acompletion(
+        response = await ctx.llm.acompletion(
             messages=messages_copy,
             max_tokens=4096,
             # use fixed temperature and seed to ensure deterministic results
             temperature=0.0,
             seed=42,
         )
+
+        ctx.record(prompts=messages_copy, response=response)
 
         messages_copy.append(response.choices[0].message)
 
