@@ -179,7 +179,7 @@ class Context:
     ) -> List[Record]:
         self._history.append(
             Record(
-                checkpoints=self.current_checkpoints,
+                checkpoints=self.current_checkpoints.copy(),
                 prompts=prompts,
                 response=response,
             )
