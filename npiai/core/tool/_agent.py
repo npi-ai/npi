@@ -82,12 +82,15 @@ class AgentTool(BaseAgentTool):
 
     async def _call_llm(self, ctx: Context, task: Task) -> str:
         while True:
+            message = task.conversations()
+
             response = await ctx.llm.acompletion(
-                messages=task.conversations(),
+                messages=message,
                 tools=self._tool.tools,
                 tool_choice="auto",
                 max_tokens=4096,
             )
+            ctx.record(prompts=message, response=response)
             await task.step([response.choices[0].message])
 
             response_message = response.choices[0].message
@@ -185,12 +188,15 @@ class BrowserAgentTool(AgentTool):
                         ]
                     )
 
+            messages = task.conversations()
+
             response = await ctx.llm.acompletion(
-                messages=task.conversations(),
+                messages=messages,
                 tools=self._tool.tools,
                 tool_choice="auto",
                 max_tokens=4096,
             )
+            ctx.record(prompts=messages, response=response)
             await task.step([response.choices[0].message])
 
             response_message = response.choices[0].message
