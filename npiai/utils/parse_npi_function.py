@@ -40,7 +40,7 @@ def parse_npi_function(
         # get parameter field definitions
         param_fields = {}
         for p in params:
-            if p.annotation is Context:
+            if inspect.isclass(p.annotation) and issubclass(p.annotation, Context):
                 ctx_param_name = p.name
                 continue
 
